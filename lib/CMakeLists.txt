@@ -49,6 +49,6 @@ message("#################")
 message("# Build Embree3 #")
 message("#################")
 set(EMBREE_ISPC_SUPPORT OFF CACHE BOOL "We do not use the Intel SPMD Compiler")
-set(EMBREE_MAX_ISA AVX2) #SSE2, SSE4.2, AVX, AVX2, AVX512KNL, AVX512SKX
+#set(EMBREE_MAX_ISA AVX2) #SSE2, SSE4.2, AVX, AVX2, AVX512KNL, AVX512SKX
 add_subdirectory(embree)
 message("# Build Embree3 Done #")
