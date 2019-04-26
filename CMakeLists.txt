@@ -47,6 +47,10 @@ find_package(embree 3.5 REQUIRED)
 ## Add Embree headers to include directories
 include_directories("${EMBREE_INCLUDE_DIRS}")
 
+## Boost
+find_package(Boost COMPONENTS log REQUIRED)
+include_directories(${Boost_INCLUDE_DIR})
+
 file(GLOB SOURCES "src/**/*.cpp")
 add_executable(TestRTIntersect ${SOURCES})
 #message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
@@ -58,3 +62,15 @@ add_dependencies(TestRTIntersect embree)
 # [Question] Exactly which file do we link here?
 target_link_libraries(TestRTIntersect embree)
 #target_link_libraries(TestRTIntersect ${EMBREE_LIBRARY})
+target_link_libraries(TestRTIntersect "${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/lib/libgmsh.a")
+## One needs to link lapack and blas (in that order) for gmesh!
+target_link_libraries(TestRTIntersect lapack blas)
+set(OCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/oce/install/oce/lib/oce-0.18")
+find_package(OCE REQUIRED)
+target_link_libraries(TestRTIntersect ${OCE_LIBRARIES})
+target_link_libraries(TestRTIntersect ${Boost_LOG_LIBRARY})
+
+
+## gmsh
+#set(gmsh_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gmsh/build/install")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/include")
