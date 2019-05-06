@@ -46,16 +46,16 @@ message("CMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE})
 #message("HPTCAD_TOOLSET=" ${HPTCAD_TOOLSET})
 
 
-## Add libraries
+## Add dependencies
 #
 # Compile Embree as a static library.
 # If we want to use Embree as dynamic library, then one needs to comment
 # the following line out and add the location of the dynamic library
-# (<build-folder>/lib/embree) to the environment variable LD_LIBRARY_PATH.
+# (<build-folder>/dependencies/embree) to the environment variable LD_LIBRARY_PATH.
 #set(EMBREE_STATIC_LIB ON CACHE BOOL "Compile Embree static library")
-add_subdirectory(lib)
+add_subdirectory(dependencies)
 # Add package Embree 3.5
-set(embree_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/lib/embree")
+set(embree_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/dependencies/embree")
 find_package(embree 3.5.2 REQUIRED)
 ## Add Embree headers to include directories
 include_directories("${EMBREE_INCLUDE_DIRS}")
@@ -77,10 +77,10 @@ add_dependencies(TestRTIntersect embree)
 # [Question] Exactly which file do we link here?
 target_link_libraries(TestRTIntersect embree)
 #target_link_libraries(TestRTIntersect ${EMBREE_LIBRARY})
-#target_link_libraries(TestRTIntersect "${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/lib/libgmsh.a")
+#target_link_libraries(TestRTIntersect "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.a")
 ## One needs to link lapack and blas (in that order) for gmesh!
 target_link_libraries(TestRTIntersect lapack blas)
-set(OCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/oce/install/oce/lib/oce-0.18")
+set(OCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/oce/install/oce/lib/oce-0.18")
 find_package(OCE REQUIRED)
 target_link_libraries(TestRTIntersect ${OCE_LIBRARIES})
 #target_link_libraries(TestRTIntersect ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_LOG_LIRARY} )
@@ -91,8 +91,8 @@ message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
 
 ## gmsh
 #set(gmsh_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gmsh/build/install")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/include")
-target_link_libraries(TestRTIntersect ${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/lib/libgmsh.so)
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/include")
+target_link_libraries(TestRTIntersect ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.so)
 
 get_target_property(ALL_LINK_LIBRARIES TestRTIntersect LINK_LIBRARIES)
 target_link_libraries(TestRTIntersect ${ALL_LINK_LIBRARIES})
