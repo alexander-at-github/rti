@@ -43,4 +43,4 @@ message("# Build Embree3 Done #")
 
   ##  ##  (export CASROOT=../oce/install/oce && echo $CASROOT && cmake -DCMAKE_INSTALL_PREFIX="$(pwd)/../install" .. && make -j8 && make install) && rm -r /home/alexander/cdr/rti/build/* && (export CASROOT=../oce/install/oce && echo $CASROOT && cmake -DCMAKE_INSTALL_PREFIX="$(pwd)/../install" -DENABLE_FLTK=0 -DDEFAULT=0 -DENABLE_BUILD_LIB=1 -DENABLE_POST=1 -DENABLE_PARSER=1 .. && make lib -j8 && make install/fast)
 
-  ##  ## (export CASROOT=../oce/install/oce && echo $CASROOT && cmake -DCMAKE_INSTALL_PREFIX="$(pwd)/../install" -DENABLE_FLTK=0 -DCMAKE_BUILD_TYPE=Debug -DDEFAULT=0 -DENABLE_BUILD_LIB=1 -DENABLE_BUILD_SHARED -DENABLE_POST=1 -DENABLE_PARSER=1 ..)
+  ##  ## (export CASROOT=../oce/install/oce && echo $CASROOT && cmake -DCMAKE_INSTALL_PREFIX="$(pwd)/../install" -DENABLE_FLTK=0 -DCMAKE_BUILD_TYPE=Debug -DDEFAULT=0 -DENABLE_BUILD_LIB=1 -DENABLE_BUILD_SHARED=1 -DENABLE_POST=1 -DENABLE_PARSER=1 ..)

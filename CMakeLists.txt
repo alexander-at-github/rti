@@ -1,19 +1,32 @@
 cmake_minimum_required(VERSION 3.7)
+
+# This variable needs to be set before the project() function!
+#set(CMAKE_CXX_COMPILER "/usr/bin/clang++-6.0" CACHE PATH "c++ compiler path")
+#set(CMAKE_C_COMPILER "/usr/bin/clang-6.0" CACHE PATH "c compiler path")
+set(CMAKE_CXX_COMPILER "/usr/bin/g++" CACHE PATH "c++ compiler path")
+set(CMAKE_C_COMPILER "/usr/bin/gcc" CACHE PATH "c compiler path")
 project(rti)
 
+# By default boost wants to link static libraries.
+# Set dynamic linkage for boost here.
+#set(BOOST_ALL_DYN_LINK ON CACHE BOOL "set BOOST_ALL_DYN_LINK")
+set(CMAKE_CXX_FLAGS " -Wall -std=c++11 -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK" CACHE STRING "set compiler flags" FORCE)
+set(CMAKE_CXX_FLAGS_DEBUG          " -O0 -g" CACHE STRING "Set CXX debug flags")
 
 message(STATUS "CMAKE_ROOT=${CMAKE_ROOT}")
-## Compiler Options
-set(CMAKE_C_COMPILER               "/usr/bin/gcc" CACHE FILEPATH "C compiler set to gcc")
-set(CMAKE_CXX_COMPILER             "/usr/bin/g++" CACHE FILEPATH "CXX compiler set to g++")
-set(CMAKE_CXX_FLAGS                " -Wall -std=c++14 -DBOOST_LOG_DYN_LINK -DBOOST_SYSTEM_NO_DEPRECATED" CACHE STRING "compile flags" FORCE)
-set(CMAKE_CXX_FLAGS_DEBUG          " -O0 -g" CACHE STRING "Set CXX debug flags")
-set(CMAKE_CXX_FLAGS_RELWITHDEBINFO " -O2 -g" CACHE STRING "Set some CXX flags")
-set(CMAKE_CXX_FLAGS_RELEASE        " -O3 -DNDEBUG" CACHE STRING "Set release CXX flags")
+### Compiler Options
+#set(CMAKE_C_COMPILER               "/usr/bin/gcc" CACHE FILEPATH "C compiler set to gcc")
+#set(CMAKE_CXX_COMPILER             "/usr/bin/g++" CACHE FILEPATH "CXX compiler set to g++")
+#set(CMAKE_CXX_FLAGS                " -Wall -std=c++14 -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK -DBOOST_SYSTEM_NO_DEPRECATED" CACHE STRING "compile flags" FORCE)
+#set(CMAKE_CXX_FLAGS_DEBUG          " -O0 -g" CACHE STRING "Set CXX debug flags")
+#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO " -O2 -g" CACHE STRING "Set some CXX flags")
+#set(CMAKE_CXX_FLAGS_RELEASE        " -O3 -DNDEBUG" CACHE STRING "Set release CXX flags")
 
 ## Set build type
+set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "" FORCE)
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  #set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
+  set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "" FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
 ## General Set-Up
@@ -43,12 +56,14 @@ message("CMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE})
 add_subdirectory(lib)
 # Add package Embree 3.5
 set(embree_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/lib/embree")
-find_package(embree 3.5 REQUIRED)
+find_package(embree 3.5.2 REQUIRED)
 ## Add Embree headers to include directories
 include_directories("${EMBREE_INCLUDE_DIRS}")
 
 ## Boost
-find_package(Boost COMPONENTS log REQUIRED)
+find_package(Boost COMPONENTS system iostreams log thread REQUIRED)
+#find_package(Boost COMPONENTS log thread system iostreams REQUIRED)
+#find_package(Boost REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 file(GLOB SOURCES "src/**/*.cpp")
@@ -62,15 +77,24 @@ add_dependencies(TestRTIntersect embree)
 # [Question] Exactly which file do we link here?
 target_link_libraries(TestRTIntersect embree)
 #target_link_libraries(TestRTIntersect ${EMBREE_LIBRARY})
-target_link_libraries(TestRTIntersect "${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/lib/libgmsh.a")
+#target_link_libraries(TestRTIntersect "${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/lib/libgmsh.a")
 ## One needs to link lapack and blas (in that order) for gmesh!
 target_link_libraries(TestRTIntersect lapack blas)
 set(OCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/oce/install/oce/lib/oce-0.18")
 find_package(OCE REQUIRED)
 target_link_libraries(TestRTIntersect ${OCE_LIBRARIES})
-target_link_libraries(TestRTIntersect ${Boost_LOG_LIBRARY})
+#target_link_libraries(TestRTIntersect ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_LOG_LIRARY} )
+target_link_libraries(TestRTIntersect ${Boost_LIBRARIES})
+message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
+#target_link_libraries(TestRTIntersect ${Boost_LOG_LIBRARY})
 
 
 ## gmsh
 #set(gmsh_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gmsh/build/install")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/include")
+target_link_libraries(TestRTIntersect ${CMAKE_CURRENT_SOURCE_DIR}/lib/gmsh/install/lib/libgmsh.so)
+
+get_target_property(ALL_LINK_LIBRARIES TestRTIntersect LINK_LIBRARIES)
+target_link_libraries(TestRTIntersect ${ALL_LINK_LIBRARIES})
+get_target_property(ALL_LINK_LIBRARIES TestRTIntersect LINK_LIBRARIES)
+message(STATUS "TestRTIntersect link libraries: \n=======================================\n ${ALL_LINK_LIBRARIES}")
