@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
   RTCScene scene = rtcNewScene(device);
 
   // No scene flags for now.
-  rtcSetSceneFlags(scene, RTC_SENE_FLAG_NONE);
+  rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
   // Selecting higher build quality results in better rendering performance but slower
   // scene commit times. The default build quality for a scene is RTC_BUILD_QUALITY_MEDIUM.
   RTCBuildQuality bbquality = RTC_BUILD_QUALITY_HIGH;
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
   // TODO: According to gdb there is an error in the following call.
   rtcIntersect1(scene, &context, &rayhit);
 
-  //gmsh::fltk::run();
+  gmsh::fltk::run();
   gmsh::finalize();
 }
 
