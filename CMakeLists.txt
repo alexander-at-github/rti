@@ -10,7 +10,7 @@ project(rti)
 # By default boost wants to link static libraries.
 # Set dynamic linkage for boost here.
 #set(BOOST_ALL_DYN_LINK ON CACHE BOOL "set BOOST_ALL_DYN_LINK")
-set(CMAKE_CXX_FLAGS " -Wall -std=c++11 -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK" CACHE STRING "set compiler flags" FORCE)
+set(CMAKE_CXX_FLAGS " -Wall -std=c++14 -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK" CACHE STRING "set compiler flags" FORCE)
 set(CMAKE_CXX_FLAGS_DEBUG          " -O0 -g" CACHE STRING "Set CXX debug flags")
 
 message(STATUS "CMAKE_ROOT=${CMAKE_ROOT}")
@@ -67,34 +67,34 @@ find_package(Boost COMPONENTS system iostreams log thread REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 file(GLOB SOURCES "src/**/*.cpp")
-add_executable(TestRTIntersect ${SOURCES})
+add_executable(rtiex ${SOURCES})
 #message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
 # Add embree as dependecy to our executable.
-add_dependencies(TestRTIntersect embree)
+add_dependencies(rtiex embree)
 #message(STATUS "EMBREE_LIBRARIES=${EMBREE_LIBRARIES}")
 #message(STATUS "EMBREE_LIBRARY=${EMBREE_LIBRARY}")
 # [Question] Exactly which file do we link here?
-target_link_libraries(TestRTIntersect embree)
-#target_link_libraries(TestRTIntersect ${EMBREE_LIBRARY})
-#target_link_libraries(TestRTIntersect "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.a")
+target_link_libraries(rtiex embree)
+#target_link_libraries(rtiex ${EMBREE_LIBRARY})
+#target_link_libraries(rtiex "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.a")
 ## One needs to link lapack and blas (in that order) for gmesh!
-target_link_libraries(TestRTIntersect lapack blas)
+target_link_libraries(rtiex lapack blas)
 set(OCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/oce/install/oce/lib/oce-0.18")
 find_package(OCE REQUIRED)
-target_link_libraries(TestRTIntersect ${OCE_LIBRARIES})
-#target_link_libraries(TestRTIntersect ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_LOG_LIRARY} )
-target_link_libraries(TestRTIntersect ${Boost_LIBRARIES})
+target_link_libraries(rtiex ${OCE_LIBRARIES})
+#target_link_libraries(rtiex ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_LOG_LIRARY} )
+target_link_libraries(rtiex ${Boost_LIBRARIES})
 message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
-#target_link_libraries(TestRTIntersect ${Boost_LOG_LIBRARY})
+#target_link_libraries(rtiex ${Boost_LOG_LIBRARY})
 
 
 ## gmsh
 #set(gmsh_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gmsh/build/install")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/include")
-target_link_libraries(TestRTIntersect ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.so)
+target_link_libraries(rtiex ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.so)
 
-get_target_property(ALL_LINK_LIBRARIES TestRTIntersect LINK_LIBRARIES)
-target_link_libraries(TestRTIntersect ${ALL_LINK_LIBRARIES})
-get_target_property(ALL_LINK_LIBRARIES TestRTIntersect LINK_LIBRARIES)
-message(STATUS "TestRTIntersect link libraries: \n=======================================\n ${ALL_LINK_LIBRARIES}")
+get_target_property(ALL_LINK_LIBRARIES rtiex LINK_LIBRARIES)
+target_link_libraries(rtiex ${ALL_LINK_LIBRARIES})
+get_target_property(ALL_LINK_LIBRARIES rtiex LINK_LIBRARIES)
+message(STATUS "rtiex link libraries: \n=======================================\n ${ALL_LINK_LIBRARIES}")
