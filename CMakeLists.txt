@@ -1,100 +1,64 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
-# This variable needs to be set before the project() function!
-#set(CMAKE_CXX_COMPILER "/usr/bin/clang++-6.0" CACHE PATH "c++ compiler path")
-#set(CMAKE_C_COMPILER "/usr/bin/clang-6.0" CACHE PATH "c compiler path")
-set(CMAKE_CXX_COMPILER "/usr/bin/g++" CACHE PATH "c++ compiler path")
-set(CMAKE_C_COMPILER "/usr/bin/gcc" CACHE PATH "c compiler path")
-project(rti)
+# Set compiler
+#set(ENV{CXX} "/usr/bin/clang++-6.0")
+#set(ENV{CXX} "/usr/bin/clang")
+# REMARK: setting ENV{CXX} only works when the project function/macro is called afterwards!
+## TODO: Which setting overrides the other? ENV or CACHE?
 
-# By default boost wants to link static libraries.
-# Set dynamic linkage for boost here.
-#set(BOOST_ALL_DYN_LINK ON CACHE BOOL "set BOOST_ALL_DYN_LINK")
-set(CMAKE_CXX_FLAGS " -Wall -std=c++14 -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK" CACHE STRING "set compiler flags" FORCE)
-set(CMAKE_CXX_FLAGS_DEBUG          " -O0 -g" CACHE STRING "Set CXX debug flags")
+project(
+  rti
+  VERSION 0.1
+  LANGUAGES CXX
+  )
 
-message(STATUS "CMAKE_ROOT=${CMAKE_ROOT}")
-### Compiler Options
-#set(CMAKE_C_COMPILER               "/usr/bin/gcc" CACHE FILEPATH "C compiler set to gcc")
-#set(CMAKE_CXX_COMPILER             "/usr/bin/g++" CACHE FILEPATH "CXX compiler set to g++")
-#set(CMAKE_CXX_FLAGS                " -Wall -std=c++14 -DBOOST_LOG_DYN_LINK -DBOOST_ALL_DYN_LINK -DBOOST_SYSTEM_NO_DEPRECATED" CACHE STRING "compile flags" FORCE)
-#set(CMAKE_CXX_FLAGS_DEBUG          " -O0 -g" CACHE STRING "Set CXX debug flags")
-#set(CMAKE_CXX_FLAGS_RELWITHDEBINFO " -O2 -g" CACHE STRING "Set some CXX flags")
-#set(CMAKE_CXX_FLAGS_RELEASE        " -O3 -DNDEBUG" CACHE STRING "Set release CXX flags")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-## Set build type
-set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "" FORCE)
-if(NOT CMAKE_BUILD_TYPE)
-  #set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
-  set(CMAKE_BUILD_TYPE "DEBUG" CACHE STRING "" FORCE)
-endif(NOT CMAKE_BUILD_TYPE)
+##########################################################################################
+### If one wants to uses an Intel SPMD Compiler, the one has to set that here
+##########################################################################################
+set(EMBREE_ISPC_SUPPORT OFF CACHE BOOL "Set whether or not you use Intel's SPMD Compiler")
+##########################################################################################
 
-## General Set-Up
-#if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-#    set(HPTCAD_TOOLSET "clang")
-#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#    set(HPTCAD_TOOLSET "gcc")
-#elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
-#    set(HPTCAD_TOOLSET "intel-linux")
-#endif()
-#message(status "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
-#message(status "CMAKE_CURRENT_LIST_DIR=${CMAKE_CURRENT_LIST_DIR}")
-message("CMAKE_C_COMPILER=" ${CMAKE_C_COMPILER})
-message("CMAKE_CXX_COMPILER=" ${CMAKE_CXX_COMPILER})
-message("CMAKE_CXX_COMPILER_ID=" ${CMAKE_CXX_COMPILER_ID})
-message("CMAKE_BUILD_TYPE=" ${CMAKE_BUILD_TYPE})
-#message("HPTCAD_TOOLSET=" ${HPTCAD_TOOLSET})
+set(M_DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/dependencies)
+set(STAGED_INSTALL_PREFIX ${M_DEPENDENCIES_DIR}/stage) # will be used in external/upstream
+message(STATUS "${PROJECT_NAME} external project's staged install path: ${STAGED_INSTALL_PREFIX}")
 
+list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system")
 
-## Add dependencies
-#
-# Compile Embree as a static library.
-# If we want to use Embree as dynamic library, then one needs to comment
-# the following line out and add the location of the dynamic library
-# (<build-folder>/dependencies/embree) to the environment variable LD_LIBRARY_PATH.
-#set(EMBREE_STATIC_LIB ON CACHE BOOL "Compile Embree static library")
-add_subdirectory(dependencies)
-# Add package Embree 3.5
-set(embree_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/dependencies/embree")
-find_package(embree 3.5.2 REQUIRED)
-## Add Embree headers to include directories
-include_directories("${EMBREE_INCLUDE_DIRS}")
+include(ExternalProject)
+add_subdirectory(external/upstream)
 
-## Boost
-find_package(Boost COMPONENTS system iostreams log thread REQUIRED)
-#find_package(Boost COMPONENTS log thread system iostreams REQUIRED)
-#find_package(Boost REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
-
-file(GLOB SOURCES "src/**/*.cpp")
-add_executable(rtiex ${SOURCES})
-#message(STATUS "CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/src")
-# Add embree as dependecy to our executable.
-add_dependencies(rtiex embree)
-#message(STATUS "EMBREE_LIBRARIES=${EMBREE_LIBRARIES}")
-#message(STATUS "EMBREE_LIBRARY=${EMBREE_LIBRARY}")
-# [Question] Exactly which file do we link here?
-target_link_libraries(rtiex embree)
-#target_link_libraries(rtiex ${EMBREE_LIBRARY})
-#target_link_libraries(rtiex "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.a")
-## One needs to link lapack and blas (in that order) for gmesh!
-target_link_libraries(rtiex lapack blas)
-set(OCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/oce/install/oce/lib/oce-0.18")
-find_package(OCE REQUIRED)
-target_link_libraries(rtiex ${OCE_LIBRARIES})
-#target_link_libraries(rtiex ${Boost_SYSTEM_LIBRARY} ${Boost_THREAD_LIBRARY} ${Boost_LOG_LIRARY} )
-target_link_libraries(rtiex ${Boost_LIBRARIES})
-message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
-#target_link_libraries(rtiex ${Boost_LOG_LIBRARY})
-
-
-## gmsh
-#set(gmsh_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gmsh/build/install")
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/include")
-target_link_libraries(rtiex ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/gmsh/install/lib/libgmsh.so)
-
-get_target_property(ALL_LINK_LIBRARIES rtiex LINK_LIBRARIES)
-target_link_libraries(rtiex ${ALL_LINK_LIBRARIES})
-get_target_property(ALL_LINK_LIBRARIES rtiex LINK_LIBRARIES)
-message(STATUS "rtiex link libraries: \n=======================================\n ${ALL_LINK_LIBRARIES}")
+externalproject_add(rti_core
+  DEPENDS
+    boost_external
+    gmsh_external
+		embree_external
+  SOURCE_DIR
+    ${CMAKE_CURRENT_LIST_DIR}/src
+  LIST_SEPARATOR ;
+  CMAKE_ARGS
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
+    -DCMAKE_CXX_EXTENSIONS=${CMAKE_CXX_EXTENSIONS}
+    -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
+    -DBOOST_ROOT:PATH=${BOOST_ROOT}
+    -DGMSH_DIR=${GMSH_DIR}
+    -DTBB_DIR=${TBB_DIR}
+    -DEMBREE_DIR=${EMBREE_DIR}
+  CMAKE_CACHE_ARGS
+    -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+    -DCMAKE_INCLUDE_PATH:PATH=${CMAKE_INCLUDE_PATH}
+    -DCMAKE_LIBRARY_PATH:PATH=${CMAKE_LIBRARY_PATH}
+    # To pass a list into externalproject_add() would need some yoga.
+    # One can see an example here
+    # https://stackoverflow.com/questions/45414507/pass-a-list-of-prefix-paths-to-externalproject-add-in-cmake-args
+    #-D BOOST_COMPONENTS_REQUIRED="${BOOST_COMPONENTS_REQUIRED}"
+  #BUILD_ALWAYS
+  #  1
+  INSTALL_COMMAND
+    ""
+)
