@@ -4,15 +4,15 @@
 #include <gmsh.h>
 
 #include "rti/logger.hpp"
-#include "rti/i_geometry_from_gmsh.hpp"
+#include "rti/absc_geometry_from_gmsh.hpp"
 
 namespace rti {
-class triangle_geometry_from_gmsh : public i_geometry_from_gmsh {
+class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
   public:
     triangle_geometry_from_gmsh(RTCDevice& pDevice) {
       init_this(pDevice);
     }
-    ~triangle_geometry_from_gmsh() {}
+    //~triangle_geometry_from_gmsh() {} // TODO: delete
     void invert_surface_normals() override {
       for (size_t idx = 0; idx < mNumTriangles; ++idx) {
         std::swap<uint32_t>(mTTBuffer[idx].v1, mTTBuffer[idx].v2);
@@ -43,9 +43,8 @@ class triangle_geometry_from_gmsh : public i_geometry_from_gmsh {
     // from the size of that buffer. "
     // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
   };
-  // Embree needs aligned memory:
-  //struct alignas(4) triangle {
-  struct triangle_t {
+  // Does Embree need aligned memory?
+  struct alignas(4) triangle_t {
     uint32_t v0, v1, v2;
     //int v0, v1, v2;
     // "RTC_GEOMETRY_TYPE_TRIANGLE: The index buffer contains an array of three
@@ -68,6 +67,14 @@ class triangle_geometry_from_gmsh : public i_geometry_from_gmsh {
     // geometries are created by passing RTC_GEOMETRY_TYPE_SPHERE_POINT,
     // RTC_GEOMETRY_TYPE_DISC_POINT, or RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT to
     // the rtcNewGeometry function."
+    //
+    // "RTC_GEOMETRY_TYPE_SPHERE_POINT -
+    //   point geometry spheres
+    // RTC_GEOMETRY_TYPE_DISC_POINT -
+    //   point geometry with ray-oriented discs
+    // RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT -
+    //   point geometry with normal-oriented discs"
+    //
     // Source: https://embree.github.io/api.html#rtc_geometry_type_point
     
     // RTC_GEOMETRY_TYPE_TRIANGLE: https://embree.github.io/api.html#rtc_geometry_type_triangle
