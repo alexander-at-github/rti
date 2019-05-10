@@ -7,55 +7,36 @@
 #include "rti/absc_geometry_from_gmsh.hpp"
 
 namespace rti {
-class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
+class sphere_geometry_from_gmsh : public absc_geometry_from_gmsh {
   public:
-    triangle_geometry_from_gmsh(RTCDevice& pDevice) {
+    sphere_geometry_from_gmsh(RTCDevice& pDevice) {
       init_this(pDevice);
     }
-    //~triangle_geometry_from_gmsh() {} // TODO: delete
     void invert_surface_normals() override {
-      for (size_t idx = 0; idx < mNumTriangles; ++idx) {
-        std::swap<uint32_t>(mTTBuffer[idx].v1, mTTBuffer[idx].v2);
-      }
+      assert(false && "not implemented");
     }
     std::string prim_to_string(unsigned int pPrimID) override {
+      assert(false && "not implemented");
       std::stringstream strstream;
-      strstream << " (" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v0].yy
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
-                <<  "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v1].yy
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
-                <<  "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v2].yy
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
+      strstream << "foo";
       return strstream.str();
     }
   private:
   ////////////////////////
   // Local algebraic types
   ////////////////////////
-  struct vertex_f3_t {
-    float xx, yy, zz; // No padding here!
+  struct vertex_f4_t {
+    float xx, yy, zz, radius;
     // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
     // single precision x, y, z floating point coordinates
     // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred
     // from the size of that buffer. "
     // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
   };
-  // Does Embree need aligned memory?
-  struct alignas(4) triangle_t {
-    uint32_t v0, v1, v2;
-    //int v0, v1, v2;
-    // "RTC_GEOMETRY_TYPE_TRIANGLE: The index buffer contains an array of three
-    // 32-bit indices per triangle (RTC_FORMAT_UINT format)"
-    // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
-  };
   ///////////////
   // Data members
   ///////////////
-  triangle_t* mTTBuffer = nullptr;
-  vertex_f3_t* mVVBuffer = nullptr;
+  vertex_f4_t* mVVBuffer = nullptr;
   size_t mNumTriangles = 0;
   size_t mNumVertices = 0;
   ////////////
@@ -77,18 +58,48 @@ class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
     //
     // Source: https://embree.github.io/api.html#rtc_geometry_type_point
     
-    // RTC_GEOMETRY_TYPE_TRIANGLE: https://embree.github.io/api.html#rtc_geometry_type_triangle
-    // "The index buffer contains an array of three 32-bit indices per triangle (RTC_FORMAT_UINT
-    // format) and the number of primitives is inferred from the size of that buffer. The vertex
-    // buffer contains an array of single precision x, y, z floating point coordinates
-    // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred from the size of that
-    // buffer."
-    mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
+    // "The point vertices can be specified t through a vertex buffer (RTC_BUFFER_TYPE_VERTEX).
+    // For the normal oriented discs a normal buffer (RTC_BUFFER_TYPE_NORMAL) has to get specified
+    // additionally. See rtcSetGeometryBuffer and rtcSetSharedGeometryBuffer for more details on
+    // how to set buffers."
+    // Source: https//embree.github.io/api.html#rtc_geometry_type_point
+
+    // "Points with per vertex radii are supported with sphere, ray-oriented discs, and
+		// normal-oriented discs geometric represetntations. Such point geometries are created by
+		// passing RTC_GEOMETRY_TYPE_SPHERE_POINT, RTC_GEOMETRY_TYPE_DISC_POINT, or
+		// RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT to the rtcNewGeometry function. The point vertices can
+		// be specified t through a vertex buffer (RTC_BUFFER_TYPE_VERTEX). For the normal oriented
+		// discs a normal buffer (RTC_BUFFER_TYPE_NORMAL) has to get specified additionally. See
+		// rtcSetGeometryBuffer and rtcSetSharedGeometryBuffer for more details on how to set buffers.
+		//
+		// The vertex buffer stores each control vertex in the form of a single precision position and
+		// radius stored in (x, y, z, r) order in memory (RTC_FORMAT_FLOAT4 format). The number of
+		// vertices is inferred from the size of this buffer. Similarly, the normal buffer stores a
+		// single precision normal per control vertex (x, y, z order and RTC_FORMAT_FLOAT3 format).
+		//
+		// In the RTC_GEOMETRY_TYPE_SPHERE_POINT mode, a real geometric surface is rendered for the
+		// curve, which is more expensive but allows closeup views.
+		//
+		// The RTC_GEOMETRY_TYPE_DISC_POINT flat mode is a fast mode designed to render distant point.
+		// In this mode the point is rendered as a ray facing disc.
+		//
+		// The RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT mode is a mode designed as a midpoint
+		// geometrically between ray facing discs and spheres. In this mode the point is rendered as
+		// a normal oriented disc.
+		//
+		// For all point types, only the hit distance and geometry normal is returned as hit
+		// information, u and v are set to zero."
+		// Source: https://www.embree.org/api.html#rtc_geometry_type_point
+
+    mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_SPHERE_POINT);
+
 
     /////////////////////////////////////////////////
     // - vvtags holds the vertices ("nodes in Gmsh")
     // - eetags[someIndex] contains the triangles
     /////////////////////////////////////////////////
+
+    // TODO: Refactor a gmsh_reader into its own class
 
     std::vector<std::size_t> vvtags;
     std::vector<double> vvxyz;
@@ -98,12 +109,12 @@ class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
     // point coordinates (RTC_FORMAT_FLOAT3 format).
     mNumVertices = vvtags.size();
     // Acquire memory from Embree
-    mVVBuffer = (vertex_f3_t*) rtcSetNewGeometryBuffer(
+    mVVBuffer = (vertex_f4_t*) rtcSetNewGeometryBuffer(
         mGeometry,
         RTC_BUFFER_TYPE_VERTEX,
         0, // slot
-        RTC_FORMAT_FLOAT3,
-        sizeof(vertex_f3_t),
+        RTC_FORMAT_FLOAT4,
+        sizeof(vertex_f4_t),
         mNumVertices);
 
     size_t vvtagsmaxval = *std::max_element(std::begin(vvtags), std::end(vvtags));
@@ -135,6 +146,8 @@ class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
       mVVBuffer[vvtag].xx = vvxyz[vcidx];
       mVVBuffer[vvtag].yy = vvxyz[vcidx+1];
       mVVBuffer[vvtag].zz = vvxyz[vcidx+2];
+			assert(false && "FIXME: set disc radius");
+			mVVBuffer[vvtag].radius == 1;
     }
 
     std::vector<int> eetypes;
@@ -161,43 +174,19 @@ class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
                                              << eetags[selectresult].size() << " triangles";
 
     mNumTriangles = eetags[selectresult].size();
-    mTTBuffer = (triangle_t*)rtcSetNewGeometryBuffer(
-        mGeometry,
-        RTC_BUFFER_TYPE_INDEX,
-        0, // slot
-        RTC_FORMAT_UINT3,
-        sizeof(triangle_t),
-        mNumTriangles);
-
-    // Check Embree device error
-    if (RTC_ERROR_NONE != rtcGetDeviceError(pDevice)) {
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Embree device error after rtcSetNewGeometryBuffer()";
-    }
-
     // Write triangle from Gmsh to Embree
     for (size_t idx = 0; idx < mNumTriangles; ++idx) {
       size_t ntidx = 3 * idx;
-      mTTBuffer[idx].v0 = nntags[selectresult][ntidx];
-      mTTBuffer[idx].v1 = nntags[selectresult][ntidx+1];
-      mTTBuffer[idx].v2 = nntags[selectresult][ntidx+2];
+			assert(false && "TODO: process trinagles");
       assert(vvtagsminval <= mTTBuffer[idx].v0 && mTTBuffer[idx].v0 <= vvtagsmaxval && "Invalid Vertex");
       assert(vvtagsminval <= mTTBuffer[idx].v1 && mTTBuffer[idx].v1 <= vvtagsmaxval && "Invalid Vertex");
       assert(vvtagsminval <= mTTBuffer[idx].v2 && mTTBuffer[idx].v2 <= vvtagsmaxval && "Invalid Vertex");
       /***************************************
        * Subtracting one to fix the indices. *
        ***************************************/
-      mTTBuffer[idx].v0 -= 1;
-      mTTBuffer[idx].v1 -= 1;
-      mTTBuffer[idx].v2 -= 1;
-      //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "(" << mVVBuffer[mTTBuffer[idx].v0].xx
-      //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].yy
-      //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].zz << ")"
-      //                                  << "(" << mVVBuffer[mTTBuffer[idx].v1].xx
-      //                                  << "," << mVVBuffer[mTTBuffer[idx].v1].yy
-      //                                  << "," << mVVBuffer[mTTBuffer[idx].v1].zz << ")"
-      //                                  << "(" << mVVBuffer[mTTBuffer[idx].v2].xx
-      //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].yy
-      //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].zz << ")";
+      //mTTBuffer[idx].v0 -= 1;
+      //mTTBuffer[idx].v1 -= 1;
+      //mTTBuffer[idx].v2 -= 1;
     }
   }
 };
