@@ -1,4 +1,4 @@
-externalproject_add(tbb_external
+externalproject_add(tbb-external
   # Only download
   GIT_REPOSITORY
     https://github.com/01org/tbb.git
@@ -6,9 +6,11 @@ externalproject_add(tbb_external
   GIT_TAG
     112ade3da541b73b053635b6f29cafe4abe4fa5e
   # No configure
-  CONFIGURE_COMMAND ""
+  CONFIGURE_COMMAND
+    ""
   # No build
-  BUILD_COMMAND ""
+  BUILD_COMMAND
+    ""
   # No install
   INSTALL_COMMAND
     ""
@@ -34,7 +36,7 @@ externalproject_add(tbb_external
     1
 )
 
-#externalproject_get_property(tbb_external SOURCE_DIR BINARY_DIR)
+#externalproject_get_property(tbb-external SOURCE_DIR BINARY_DIR)
 #set(TBB_SOURCE_DIR ${SOURCE_DIR})
 #set(TBB_BINARY_DIR ${BINARY_DIR})
 #unset(SOURCE_DIR)

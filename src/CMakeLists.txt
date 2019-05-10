@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 
 project(
-  rti_core
+  rti
   VERSION 0.1
   LANGUAGES CXX
   )
@@ -27,6 +27,12 @@ find_library(GMSH_LIBRARY NAMES gmsh libgmsh
   NO_DEFAULT_PATH
 )
 
+# One needs to set the RPATH, otherwise the installed executable does not have dynamic
+# link libraries set correctly.
+# CMAKE_INSTALL_RPATH_USE_LINK_PATH needs to be set before the executables are added.
+#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+# We set this property later on the executable itself.
+
 add_executable(rtiex rti/main.cpp)
 
 target_include_directories(rtiex
@@ -43,6 +49,27 @@ target_link_libraries(rtiex
     ${EMBREE_LIBRARY}
   )
 
+# Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
+install(TARGETS rtiex
+  DESTINATION "."
+  # If one wants to install the executable somewhere else, then one should consider
+  # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
+  )
+
+# One needs to set the RPATH, otherwise the installed executable does not have dynamic
+# link libraries set correctly.
+set_target_properties(rtiex PROPERTIES
+  INSTALL_RPATH_USE_LINK_PATH TRUE
+  )
+
+
+
+
+
+
+
+
+#message(STATUS "[src/CMakeLists.txt] CMAKE_INSTALL_PREFIX == ${CMAKE_INSTALL_PREFIX}")
 #message(STATUS "[src/CMakeLists.txt] CMAKE_INCLUDE_PATH == ${CMAKE_INCLUDE_PATH}")
 #message(STATUS "[src/CMakeLists.txt] CMAKE_LIBRARY_PATH == ${CMAKE_LIBRARY_PATH}")
 #message(STATUS "[src/CMakeLists.txt] BOOST_ROOT == ${BOOST_ROOT}")

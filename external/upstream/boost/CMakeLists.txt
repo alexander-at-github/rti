@@ -34,7 +34,7 @@ if(NOT "${BOOST_COMPONENTS_REQUIRED}" STREQUAL "")
   message(STATUS "  Libraries to be built: ${printout}")
 endif()
 
-ExternalProject_Add(boost_external
+ExternalProject_Add(boost-external
   URL
     #https://sourceforge.net/projects/boost/files/boost/1.61.0/boost_1_61_0.zip
     https://sourceforge.net/projects/boost/files/boost/1.70.0/boost_1_70_0.tar.gz

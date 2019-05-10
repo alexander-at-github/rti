@@ -1,13 +1,13 @@
 # Embree-TBB specific
-externalproject_get_property(tbb_external SOURCE_DIR)
+externalproject_get_property(tbb-external SOURCE_DIR)
 set(TBB_SOURCE_DIR ${SOURCE_DIR})
 unset(SOURCE_DIR)
 
-message(STATUS "[embree/CMakeLists.txt] TBB_SOURCE_DIR=${TBB_SOURCE_DIR}")
+#message(STATUS "[embree/CMakeLists.txt] TBB_SOURCE_DIR=${TBB_SOURCE_DIR}")
 
-externalproject_add(embree_external
+externalproject_add(embree-external
   DEPENDS
-    tbb_external
+    tbb-external
   GIT_REPOSITORY
     https://github.com/embree/embree.git
   # Hash of tags/v3.5.2
@@ -42,9 +42,9 @@ externalproject_add(embree_external
 )
 
 # Get install and build directory from external project
-externalproject_get_property(embree_external INSTALL_DIR BINARY_DIR)
-message(STATUS "[embree/CMakeLists.txt] INSTALL_DIR=${INSTALL_DIR}")
-message(STATUS "[embree/CMakeLists.txt] BINARY_DIR=${BINARY_DIR}")
+externalproject_get_property(embree-external INSTALL_DIR BINARY_DIR)
+#message(STATUS "[embree/CMakeLists.txt] INSTALL_DIR=${INSTALL_DIR}")
+#message(STATUS "[embree/CMakeLists.txt] BINARY_DIR=${BINARY_DIR}")
 
 set(
   # Very important to use the binary directory as EMBREE_DIR here, cause when the Embree

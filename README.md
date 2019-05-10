@@ -1,15 +1,24 @@
 # Project rti
 
 ### Installing
+
+Create a build directory
 ````
 cd <rti-base-directory>
 mkdir build
 cd build
+````
+The following commands download and build Boost, OCE, Gmsh, TBB, and Embree in the folder `<rti-base-directory>/dependencies`. You need to build them only once.
+````
 cmake ..
-cmake --build . --target rti_core -j <number-of-cores>
+cmake --build . --target boost-external
+cmake --build . --target gmsh-external
+cmake --build . --target embree-external
 ````
 
-The build system will download and install OCE, Gmsh, TBB, and Embree locally and automatically. These external dependencies are saved in the directory `<rti-base-directory>/dependencies`.
-
+Build the rti project
+````
+cmake --build . --target rti
+````
 ### License
 See the [License file](./LICENSE).

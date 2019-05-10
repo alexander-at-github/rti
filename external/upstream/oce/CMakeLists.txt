@@ -1,4 +1,4 @@
-externalproject_add(oce_external
+externalproject_add(oce-external
   GIT_REPOSITORY
     https://github.com/tpaviot/oce.git
   # Hash of tags/OCE-0.18.3

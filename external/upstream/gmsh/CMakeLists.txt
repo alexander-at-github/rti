@@ -1,12 +1,12 @@
 # Get OCE installation directory for Gmsh
-externalproject_get_property(oce_external INSTALL_DIR)
+externalproject_get_property(oce-external INSTALL_DIR)
 # rename the variable to something more meaningful
 set(OCE_INSTALL_PREFIX ${INSTALL_DIR})
 unset(INSTALL_DIR)
 
-externalproject_add(gmsh_external
+externalproject_add(gmsh-external
   DEPENDS
-    oce_external
+    oce-external
   GIT_REPOSITORY
     https://gitlab.onelab.info/gmsh/gmsh.git
   # Hash of tags/gmsh_4_3_0
@@ -36,7 +36,7 @@ externalproject_add(gmsh_external
 )
 
 # Get install and build directories from Gmsh
-externalproject_get_property(gmsh_external INSTALL_DIR BINARY_DIR)
+externalproject_get_property(gmsh-external INSTALL_DIR BINARY_DIR)
 
 set(
   GMSH_DIR "${INSTALL_DIR}"

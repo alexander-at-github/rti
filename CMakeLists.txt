@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 ## TODO: Which setting overrides the other? ENV or CACHE?
 
 project(
-  rti
+  rti-superbuild
   VERSION 0.1
   LANGUAGES CXX
   )
@@ -31,14 +31,24 @@ list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system")
 include(ExternalProject)
 add_subdirectory(external/upstream)
 
-externalproject_add(rti_core
+externalproject_add(rti
   DEPENDS
-    boost_external
-    gmsh_external
-		embree_external
+    boost-external
+    #gmsh-external
+		#embree-external
+    #
+    # The project depends on gmsh-external and embree-external. We do not add it here,
+    # because otherwise the build system is very slow when rebuilding the project.
+    # (The build configuration of these dependecies redo a lot of steps). You are adviced
+    # to build these two targets once yourself with the following commands:
+    # $ cmake --build . --target embree-external
+    # $ cmake --build . --target gmsh-external
   SOURCE_DIR
     ${CMAKE_CURRENT_LIST_DIR}/src
-  LIST_SEPARATOR ;
+  # Eventhough this is a superbuild, we want the final binary in the build directory
+  INSTALL_DIR
+    ${CMAKE_BINARY_DIR}
+  #LIST_SEPARATOR ;
   CMAKE_ARGS
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
@@ -46,8 +56,9 @@ externalproject_add(rti_core
     -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
     -DBOOST_ROOT:PATH=${BOOST_ROOT}
     -DGMSH_DIR=${GMSH_DIR}
-    -DTBB_DIR=${TBB_DIR}
+    #-DTBB_DIR=${TBB_DIR}
     -DEMBREE_DIR=${EMBREE_DIR}
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
   CMAKE_CACHE_ARGS
     -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
@@ -57,8 +68,8 @@ externalproject_add(rti_core
     # One can see an example here
     # https://stackoverflow.com/questions/45414507/pass-a-list-of-prefix-paths-to-externalproject-add-in-cmake-args
     #-D BOOST_COMPONENTS_REQUIRED="${BOOST_COMPONENTS_REQUIRED}"
-  #BUILD_ALWAYS
-  #  1
-  INSTALL_COMMAND
-    ""
+  BUILD_ALWAYS
+    1
+  #INSTALL_COMMAND
+  #  ""
 )
