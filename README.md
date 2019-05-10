@@ -12,4 +12,4 @@ cmake --build . --target rti_core -j <number-of-cores>
 The build system will download and install OCE, Gmsh, TBB, and Embree locally and automatically. These external dependencies are saved in the directory `<rti-base-directory>/dependencies`.
 
 ### License
-See the file [LICENSE.md].
+See the [License file](./LICENSE).
