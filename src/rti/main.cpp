@@ -9,7 +9,9 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
+#include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/logger.hpp"
+#include "rti/sphere_geometry_from_gmsh.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp"
 #include "rti/utils.hpp"
 
@@ -68,15 +70,15 @@ int main(int argc, char* argv[]) {
   if (true) {
     geometry_from_gmsh = std::make_unique<rti::triangle_geometry_from_gmsh>(device);
   } else if (true) { // TODO: FIX
-    //geometry_from_gmsh = std::make_unique<disc_geometry_from_gmsh>(device);
+    geometry_from_gmsh = std::make_unique<disc_geometry_from_gmsh>(device);
   } else if (true) { // TODO: FIX
-    //geometry_from_gmsh = std::make_unique<sphere_geometry_from_gmsh>(device);
+    geometry_from_gmsh = std::make_unique<sphere_geometry_from_gmsh>(device);
   }
   //geometry_from_gmsh->read_from_gmsh();
   // Invert surface normals.
   geometry_from_gmsh->invert_surface_normals();
   RTCGeometry geometry = geometry_from_gmsh->get_rtc_geometry();
-    
+
   rtcCommitGeometry(geometry);
 
   auto geomID = rtcAttachGeometry(scene, geometry);
