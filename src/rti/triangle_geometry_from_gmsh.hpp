@@ -18,6 +18,12 @@ class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
         std::swap<uint32_t>(mTTBuffer[idx].v1, mTTBuffer[idx].v2);
       }
     }
+    std::string to_string() override {
+      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "ERROR: rti::triangle_geometry_from_gmsh::to_string() not implemented";
+      //assert(false && "not implemented")
+      std::stringstream strstream;
+      return strstream.str();
+    }
     std::string prim_to_string(unsigned int pPrimID) override {
       std::stringstream strstream;
       strstream << " (" << mVVBuffer[mTTBuffer[pPrimID].v0].xx

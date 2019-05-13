@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+#include <typeinfo> // need?
 
 #include <assert.h>
 
@@ -25,6 +26,14 @@ namespace rti {
       // See: https://embree.github.io/api.html#mxcsr-control-and-status-register
       _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
       _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+    }
+    void print_rtc_device_info(RTCDevice pDevice) {
+      BOOST_LOG_SEV(rti::mRLogger, blt::debug)
+        << "RTC_DEVICE_PROPERTY_TRIANGLE_GEOMETRY_SUPPORTED == "
+        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_TRIANGLE_GEOMETRY_SUPPORTED);
+      BOOST_LOG_SEV(rti::mRLogger, blt::debug)
+        << "RTC_DEVICE_PROPERTY_POINT_GEOMETRY_SUPPORTED == "
+        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_POINT_GEOMETRY_SUPPORTED);
     }
   }
 }
@@ -59,6 +68,8 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   RTCScene scene = rtcNewScene(device);
 
+  rti::main::print_rtc_device_info(device);
+
   // No scene flags for now.
   rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
   // Selecting higher build quality results in better rendering performance but slower
@@ -67,17 +78,22 @@ int main(int argc, char* argv[]) {
   rtcSetSceneBuildQuality(scene, bbquality);
 
   std::unique_ptr<rti::i_geometry_from_gmsh> geometry_from_gmsh = nullptr;
-  if (true) {
-    geometry_from_gmsh = std::make_unique<rti::triangle_geometry_from_gmsh>(device);
-  } else if (true) { // TODO: FIX
-    geometry_from_gmsh = std::make_unique<disc_geometry_from_gmsh>(device);
-  } else if (true) { // TODO: FIX
-    geometry_from_gmsh = std::make_unique<sphere_geometry_from_gmsh>(device);
-  }
-  //geometry_from_gmsh->read_from_gmsh();
+  //geometry_from_gmsh = std::make_unique<rti::triangle_geometry_from_gmsh>(device);
+  geometry_from_gmsh = std::make_unique<rti::disc_geometry_from_gmsh>(device);
+  //geometry_from_gmsh = std::make_unique<rti::sphere_geometry_from_gmsh>(device);
+  //if (true) {
+  //  geometry_from_gmsh = std::make_unique<rti::triangle_geometry_from_gmsh>(device);
+  //} else if (true) { // TODO: FIX
+  //  geometry_from_gmsh = std::make_unique<rti::disc_geometry_from_gmsh>(device);
+  //} else if (true) { // TODO: FIX
+  //  geometry_from_gmsh = std::make_unique<rti::sphere_geometry_from_gmsh>(device);
+  //}
   // Invert surface normals.
   geometry_from_gmsh->invert_surface_normals();
   RTCGeometry geometry = geometry_from_gmsh->get_rtc_geometry();
+
+  BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << typeid(*geometry_from_gmsh).name();
+  BOOST_LOG_SEV(rti::mRLogger, blt::debug) << geometry_from_gmsh->to_string();
 
   rtcCommitGeometry(geometry);
 

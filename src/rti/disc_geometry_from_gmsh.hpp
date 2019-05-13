@@ -13,10 +13,24 @@ class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
       init_this(pDevice);
     }
     void invert_surface_normals() override {
-      assert(false && "not implemented");
+      BOOST_LOG_SEV(rti::mRLogger, blt::info) <<  "Function rti::disc_geometry_from_gmsh::invert_surface_normals() "
+                                                  "does not have any functionality";
+      //assert(false && "not implemented");
+    }
+    std::string to_string() override {
+      std::stringstream strstream;
+      strstream << "[";
+      if (mVVBuffer != nullptr) {
+        for (size_t idx = 0; idx < mNumVertices; ++idx) {
+          strstream << "(" << mVVBuffer[idx].xx << "," << mVVBuffer[idx].yy
+                    << "," << mVVBuffer[idx].zz << "," << mVVBuffer[idx].radius << ")";
+        }
+      }
+      strstream << "]";
+      return strstream.str();
     }
     std::string prim_to_string(unsigned int pPrimID) override {
-      assert(false && "not implemented");
+      //assert(false && "not implemented");
       std::stringstream strstream;
       strstream << "foo";
       return strstream.str();
@@ -105,8 +119,8 @@ class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
     std::vector<double> vvxyz;
     std::vector<double> vvuvw;
     gmsh::model::mesh::getNodes(vvtags, vvxyz, vvuvw); // the vvtags seem to be the Nodes in Gmsh.
-    // The vertex buffer contains an array of single precision x, y, z floating
-    // point coordinates (RTC_FORMAT_FLOAT3 format).
+    // In case of RTC_GEOMETRY_TYPE_SPHERE_POINT the vertex buffer contains an array of four single
+    // recision x, y, z, r floating point coordinates (RTC_FORMAT_FLOAT4 format).
     mNumVertices = vvtags.size();
     // Acquire memory from Embree
     mVVBuffer = (vertex_f4_t*) rtcSetNewGeometryBuffer(
@@ -131,6 +145,7 @@ class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
     // the triangles late, one has to perform this subtraction, too!
 
     // Write vertices ("nodes" in Gmsh) from Gmsh to Embree
+    BOOST_LOG_SEV(rti::mRLogger, blt::error) << "ERROR: radii of spheres set to some default value"; // TODO
     for (size_t idx = 0; idx < vvtags.size(); ++idx) {
       size_t vcidx = 3 * idx;
       //
@@ -146,8 +161,7 @@ class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
       mVVBuffer[vvtag].xx = vvxyz[vcidx];
       mVVBuffer[vvtag].yy = vvxyz[vcidx+1];
       mVVBuffer[vvtag].zz = vvxyz[vcidx+2];
-			assert(false && "FIXME: set disc radius");
-			mVVBuffer[vvtag].radius == 1;
+			mVVBuffer[vvtag].radius = 0.125; // Set sphere radius to some default value
     }
 
     std::vector<int> eetypes;
@@ -174,13 +188,14 @@ class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
                                              << eetags[selectresult].size() << " triangles";
 
     mNumTriangles = eetags[selectresult].size();
-    // Write triangle from Gmsh to Embree
+    // Set radii of spheres
+    BOOST_LOG_SEV(rti::mRLogger, blt::error) << "ERROR: input data not used compute radii of spheres"; // TODO
     for (size_t idx = 0; idx < mNumTriangles; ++idx) {
       size_t ntidx = 3 * idx;
-			assert(false && "TODO: process trinagles");
-      assert(vvtagsminval <= mTTBuffer[idx].v0 && mTTBuffer[idx].v0 <= vvtagsmaxval && "Invalid Vertex");
-      assert(vvtagsminval <= mTTBuffer[idx].v1 && mTTBuffer[idx].v1 <= vvtagsmaxval && "Invalid Vertex");
-      assert(vvtagsminval <= mTTBuffer[idx].v2 && mTTBuffer[idx].v2 <= vvtagsmaxval && "Invalid Vertex");
+			//assert(false && "TODO: process trinagles");
+      //assert(vvtagsminval <= mTTBuffer[idx].v0 && mTTBuffer[idx].v0 <= vvtagsmaxval && "Invalid Vertex");
+      //assert(vvtagsminval <= mTTBuffer[idx].v1 && mTTBuffer[idx].v1 <= vvtagsmaxval && "Invalid Vertex");
+      //assert(vvtagsminval <= mTTBuffer[idx].v2 && mTTBuffer[idx].v2 <= vvtagsmaxval && "Invalid Vertex");
       /***************************************
        * Subtracting one to fix the indices. *
        ***************************************/
