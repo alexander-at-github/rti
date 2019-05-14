@@ -66,7 +66,9 @@ int main(int argc, char* argv[]) {
     std::cout << result.to_string() << std::endl;
   }
 
+  // gmsh::fltk::run();
+  // gmsh::finalize();
   gmsh::fltk::run();
-  gmsh::finalize();
+  gmshReader.finalize();
 }
 
