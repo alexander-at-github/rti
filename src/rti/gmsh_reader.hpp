@@ -2,6 +2,8 @@
 
 #include <gmsh.h>
 
+#include "rti/logger.hpp"
+
 namespace rti {
 
   // Alias template for triples
