@@ -31,6 +31,14 @@ list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system")
 include(ExternalProject)
 add_subdirectory(external/upstream)
 
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
+set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+
 externalproject_add(rti
   DEPENDS
     boost-external
@@ -59,6 +67,10 @@ externalproject_add(rti
     #-DTBB_DIR=${TBB_DIR}
     -DEMBREE_DIR=${EMBREE_DIR}
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+
+    -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+    -D CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
+    -D CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
   CMAKE_CACHE_ARGS
     -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
