@@ -136,7 +136,7 @@ namespace rti {
       std::vector<rti::triple_t<std::size_t> > triangles = pGmshReader.get_triangles();
 
       this->mNumTriangles = triangles.size();
-      // Set radii of spheres
+      // Set radii of discs
       BOOST_LOG_SEV(rti::mRLogger, blt::error) << "ERROR: input data not used compute radii of spheres"; // TODO
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
         //assert(false && "TODO: process trinagles");
