@@ -39,7 +39,9 @@ namespace rti {
       }
       BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading input file " << mMshFilePath;
       gmsh::open(mMshFilePath);
+      // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Will read vertices";
       mVertices = read_vertices();
+      // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Will read triangles";
       mTriangles = read_triangles();
     }
     // Destructor calls gmsh::finalize(); RAII
@@ -92,7 +94,7 @@ namespace rti {
       assert(vvxyz.size() == 3 * vvtags.size() && "Vertex data missmatch");
 
       // BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-      //   << "min element is " << *std::min_element(vvtags.begin(), vvtags.end()) << " should be 0";
+      //   << "min element is " << *std::min_element(vvtags.begin(), vvtags.end()) << " should be 1";
       // In Gmsh's world node tags start from 1. In our world vertex tags start from 0.
       // We adjust it here. Subtract one from each vertex identifier.
       std::for_each(vvtags.begin(), vvtags.end(), [](auto &tt) {--tt;});
@@ -105,13 +107,16 @@ namespace rti {
 
       //std::vector<double> result(vvxyz.size());
       std::vector<triple_t<double> > result(vvtags.size());
-      for (size_t idx; idx < vvtags.size(); ++idx) {
+      // BOOST_LOG_SEV(rti::mRLogger, blt::debug)
+      //   << "result vector created";
+      for (size_t idx = 0; idx < vvtags.size(); ++idx) {
         size_t xyzidx = 3 * idx;
         assert(0 <= xyzidx && xyzidx < vvxyz.size() && "Error in reading spatial data");
         size_t vvtag = vvtags[idx];
         assert(0 <= vvtag && vvtag < vvtags.size() && "Error in tag/index computation");
         triple_t<double> rr {vvxyz[xyzidx], vvxyz[xyzidx+1], vvxyz[xyzidx+2]};
-        result[vvtag] = std::move(rr); // Does this use move semantics without explicit call to std::move()?
+        // Would this statement use move semantics without explicit call to std::move()?
+        result[vvtag] = std::move(rr);
       }
       return result;
     }
