@@ -23,7 +23,7 @@ namespace rti {
 
       RTCGeometry geometry = mGeo.get_rtc_geometry();
       BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << typeid(mGeo).name();
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << mGeo.to_string();
+      // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << mGeo.to_string();
       rtcCommitGeometry(geometry);
 
       auto geomID = rtcAttachGeometry(scene, geometry);
