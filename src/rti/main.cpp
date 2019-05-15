@@ -10,7 +10,7 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
-//#include "rti/disc_geometry_from_gmsh.hpp"
+#include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/dummy_ray_source.hpp"
 #include "rti/logger.hpp"
 //#include "rti/sphere_geometry_from_gmsh.hpp"
@@ -55,10 +55,13 @@ int main(int argc, char* argv[]) {
   rti::test_pool rtiTPool;
   //i_geometry_from_gmsh* geo = std::make_unique<triangle_geometry_from_gmsh>(device, gmshReader);
   //i_ray_source* raySource = std::make_unique<dummy_ray_source>();
-  rti::triangle_geometry_from_gmsh geo(device, gmshReader);
   rti::dummy_ray_source raySource;
-  rti::test_run testRun(geo, raySource);
-  rtiTPool.add_test_run(testRun);
+  rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);
+  //rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
+  rti::test_run testRunTriangle(triangleGeo, raySource);
+  //rti::test_run testRunDisc(discGeo, raySource);
+  rtiTPool.add_test_run(testRunTriangle);
+  //rtiTPool.add_test_run(testRunDisc);
   // rtiTPool.add_test_run(std::make_unique<disc_geometry_from_gmsh>(device));
   // rtiTPool.add_test_run(std::make_unique<sphere_geometry_from_gmsh>(device));
   auto results = rtiTPool.run();
