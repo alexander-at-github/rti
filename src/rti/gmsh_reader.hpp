@@ -42,6 +42,10 @@ namespace rti {
       mVertices = read_vertices();
       mTriangles = read_triangles();
     }
+    // Destructor calls gmsh::finalize(); RAII
+    ~gmsh_reader() {
+      gmsh::finalize();
+    }
 
     ////////////////////////////////////////////////////////
     // Code which is not related to the singleton behaviour.
@@ -54,10 +58,6 @@ namespace rti {
 
     std::vector<triple_t<std::size_t> > get_triangles() {
       return this->mTriangles;
-    }
-
-    void finalize() {
-      gmsh::finalize();
     }
 
   private:
