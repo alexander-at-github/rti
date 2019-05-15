@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "rti/i_geometry_from_gmsh.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/test_result.hpp"
@@ -10,6 +12,7 @@ namespace rti {
     test_run(i_geometry_from_gmsh& pGeo, i_ray_source& pRaySource) :
       mGeo(pGeo),
       mRaySource(pRaySource) {};
+
     test_result run() {
       RTCDevice device = mGeo.get_rtc_device();
       RTCScene scene = rtcNewScene(device);
@@ -42,7 +45,9 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      for (size_t idx = 0; idx < 3; ++idx) { // Do some rays for now.
+      size_t numRays = std::pow(2,3);
+
+      for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
         //RTCRay ray = rti::utils::constructRay(0,0,1, 1,1,-1); // origin (0,0,1) direction (1,1,-1)
         //RTCRay ray = rti::utils::constructRay(0,0,1, 1,0,-1); // origin (0,0,1) direction (1,0,-1)
         //RTCRay ray = rti::utils::constructRay(0,0,0.5, 1,0,0);
