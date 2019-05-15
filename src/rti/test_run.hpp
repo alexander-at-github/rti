@@ -47,6 +47,7 @@ namespace rti {
 
       size_t numRays = std::pow(2,3);
 
+      BOOST_LOG_SEV(rti::mRLogger, blt::warning) << "\n>>>>>>>> TODO: Compare oo-source-design with template-source-design and no-abstraction-source-design\n";
       for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
         //RTCRay ray = rti::utils::constructRay(0,0,1, 1,1,-1); // origin (0,0,1) direction (1,1,-1)
         //RTCRay ray = rti::utils::constructRay(0,0,1, 1,0,-1); // origin (0,0,1) direction (1,0,-1)
