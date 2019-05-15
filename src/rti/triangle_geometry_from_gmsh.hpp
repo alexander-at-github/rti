@@ -27,19 +27,27 @@ namespace rti {
         << "ERROR: rti::triangle_geometry_from_gmsh::to_string() not implemented";
       //assert(false && "not implemented")
       std::stringstream strstream;
+      strstream << "(:class triangle_geometry_from_gmsh ";
+      for (size_t idxA = 0; idxA < mNumTriangles; ++idxA) {
+        strstream << this->prim_to_string(idxA);
+        if (idxA < mNumTriangles-1) {
+          strstream << ",";
+        }
+      }
+      strstream << ")";
       return strstream.str();
     }
     std::string prim_to_string(unsigned int pPrimID) override {
       std::stringstream strstream;
-      strstream << " (" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v0].yy
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
-                <<  "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v1].yy
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
-                <<  "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v2].yy
-                <<  "," << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
+      strstream << "(" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
+                << "," << mVVBuffer[mTTBuffer[pPrimID].v0].yy
+                << "," << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
+                << "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
+                << "," << mVVBuffer[mTTBuffer[pPrimID].v1].yy
+                << "," << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
+                << "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
+                << "," << mVVBuffer[mTTBuffer[pPrimID].v2].yy
+                << "," << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
       return strstream.str();
     }
   private:
