@@ -5,7 +5,7 @@
 namespace rti {
 
   // Alias template for triples
-  template<class T>
+  template<typename T>
   using triple_t = std::tuple<T, T, T>;
 
   class gmsh_reader {
