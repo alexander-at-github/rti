@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
-#include <typeinfo> // need?
 
 #include <assert.h>
 
