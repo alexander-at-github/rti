@@ -18,7 +18,6 @@ externalproject_add(gmsh-external
     -DCMAKE_CXX_EXTENSIONS=${CMAKE_CXX_EXTENSIONS}
     -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> # strange that we need that at all
-    -DCAS_ROOT=${OCE_INSTALL_PREFIX}
     -DENABLE_FLTK=1 # One may disable the compilation of the GUI components, if not needed.
     #-DENABLE_BUILD_LIB=1
     -DENABLE_BUILD_SHARED=1
@@ -27,6 +26,7 @@ externalproject_add(gmsh-external
   CMAKE_CACHE_ARGS
     -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+    -DENV{CASROOT}:PATH=${OCE_INSTALL_PREFIX}
   USES_TERMINAL_DOWNLOAD
     1
   USES_TERMINAL_UPDATE
