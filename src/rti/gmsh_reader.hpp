@@ -79,9 +79,9 @@ namespace rti {
           // Mesh file path was found in argv.
           return std::string(argv[idx]);
         }
-        // No mesh file path in argv. Return empty string.
-        return std::string();
       }
+      // No mesh file path in argv. Return empty string.
+      return std::string();
     }
 
     std::vector<triple_t<double> > read_vertices() {
