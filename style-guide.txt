@@ -14,8 +14,6 @@
 
 #define NAMESPACE_NAMES_THEN_MACRO_NAME(pMacroNames) ARE_ALL_CAPS
 
-// TODO: FIX
-
 namespace lowercase_identifers
 {
     class separated_by_underscores
@@ -23,8 +21,7 @@ namespace lowercase_identifers
     public:
         void because_underscores_are() const
         {
-            volatile int mostLikeSpaces = 0; // but local names are
-condensed
+            volatile int mostLikeSpaces = 0; // but local names are condensed
 
             while (!mostLikeSpaces)
                 single_statements(); // don't need braces
