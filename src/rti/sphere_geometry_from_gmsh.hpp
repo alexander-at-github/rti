@@ -58,7 +58,7 @@ namespace rti {
     ////////////
     // Functions
     ////////////
-    void init_this(RTCDevice& pDevice) {
+    void init_this(RTCDevice& pDevice, gmsh_reader& pGmshReader) {
       // "Points with per vertex radii are supported with sphere, ray-oriented
       // discs, and normal-oriented discs geometric represetntations. Such point
       // geometries are created by passing RTC_GEOMETRY_TYPE_SPHERE_POINT,
