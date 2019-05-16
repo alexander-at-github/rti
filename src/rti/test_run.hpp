@@ -60,10 +60,6 @@ namespace rti {
       std::cout << "Running 2**" << nrexp << " ray traces on "
                 << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
       for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
-        //RTCRay ray = rti::utils::constructRay(0,0,1, 1,1,-1); // origin (0,0,1) direction (1,1,-1)
-        //RTCRay ray = rti::utils::constructRay(0,0,1, 1,0,-1); // origin (0,0,1) direction (1,0,-1)
-        //RTCRay ray = rti::utils::constructRay(0,0,0.5, 1,0,0);
-        //RTCRay ray = rti::utils::constructRay(0,0,0.5, 1,0.1,0); // origin (0,0,1) direction (1,1,-1)
         RTCRay ray = mRaySource.get_ray();
 
         RTCRayHit rayhit {ray, RTCHit {}};
