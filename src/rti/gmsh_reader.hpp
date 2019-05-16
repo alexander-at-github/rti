@@ -76,12 +76,18 @@ namespace rti {
     ////////////
     std::string getMshFilePath(int argc, char* argv[]) {
       std::string optStr{"--msh-file"};
+      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading command line";
       for(int idx = 0; idx < argc; ++idx) {
-        if (optStr.compare(argv[idx]) && idx < (argc-1)) {
+        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "argv[" << idx << "] == " << argv[idx];
+      }
+      for(int idx = 0; idx < argc; ++idx) {
+        // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "idx == " << idx << " argv[idx] == " << argv[idx];
+        if (optStr.compare(argv[idx]) == 0 && idx < (argc-1)) {
+          std::string filePath(argv[idx+1]);
           BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-            << "Mesh file option string: " << argv[idx] << " " << argv[idx + 1];
+            << "Found Mesh file option string: '" << argv[idx] << " " << filePath << "' at index " << idx;
           // Mesh file path was found in argv.
-          return std::string(argv[idx]);
+          return filePath;
         }
       }
       // No mesh file path in argv. Return empty string.
