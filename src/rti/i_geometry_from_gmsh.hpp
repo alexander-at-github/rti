@@ -1,7 +1,5 @@
 #pragma once
 
-#include "rti/utils.hpp"
-
 namespace rti {
   // Interface
   class i_geometry_from_gmsh {

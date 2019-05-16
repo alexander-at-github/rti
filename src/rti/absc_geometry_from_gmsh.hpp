@@ -1,7 +1,6 @@
 #pragma once
 
 #include "rti/i_geometry_from_gmsh.hpp"
-#include "rti/utils.hpp"
 
 namespace rti {
 class absc_geometry_from_gmsh : public i_geometry_from_gmsh {
