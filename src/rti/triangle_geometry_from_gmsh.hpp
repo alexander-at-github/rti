@@ -147,9 +147,10 @@ namespace rti {
         mTTBuffer[idx].v0 = std::get<0>(triple);
         mTTBuffer[idx].v1 = std::get<1>(triple);
         mTTBuffer[idx].v2 = std::get<2>(triple);
-        assert(0 <= mTTBuffer[idx].v0 && mTTBuffer[idx].v0 < mNumVertices && "Invalid Vertex");
-        assert(0 <= mTTBuffer[idx].v1 && mTTBuffer[idx].v1 < mNumVertices && "Invalid Vertex");
-        assert(0 <= mTTBuffer[idx].v2 && mTTBuffer[idx].v2 < mNumVertices && "Invalid Vertex");
+        // assert(0 <= mTTBuffer[idx].v0); // not necessary; unsigned
+        assert(mTTBuffer[idx].v0 < mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v1 < mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v2 < mNumVertices && "Invalid Vertex");
         //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "(" << mVVBuffer[mTTBuffer[idx].v0].xx
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].yy
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].zz << ")"

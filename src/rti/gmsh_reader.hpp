@@ -76,7 +76,7 @@ namespace rti {
     ////////////
     std::string getMshFilePath(int argc, char* argv[]) {
       std::string optStr{"--msh-file"};
-      for(size_t idx = 0; idx < argc; ++idx) {
+      for(int idx = 0; idx < argc; ++idx) {
         if (optStr.compare(argv[idx]) && idx < (argc-1)) {
           BOOST_LOG_SEV(rti::mRLogger, blt::debug)
             << "Mesh file option string: " << argv[idx] << " " << argv[idx + 1];
@@ -113,9 +113,11 @@ namespace rti {
       //   << "result vector created";
       for (size_t idx = 0; idx < vvtags.size(); ++idx) {
         size_t xyzidx = 3 * idx;
-        assert(0 <= xyzidx && xyzidx < vvxyz.size() && "Error in reading spatial data");
+        //assert(std::is_unsigned<decltype(xyzidx)>::value); // not necessary; unsigned type
+        assert(xyzidx < vvxyz.size() && "Error in reading spatial data");
         size_t vvtag = vvtags[idx];
-        assert(0 <= vvtag && vvtag < vvtags.size() && "Error in tag/index computation");
+        //assert(std::is_unsigned<decltype(vvtag)>::value); // not necessary; unsigned type
+        assert(vvtag < vvtags.size() && "Error in tag/index computation");
         triple_t<double> rr {vvxyz[xyzidx], vvxyz[xyzidx+1], vvxyz[xyzidx+2]};
         // Would this statement use move semantics without explicit call to std::move()?
         result[vvtag] = std::move(rr);
@@ -150,7 +152,8 @@ namespace rti {
       // from 0 instead of 1.
 			std::for_each(selected.begin(), selected.end(), [](auto &nn) {--nn;});
       // Some sanity checks
-      assert(*std::min_element(selected.begin(), selected.end()) >= 0 && "Vertex tag assumption not met");
+      // Not needed because of unsigned type
+      //assert(*std::min_element(selected.begin(), selected.end()) >= 0 && "Vertex tag assumption not met");
       if (this->mVertices.size() > 0) {
         // We can verify this property only if the vertices are set in mVertices.
         assert(*std::max_element(selected.begin(), selected.end()) < mVertices.size() &&
@@ -163,7 +166,8 @@ namespace rti {
       std::vector<triple_t<size_t> > result(numTriangles);
       for (size_t idx = 0; idx < numTriangles; ++idx) {
         size_t ntidx = 3 * idx;
-        assert(0 <= ntidx && ntidx <= selected.size() && "Index out of bounds");
+        //assert(0 <= ntidx); // not needed; unsigned type
+        assert(ntidx <= selected.size() && "Index out of bounds");
         triple_t<size_t> rr {selected[ntidx], selected[ntidx+1], selected[ntidx+2]};
         result[idx] = std::move(rr); // Do we need std::move() for move semantics?
       }

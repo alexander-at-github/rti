@@ -34,7 +34,7 @@ namespace rti {
     std::string prim_to_string(unsigned int pPrimID) override {
       //assert(false && "not implemented");
       std::stringstream strstream;
-      strstream << "foo";
+      strstream << "TODO" << pPrimID;
       return strstream.str();
     }
   private:

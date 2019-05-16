@@ -31,7 +31,7 @@ namespace rti {
       // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << mGeo.to_string();
       rtcCommitGeometry(geometry);
 
-      auto geomID = rtcAttachGeometry(scene, geometry);
+      (void) rtcAttachGeometry(scene, geometry);
       rtcCommitScene(scene);
       // Release geomtery.
       // The geometry object will be destructed when the scene object is
