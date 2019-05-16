@@ -47,7 +47,7 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 28;
+      size_t nrexp = 24;
       size_t numRays = std::pow(2,nrexp);
 
       BOOST_LOG_SEV(rti::mRLogger, blt::warning)
@@ -60,12 +60,37 @@ namespace rti {
       std::cout << "Running 2**" << nrexp << " ray traces on "
                 << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
 
-      RTCHit hit{};
-      RTCRay ray = mRaySource.get_ray();
-      for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
-        //RTCRay ray = mRaySource.get_ray();
+      std::vector<std::pair<float, float>> ddxys
+        {{-3, -3}, {-1, -3}, { 1, -3}, {3, -3},
+         {-3, -1}, {-1, -1}, { 1, -1}, {3, -1},
+         {-3,  1}, {-1,  1}, { 1,  1}, {3,  1},
+         {-3,  3}, {-1,  3}, { 1,  3}, {3,  3}};
+      std::vector<RTCRay> raypack(ddxys.size());
+      for (size_t idx = 0; idx < ddxys.size(); ++idx) {
+        // Origin:
+        raypack[idx].org_x = 1;
+        raypack[idx].org_y = 0;
+        raypack[idx].org_z = 0;
+        raypack[idx].dir_x = ddxys[idx].first;
+        raypack[idx].dir_y = ddxys[idx].second;
+        raypack[idx].dir_z = 0.5; // magic number
+        // start of ray
+        raypack[idx].tnear = 0;
+        // Maximum length of ray
+        raypack[idx].tfar = std::numeric_limits<float>::max();
+      }
 
-        RTCRayHit rayhit {ray, hit};
+      RTCHit hit{};
+      RTCRayHit rayhit {raypack[1], hit}; // initialize arbitrary
+
+      for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
+
+        size_t rpidx = idx % raypack.size();
+        raypack[rpidx].dir_z *= 1.5; // increase z axis of ray direction
+        raypack[rpidx].tfar = std::numeric_limits<float>::max();
+
+        // RTCRayHit rayhit {raypack[rpidx], hit};
+        rayhit.ray = raypack[rpidx];
         //RTCRayHit rayhit = rti::utils::constructRayHit(ray, rti::utils::constructHit()); // TODO
         BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
         BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
