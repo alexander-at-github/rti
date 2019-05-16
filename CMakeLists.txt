@@ -37,7 +37,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -march=native")
 
 externalproject_add(rti
   DEPENDS
