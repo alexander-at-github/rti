@@ -1,5 +1,7 @@
 #pragma once
 
+#include<boost/timer/timer.hpp>
+
 #include <cmath>
 
 #include "rti/i_geometry_from_gmsh.hpp"
@@ -45,15 +47,27 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t numRays = std::pow(2,3);
+      size_t nrexp = 20;
+      size_t numRays = std::pow(2,nrexp);
 
-      BOOST_LOG_SEV(rti::mRLogger, blt::warning) << "\n>>>>>>>> TODO: Compare oo-source-design with template-source-design and no-abstraction-source-design\n";
+      BOOST_LOG_SEV(rti::mRLogger, blt::warning)
+        << "\n>>>>>>>> TODO: Compare oo-source-design with template-source-design and "
+        << "no-abstraction-source-design\n";
+
+      // Start timing until end of variable scope.
+      boost::timer::auto_cpu_timer timer;
+
+      std::cout << "Running 2**" << nrexp << " ray traces on "
+                << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
       for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
         //RTCRay ray = rti::utils::constructRay(0,0,1, 1,1,-1); // origin (0,0,1) direction (1,1,-1)
         //RTCRay ray = rti::utils::constructRay(0,0,1, 1,0,-1); // origin (0,0,1) direction (1,0,-1)
         //RTCRay ray = rti::utils::constructRay(0,0,0.5, 1,0,0);
-        RTCRay ray = rti::utils::constructRay(0,0,0.5, 1,0.1,0); // origin (0,0,1) direction (1,1,-1)
-        RTCRayHit rayhit = rti::utils::constructRayHit(ray, rti::utils::constructHit()); // TODO
+        //RTCRay ray = rti::utils::constructRay(0,0,0.5, 1,0.1,0); // origin (0,0,1) direction (1,1,-1)
+        RTCRay ray = mRaySource.get_ray();
+
+        RTCRayHit rayhit {ray, RTCHit {}};
+        //RTCRayHit rayhit = rti::utils::constructRayHit(ray, rti::utils::constructHit()); // TODO
         BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
         BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
         rtcIntersect1(scene, &context, &rayhit);
