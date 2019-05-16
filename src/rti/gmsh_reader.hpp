@@ -37,7 +37,7 @@ namespace rti {
       gmsh::option::setNumber("General.Terminal", 1);
       if (mMshFilePath.empty()) {
         // Try default path
-        mMshFilePath = "../resources/box.fine.msh";
+        mMshFilePath = "../resources/cylinder/c.msh";
       }
       BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading input file " << mMshFilePath;
       gmsh::open(mMshFilePath);
