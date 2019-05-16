@@ -47,7 +47,7 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 20;
+      size_t nrexp = 28;
       size_t numRays = std::pow(2,nrexp);
 
       BOOST_LOG_SEV(rti::mRLogger, blt::warning)
@@ -59,10 +59,13 @@ namespace rti {
 
       std::cout << "Running 2**" << nrexp << " ray traces on "
                 << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
-      for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
-        RTCRay ray = mRaySource.get_ray();
 
-        RTCRayHit rayhit {ray, RTCHit {}};
+      RTCHit hit{};
+      RTCRay ray = mRaySource.get_ray();
+      for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
+        //RTCRay ray = mRaySource.get_ray();
+
+        RTCRayHit rayhit {ray, hit};
         //RTCRayHit rayhit = rti::utils::constructRayHit(ray, rti::utils::constructHit()); // TODO
         BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
         BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;

@@ -42,7 +42,7 @@ namespace rti {
         << rtcGetDeviceProperty(pDevice,RTC_DEVICE_PROPERTY_TASKING_SYSTEM) << std::endl
         << "0 indicates internal tasking system" << std::endl
         << "1 indicates Intel Threading Building Blocks (TBB)" << std::endl
-        << "and 2 indicates Parallel Patterns Library (PPL)";
+        << "2 indicates Parallel Patterns Library (PPL)";
     }
   }
 }

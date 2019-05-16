@@ -24,8 +24,7 @@ namespace rti {
       strstream << "(:class disc_geometry_from_gmsh ";
       if (mVVBuffer != nullptr) {
         for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
-          strstream << "(" << mVVBuffer[idx].xx << " " << mVVBuffer[idx].yy
-                    << " " << mVVBuffer[idx].zz << " " << mVVBuffer[idx].radius << ")";
+          strstream << this->prim_to_string(idx);
         }
       }
       strstream << ")";
@@ -34,7 +33,8 @@ namespace rti {
     std::string prim_to_string(unsigned int pPrimID) override {
       //assert(false && "not implemented");
       std::stringstream strstream;
-      strstream << "TODO" << pPrimID;
+      strstream << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
+                << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
       return strstream.str();
     }
   private:
@@ -124,7 +124,7 @@ namespace rti {
                                 this->mNumVertices);
 
       // Write vertices to Embree
-      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "ERROR: radii of spheres set to some default value"; // TODO
+      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "WARNING: radii of spheres set to some default value"; // TODO
       for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
         auto& triple = vertices[idx];
         mVVBuffer[idx].xx = std::get<0>(triple);
@@ -137,7 +137,7 @@ namespace rti {
 
       this->mNumTriangles = triangles.size();
       // Set radii of discs
-      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "ERROR: input data not used compute radii of spheres"; // TODO
+      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "WARNING: input data not used compute radii of spheres"; // TODO
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
         //assert(false && "TODO: process trinagles");
         // size_t ntidx = 3 * idx;
