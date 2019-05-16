@@ -6,9 +6,18 @@ project(
   LANGUAGES CXX
   )
 
+message(STATUS "CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
+message(STATUS "CMAKE_BUILD_TYPE == '${CMAKE_BUILD_TYPE}'")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  message(STATUS "CMAKE_CXX_FLAGS_DEBUG == ${CMAKE_CXX_FLAGS_DEBUG}")
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  message(STATUS "CMAKE_CXX_FLAGS_RELEASE == ${CMAKE_CXX_FLAGS_RELEASE}")
+endif()
+
 set(BUILD_SHARED_LIBS ON) # A particularity of Boost 1.70
 
-find_package(Boost REQUIRED COMPONENTS log system # "${BOOST_COMPONENTS_REQUIRED}"
+find_package(Boost REQUIRED COMPONENTS log system timer # "${BOOST_COMPONENTS_REQUIRED}"
   PATHS ${BOOST_ROOT}
   NO_DEFAULT_PATH
   )
@@ -45,6 +54,7 @@ target_link_libraries(rtiex
   PRIVATE
     Boost::log
     Boost::system
+    Boost::timer
 		${GMSH_LIBRARY}
     ${EMBREE_LIBRARY}
   )

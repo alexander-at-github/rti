@@ -26,7 +26,7 @@ set(M_DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 set(STAGED_INSTALL_PREFIX ${M_DEPENDENCIES_DIR}/stage) # will be used in external/upstream
 message(STATUS "${PROJECT_NAME} external project's staged install path: ${STAGED_INSTALL_PREFIX}")
 
-list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system")
+list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system" "timer")
 
 include(ExternalProject)
 add_subdirectory(external/upstream)
@@ -37,7 +37,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3")
 
 externalproject_add(rti
   DEPENDS
@@ -68,6 +68,7 @@ externalproject_add(rti
     -DEMBREE_DIR=${EMBREE_DIR}
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
 
+    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -D CMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
     -D CMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
     -D CMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
