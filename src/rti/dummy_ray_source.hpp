@@ -7,7 +7,7 @@
 namespace rti {
   class dummy_ray_source : public i_ray_source {
   public:
-    RTCRay get_ray() override {
+    RTCRay get_ray() override final {
       RTCRay ray;
       // Origin:
       ray.org_x = 1;
