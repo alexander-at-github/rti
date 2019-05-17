@@ -91,22 +91,19 @@ namespace rti {
 
         rayhit.ray.tfar = std::numeric_limits<float>::max();
 
-        // Boost logging causes a performance penalty of about 5% even, when the logging
-        // level is so high (no log messages produced here).
-        
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
+        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
+        BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
         rtcIntersect1(scene, &context, &rayhit);
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
-        //                                          << " rayhit.ray.tfar=" << rayhit.ray.tfar
-        //                                          // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
-        //                                          // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
-        //                                          // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
-        //                                          << " rayhit.hit.primID=" << rayhit.hit.primID;
-        // unsigned int primID = rayhit.hit.primID;
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
-        //                                          << " " << mGeo.prim_to_string(primID);
+        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
+        BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
+                                                 << " rayhit.ray.tfar=" << rayhit.ray.tfar
+                                                 // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
+                                                 // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
+                                                 // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
+                                                 << " rayhit.hit.primID=" << rayhit.hit.primID;
+        unsigned int primID = rayhit.hit.primID;
+        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
+                                                 << " " << mGeo.prim_to_string(primID);
       }
 
       test_result dummyResult {};
