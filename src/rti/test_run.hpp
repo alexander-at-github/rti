@@ -47,33 +47,26 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 24;
+      size_t nrexp = 20;
       size_t numRays = std::pow(2,nrexp);
-
-      BOOST_LOG_SEV(rti::mRLogger, blt::warning)
-        << "\n>>>>>>>> TODO: Compare oo-source-design with template-source-design and "
-        << "no-abstraction-source-design\n";
-
-      // Start timing until end of variable scope.
-      boost::timer::auto_cpu_timer timer;
 
       std::cout << "Running 2**" << nrexp << " ray traces on "
                 << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
 
-      std::vector<std::pair<float, float>> ddxys
-        {{-3, -3}, {-1, -3}, { 1, -3}, {3, -3},
-         {-3, -1}, {-1, -1}, { 1, -1}, {3, -1},
-         {-3,  1}, {-1,  1}, { 1,  1}, {3,  1},
-         {-3,  3}, {-1,  3}, { 1,  3}, {3,  3}};
+      const std::vector<std::pair<float, float>> ddxys
+        {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
+         {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
+         {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
+         {-3.f,  3.f}, {-1.f,  3.f}, { 1.f,  3.f}, {3.f,  3.f}};
       std::vector<RTCRay> raypack(ddxys.size());
       for (size_t idx = 0; idx < ddxys.size(); ++idx) {
         // Origin:
         raypack[idx].org_x = 1;
         raypack[idx].org_y = 0;
         raypack[idx].org_z = 0;
-        raypack[idx].dir_x = ddxys[idx].first;
-        raypack[idx].dir_y = ddxys[idx].second;
-        raypack[idx].dir_z = 0.5; // magic number
+        raypack[idx].dir_x = 0.5; // magic number
+        raypack[idx].dir_y = ddxys[idx].first;
+        raypack[idx].dir_z = ddxys[idx].second;
         // start of ray
         raypack[idx].tnear = 0;
         // Maximum length of ray
@@ -81,30 +74,39 @@ namespace rti {
       }
 
       RTCHit hit{};
-      RTCRayHit rayhit {raypack[1], hit}; // initialize arbitrary
+      RTCRayHit rayhit {raypack[0], hit}; // initialize arbitrary
+
+      // Start timing until end of variable scope.
+      boost::timer::auto_cpu_timer timer;
 
       for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
 
         size_t rpidx = idx % raypack.size();
-        raypack[rpidx].dir_z *= 1.5; // increase z axis of ray direction
-        raypack[rpidx].tfar = std::numeric_limits<float>::max();
+        raypack[rpidx].dir_x *= 1.5; // increase z axis of ray direction
+        // raypack[rpidx].tfar = std::numeric_limits<float>::max();
+        // If we copy the ray, then this is not overwritten.
 
         // RTCRayHit rayhit {raypack[rpidx], hit};
         rayhit.ray = raypack[rpidx];
-        //RTCRayHit rayhit = rti::utils::constructRayHit(ray, rti::utils::constructHit()); // TODO
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
+
+        rayhit.ray.tfar = std::numeric_limits<float>::max();
+
+        // Boost logging causes a performance penalty of about 5% even, when the logging
+        // level is so high (no log messages produced here).
+        
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
         rtcIntersect1(scene, &context, &rayhit);
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
-                                                 << " rayhit.ray.tfar=" << rayhit.ray.tfar
-                                                 // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
-                                                 // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
-                                                 // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
-                                                 << " rayhit.hit.primID=" << rayhit.hit.primID;
-        unsigned int primID = rayhit.hit.primID;
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
-                                                 << " " << mGeo.prim_to_string(primID);
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
+        //                                          << " rayhit.ray.tfar=" << rayhit.ray.tfar
+        //                                          // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
+        //                                          // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
+        //                                          // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
+        //                                          << " rayhit.hit.primID=" << rayhit.hit.primID;
+        // unsigned int primID = rayhit.hit.primID;
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
+        //                                          << " " << mGeo.prim_to_string(primID);
       }
 
       test_result dummyResult {};
