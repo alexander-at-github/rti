@@ -47,24 +47,26 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 20;
+      size_t nrexp = 18;
       size_t numRays = std::pow(2,nrexp);
 
       std::cout << "Running 2**" << nrexp << " ray traces on "
                 << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
 
       const std::vector<std::pair<float, float>> ddxys
-        {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
-         {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
-         {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
-         {-3.f,  3.f}, {-1.f,  3.f}, { 1.f,  3.f}, {3.f,  3.f}};
+      {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
+       {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
+       {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
+       {-3.f,  3.f}, {-1.f,  3.f}, { 1.f,  3.f}, {3.f,  3.f}};
       std::vector<RTCRay> raypack(ddxys.size());
+      float magic = 0.5f; // magic number
+
       for (size_t idx = 0; idx < ddxys.size(); ++idx) {
         // Origin:
         raypack[idx].org_x = 1;
         raypack[idx].org_y = 0;
         raypack[idx].org_z = 0;
-        raypack[idx].dir_x = 0.5; // magic number
+        raypack[idx].dir_x = magic;
         raypack[idx].dir_y = ddxys[idx].first;
         raypack[idx].dir_z = ddxys[idx].second;
         // start of ray
@@ -79,31 +81,38 @@ namespace rti {
       // Start timing until end of variable scope.
       boost::timer::auto_cpu_timer timer;
 
+      int rand = this->fastrand();
+
       for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
 
         size_t rpidx = idx % raypack.size();
-        raypack[rpidx].dir_x *= 1.5; // increase z axis of ray direction
+        //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
         // raypack[rpidx].tfar = std::numeric_limits<float>::max();
         // If we copy the ray, then this is not overwritten.
 
         // RTCRayHit rayhit {raypack[rpidx], hit};
+
+        if (rpidx == 0) {
+          rand = this->fastrand();
+        }
+        raypack[rpidx].dir_x = static_cast<float>(rand);
         rayhit.ray = raypack[rpidx];
 
         rayhit.ray.tfar = std::numeric_limits<float>::max();
 
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
         rtcIntersect1(scene, &context, &rayhit);
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
-                                                 << " rayhit.ray.tfar=" << rayhit.ray.tfar
-                                                 // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
-                                                 // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
-                                                 // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
-                                                 << " rayhit.hit.primID=" << rayhit.hit.primID;
-        unsigned int primID = rayhit.hit.primID;
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
-                                                 << " " << mGeo.prim_to_string(primID);
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
+        //                                          << " rayhit.ray.tfar=" << rayhit.ray.tfar
+        //   // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
+        //   // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
+        //   // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
+        //                                          << " rayhit.hit.primID=" << rayhit.hit.primID;
+        // unsigned int primID = rayhit.hit.primID;
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
+        //                                          << " " << mGeo.prim_to_string(primID);
       }
 
       test_result dummyResult {};
@@ -112,5 +121,11 @@ namespace rti {
   private:
     i_geometry_from_gmsh& mGeo;
     i_ray_source& mRaySource;
+
+    unsigned int g_seed = 1234;
+    inline int fastrand() {
+      g_seed = (214013*g_seed+2531011);
+      return (g_seed>>16)&0x7FFF;
+    }
   };
 }
