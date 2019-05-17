@@ -56,26 +56,39 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main::print_rtc_device_info(device);
 
-  rti::test_pool rtiTPool;
   //i_geometry_from_gmsh* geo = std::make_unique<triangle_geometry_from_gmsh>(device, gmshReader);
   //i_ray_source* raySource = std::make_unique<dummy_ray_source>();
   rti::dummy_ray_source raySource;
+
   rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);
   rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
   rti::sphere_geometry_from_gmsh sphereGeo(device, gmshReader);
+
   rti::test_run testRunTriangle(triangleGeo, raySource);
   rti::test_run testRunDisc(discGeo, raySource);
   rti::test_run testRunSphere(sphereGeo, raySource);
-  rtiTPool.add_test_run(testRunTriangle);
-  rtiTPool.add_test_run(testRunDisc);
-  rtiTPool.add_test_run(testRunSphere);
-  //rtiTPool.add_test_run(testRunDisc);
+
+  rti::test_pool poolTrngl;
+  rti::test_pool poolDsc;
+  rti::test_pool poolSphr;
+
+  // Number of test repetitions (samples).
+  size_t reps = 2;
+  for(size_t nn = 0; nn < reps; ++nn) {
+    poolTrngl.add_test_run(testRunTriangle);
+    poolDsc.add_test_run(testRunDisc);
+    poolSphr.add_test_run(testRunSphere);
+  }
+
+  for (auto & pp : std::vector<rti::test_pool> {poolTrngl, poolDsc, poolSphr})
+    { pp.run(); }
+
   // rtiTPool.add_test_run(std::make_unique<disc_geometry_from_gmsh>(device));
   // rtiTPool.add_test_run(std::make_unique<sphere_geometry_from_gmsh>(device));
-  auto results = rtiTPool.run();
-  for (auto& result : results) {
-    std::cout << result.to_string() << std::endl;
-  }
+  //auto results = rtiTPool.run();
+  //for (auto& result : results) {
+  //  std::cout << result.to_string() << std::endl;
+  //}
 
   // gmsh::fltk::run();
 }
