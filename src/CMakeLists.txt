@@ -35,6 +35,25 @@ find_library(GMSH_LIBRARY NAMES gmsh libgmsh
   PATHS "${GMSH_DIR}/lib"
   NO_DEFAULT_PATH
 )
+# TBB
+message(STATUS "TBB_DIR == ${TBB_DIR}")
+find_path(TBB_INCLUDE_DIR NAMES tbb/task_scheduler_init.h
+  PATHS "${TBB_DIR}/include" # ${TBB_DIR}/include/tbb/task_scheduler_init.h
+  NO_DEFAULT_PATH
+)
+find_library(TBB_LIBRARY NAMES tbb libtbb
+  PATHS "${TBB_DIR}/build/lib_release" # ${TBB_DIR}/build/lib_release/libtbb.so
+  NO_DEFAULT_PATH
+  )
+find_library(TBB_MALLOC_LIBRARY NAMES tbbmalloc libtbbmalloc
+  PATHS "${TBB_DIR}/build/lib_release"
+  NO_DEFAULT_PATH
+  )
+message(STATUS "TBB_INCLUDE_DIR == ${TBB_INCLUDE_DIR}")
+message(STATUS "TBB_LIBRARY == ${TBB_LIBRARY}")
+message(STATUS "TBB_MALLOC_LIBRARY == ${TBB_MALLOC_LIBRARY}")
+message(STATUS "TODO: use tbb-malloc")
+
 
 # One needs to set the RPATH, otherwise the installed executable does not have dynamic
 # link libraries set correctly.
@@ -47,16 +66,18 @@ add_executable(rtiex rti/main.cpp)
 target_include_directories(rtiex
   PRIVATE
 	  ${CMAKE_CURRENT_LIST_DIR}
-	  ${GMSH_INCLUDE_DIR}
     ${EMBREE_INCLUDE_DIRS}
+	  ${GMSH_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
   )
 target_link_libraries(rtiex
   PRIVATE
     Boost::log
     Boost::system
     Boost::timer
-		${GMSH_LIBRARY}
     ${EMBREE_LIBRARY}
+		${GMSH_LIBRARY}
+    ${TBB_LIBRARY}
   )
 
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
