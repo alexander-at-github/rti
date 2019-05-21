@@ -4,6 +4,8 @@
 
 #include <cmath>
 
+#include "tbb/tbb.h"
+
 #include "rti/i_geometry_from_gmsh.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/test_result.hpp"
@@ -47,7 +49,7 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 18;
+      size_t nrexp = 26;
       size_t numRays = std::pow(2,nrexp);
 
       std::cout << "Running 2**" << nrexp << " ray traces on "
@@ -81,39 +83,68 @@ namespace rti {
       // Start timing until end of variable scope.
       boost::timer::auto_cpu_timer timer;
 
-      int rand = this->fastrand();
+      tbb::parallel_for(
+        tbb::blocked_range<size_t>(0,numRays),
+        [&](const tbb::blocked_range<size_t>& range) {
+          unsigned int rand = range.begin(); // some value
+          for(size_t idx = range.begin(); idx < range.end(); ++idx) {
+            size_t rpidx = idx % raypack.size();
+            //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
+            // raypack[rpidx].tfar = std::numeric_limits<float>::max();
+            // If we copy the ray, then this is not overwritten.
 
-      for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
+            // RTCRayHit rayhit {raypack[rpidx], hit};
 
-        size_t rpidx = idx % raypack.size();
-        //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
-        // raypack[rpidx].tfar = std::numeric_limits<float>::max();
-        // If we copy the ray, then this is not overwritten.
+            if (rpidx == 0) {
+              rand = this->fastrand(rand);
+            }
+            raypack[rpidx].dir_x = static_cast<float>(rand);
+            rayhit.ray = raypack[rpidx];
 
-        // RTCRayHit rayhit {raypack[rpidx], hit};
+            rayhit.ray.tfar = std::numeric_limits<float>::max();
 
-        if (rpidx == 0) {
-          rand = this->fastrand();
-        }
-        raypack[rpidx].dir_x = static_cast<float>(rand);
-        rayhit.ray = raypack[rpidx];
+            rtcIntersect1(scene, &context, &rayhit);
 
-        rayhit.ray.tfar = std::numeric_limits<float>::max();
+            // if (rayhit.ray.tfar > 100 /* magic number*/) {
+            //   // No hit. That's a program error.
+            //   std::cout << "ERROR: ray did not hit anything" << std::endl;
+            //}
+          }
+        });
 
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
-        rtcIntersect1(scene, &context, &rayhit);
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
-        //                                          << " rayhit.ray.tfar=" << rayhit.ray.tfar
-        //   // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
-        //   // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
-        //   // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
-        //                                          << " rayhit.hit.primID=" << rayhit.hit.primID;
-        // unsigned int primID = rayhit.hit.primID;
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
-        //                                          << " " << mGeo.prim_to_string(primID);
-      }
+
+
+      // for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
+
+      //   size_t rpidx = idx % raypack.size();
+      //   //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
+      //   // raypack[rpidx].tfar = std::numeric_limits<float>::max();
+      //   // If we copy the ray, then this is not overwritten.
+
+      //   // RTCRayHit rayhit {raypack[rpidx], hit};
+
+      //   if (rpidx == 0) {
+      //     rand = this->fastrand();
+      //   }
+      //   raypack[rpidx].dir_x = static_cast<float>(rand);
+      //   rayhit.ray = raypack[rpidx];
+
+      //   rayhit.ray.tfar = std::numeric_limits<float>::max();
+
+      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
+      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
+      //   rtcIntersect1(scene, &context, &rayhit);
+      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
+      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
+      //   //                                          << " rayhit.ray.tfar=" << rayhit.ray.tfar
+      //   //   // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
+      //   //   // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
+      //   //   // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
+      //   //                                          << " rayhit.hit.primID=" << rayhit.hit.primID;
+      //   // unsigned int primID = rayhit.hit.primID;
+      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
+      //   //                                          << " " << mGeo.prim_to_string(primID);
+      // }
 
       test_result dummyResult {};
       return dummyResult;
@@ -122,10 +153,10 @@ namespace rti {
     i_geometry_from_gmsh& mGeo;
     i_ray_source& mRaySource;
 
-    unsigned int g_seed = 1234;
-    inline int fastrand() {
-      g_seed = (214013*g_seed+2531011);
-      return (g_seed>>16)&0x7FFF;
+    //unsigned int g_seed = 1234;
+    inline int fastrand(unsigned int pSeed) {
+      pSeed = (214013*pSeed+2531011);
+      return (pSeed>>16)&0x7FFF; // bs
     }
   };
 }

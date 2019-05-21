@@ -7,8 +7,10 @@
 #include <embree3/rtcore.h>
 #include <gmsh.h>
 #include <pmmintrin.h>
+#include <tbb/tbb.h>
 #include <xmmintrin.h>
 
+#include "rti/command_line_options.hpp"
 #include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/dummy_ray_source.hpp"
 #include "rti/logger.hpp"
@@ -20,14 +22,27 @@
 namespace rti {
   namespace main {
 
-    void init() {
+    void init(int argc, char* argv[]) {
       // Initialize global logger
       rti::logger::init();
+      rti::command_line_options::init(argc, argv);
       // Enable Flush-to-Zero and Denormals-are-Zero for the MXSCR status and
       // control registers for performance reasons.
       // See: https://embree.github.io/api.html#mxcsr-control-and-status-register
       _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
       _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+
+      // tbb
+      // do we need that? Not necessary. But one can set the number of threads.
+      //static tbb::task_scheduler_init init(tbb::task_scheduler_init::automatic);
+      std::string maxThreadsStr = rti::command_line_options::get_instance().
+        get_option_value(rti::command_line_options::option_type::MAX_THREADS);
+      unsigned int maxThreads = tbb::task_scheduler_init::default_num_threads();
+      if ( ! maxThreadsStr.empty()) {
+        maxThreads = std::stoul(maxThreadsStr);
+      }
+      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << maxThreads << " threads";
+      static tbb::task_scheduler_init init(maxThreads);
     }
 
     void print_rtc_device_info(RTCDevice pDevice) {
@@ -48,8 +63,8 @@ namespace rti {
 }
 
 int main(int argc, char* argv[]) {
-  rti::main::init();
-  rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance(argc, argv);
+  rti::main::init(argc, argv);
+  rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance();
 
   // Enable huge page support.
   const std::string device_config = "hugepages=1";
@@ -73,7 +88,7 @@ int main(int argc, char* argv[]) {
   rti::test_pool poolSphr;
 
   // Number of test repetitions (samples).
-  size_t reps = 2;
+  size_t reps = 1;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
     poolDsc.add_test_run(testRunDisc);

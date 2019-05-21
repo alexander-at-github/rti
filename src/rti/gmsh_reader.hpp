@@ -17,28 +17,29 @@ namespace rti {
     // For this implementation see suggestions at
     // https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
   public:
-    static gmsh_reader& getInstance(int argc, char* argv[]) {
+    static gmsh_reader& getInstance() {
       // the static keyword ensures that there is only one instance.
       // (At least per translation unit).
-      static gmsh_reader instance(argc, argv);
+      static gmsh_reader instance;
       return instance;
     }
 
     // Delete default constructor, copy constructor, and copy assignment operator
-    gmsh_reader() = delete;
+    //gmsh_reader() = delete;
     gmsh_reader(gmsh_reader const&) = delete;
-    void operator=(gmsh_reader const&) = delete;
+    gmsh_reader& operator=(gmsh_reader const&) = delete;
 
   private:
     // Declare constructor private
-    gmsh_reader(int argc, char* argv[]) {
-      mMshFilePath = getMshFilePath(argc, argv);
-      gmsh::initialize();
-      gmsh::option::setNumber("General.Terminal", 1);
+    gmsh_reader() {
+      mMshFilePath = rti::command_line_options::get_instance().
+        get_option_value(rti::command_line_options::option_type::MESH_FILE);
       if (mMshFilePath.empty()) {
         // Try default path
         mMshFilePath = "../resources/cylinder/c.msh";
       }
+      gmsh::initialize();
+      gmsh::option::setNumber("General.Terminal", 1);
       BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading input file " << mMshFilePath;
       gmsh::open(mMshFilePath);
       // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Will read vertices";
@@ -74,25 +75,25 @@ namespace rti {
     ////////////
     // Functions
     ////////////
-    std::string getMshFilePath(int argc, char* argv[]) {
-      std::string optStr{"--msh-file"};
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading command line";
-      for(int idx = 0; idx < argc; ++idx) {
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "argv[" << idx << "] == " << argv[idx];
-      }
-      for(int idx = 0; idx < argc; ++idx) {
-        // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "idx == " << idx << " argv[idx] == " << argv[idx];
-        if (optStr.compare(argv[idx]) == 0 && idx < (argc-1)) {
-          std::string filePath(argv[idx+1]);
-          BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-            << "Found Mesh file option string: '" << argv[idx] << " " << filePath << "' at index " << idx;
-          // Mesh file path was found in argv.
-          return filePath;
-        }
-      }
-      // No mesh file path in argv. Return empty string.
-      return std::string();
-    }
+    // std::string getMshFilePath(int argc, char* argv[]) {
+    //   std::string optStr{"--msh-file"};
+    //   BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading command line";
+    //   for(int idx = 0; idx < argc; ++idx) {
+    //     BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "argv[" << idx << "] == " << argv[idx];
+    //   }
+    //   for(int idx = 0; idx < argc; ++idx) {
+    //     // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "idx == " << idx << " argv[idx] == " << argv[idx];
+    //     if (optStr.compare(argv[idx]) == 0 && idx < (argc-1)) {
+    //       std::string filePath(argv[idx+1]);
+    //       BOOST_LOG_SEV(rti::mRLogger, blt::debug)
+    //         << "Found Mesh file option string: '" << argv[idx] << " " << filePath << "' at index " << idx;
+    //       // Mesh file path was found in argv.
+    //       return filePath;
+    //     }
+    //   }
+    //   // No mesh file path in argv. Return empty string.
+    //   return std::string();
+    // }
 
     std::vector<triple_t<double> > read_vertices() {
       std::vector<std::size_t> vvtags;
