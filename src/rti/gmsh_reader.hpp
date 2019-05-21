@@ -56,7 +56,6 @@ namespace rti {
     // Code which is not related to the singleton behaviour.
     ////////////////////////////////////////////////////////
   public:
-
     std::vector<triple_t<double> > get_vertices() {
       return this->mVertices;
     }
@@ -65,6 +64,9 @@ namespace rti {
       return this->mTriangles;
     }
 
+    std::string get_mesh_file_path() {
+      return this->mMshFilePath;
+    }
   private:
     ///////////////
     // Data Members

@@ -3,6 +3,7 @@
 #include<boost/timer/timer.hpp>
 
 #include <cmath>
+#include <chrono>
 
 #include "tbb/tbb.h"
 
@@ -17,9 +18,16 @@ namespace rti {
       mGeo(pGeo),
       mRaySource(pRaySource) {};
 
-    test_result run() {
+    rti::test_result run() {
+      test_result result {};
+      result.inputFilePath = mGeo.get_input_file_path();
+      result.geometryClassName = boost::core::demangle(typeid(mGeo).name());
+
       RTCDevice device = mGeo.get_rtc_device();
       RTCScene scene = rtcNewScene(device);
+
+      // BOOST_LOG_SEV(rti::mRLogger, blt::warning) <<"Does mGeo contain a primitive with ID==0 ? "
+      //                                            << mGeo.prim_to_string(0);
 
       // No scene flags for now.
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
@@ -29,7 +37,7 @@ namespace rti {
       rtcSetSceneBuildQuality(scene, bbquality);
 
       RTCGeometry geometry = mGeo.get_rtc_geometry();
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << typeid(mGeo).name();
+      //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << typeid(mGeo).name();
       // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << mGeo.to_string();
       rtcCommitGeometry(geometry);
 
@@ -49,17 +57,19 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 26;
+      size_t nrexp = 29;
       size_t numRays = std::pow(2,nrexp);
+      result.numRays = numRays;
 
-      std::cout << "Running 2**" << nrexp << " ray traces on "
-                << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
+      // std::cout << "Running 2**" << nrexp << " ray traces on "
+      //           << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
 
       const std::vector<std::pair<float, float>> ddxys
       {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
        {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
        {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
        {-3.f,  3.f}, {-1.f,  3.f}, { 1.f,  3.f}, {3.f,  3.f}};
+
       std::vector<RTCRay> raypack(ddxys.size());
       float magic = 0.5f; // magic number
 
@@ -75,18 +85,26 @@ namespace rti {
         raypack[idx].tnear = 0;
         // Maximum length of ray
         raypack[idx].tfar = std::numeric_limits<float>::max();
+        raypack[idx].flags = 0;
       }
 
-      RTCHit hit{};
-      RTCRayHit rayhit {raypack[0], hit}; // initialize arbitrary
-
       // Start timing until end of variable scope.
-      boost::timer::auto_cpu_timer timer;
+      //boost::timer::auto_cpu_timer timerOld;
+
+      boost::timer::cpu_timer timer; // also calls start
+
+      result.startTime = std::chrono::high_resolution_clock::now();
 
       tbb::parallel_for(
         tbb::blocked_range<size_t>(0,numRays),
-        [&](const tbb::blocked_range<size_t>& range) {
+        //[raypack = raypack] // C++14; use generalized lambda capture to copy raypack
+        //[&] // Capture all by refernce can easily cause errors
+        [&scene, &context, &raypack] // capture by refernce
+        (const tbb::blocked_range<size_t>& range) {
+          RTCHit hit{};
+          RTCRayHit rayhit {raypack[0], hit}; // initialize arbitrary
           unsigned int rand = range.begin(); // some value
+
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
             size_t rpidx = idx % raypack.size();
             //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
@@ -96,14 +114,28 @@ namespace rti {
             // RTCRayHit rayhit {raypack[rpidx], hit};
 
             if (rpidx == 0) {
-              rand = this->fastrand(rand);
+              rand = fastrand(rand);
             }
-            raypack[rpidx].dir_x = static_cast<float>(rand);
+            // raypack[rpidx].dir_x = static_cast<float>(rand);
+            // Read access to raypack. Copy struct RTCRay to rayhit.
             rayhit.ray = raypack[rpidx];
+            // Modification only in local copy rayhit.ray
+            rayhit.ray.dir_x = static_cast<float>(rand);
 
             rayhit.ray.tfar = std::numeric_limits<float>::max();
+            rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+            rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
             rtcIntersect1(scene, &context, &rayhit);
+
+            // if (rayhit.ray.tfar * raypack[rpidx].dir_x > 1) {
+            // if (rayhit.hit.primID == 0) {
+            if ( rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
+              std::cerr << ">>>>> ERROR: ray did not hit anything"
+                        << " rayhit.ray.tfar == " << rayhit.ray.tfar 
+                        << " raypack[rpidx].dir_x == " << raypack[rpidx].dir_x
+                        << " primID == " << rayhit.hit.primID << std::endl;
+            }
 
             // if (rayhit.ray.tfar > 100 /* magic number*/) {
             //   // No hit. That's a program error.
@@ -112,6 +144,10 @@ namespace rti {
           }
         });
 
+        result.endTime = std::chrono::high_resolution_clock::now();
+
+        result.timeNanoseconds = timer.elapsed().wall;
+        //boost::timer::cpu_times const elapsed_times(timer.elapsed());
 
 
       // for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
@@ -146,15 +182,15 @@ namespace rti {
       //   //                                          << " " << mGeo.prim_to_string(primID);
       // }
 
-      test_result dummyResult {};
-      return dummyResult;
+      return result;
     }
   private:
     i_geometry_from_gmsh& mGeo;
     i_ray_source& mRaySource;
 
     //unsigned int g_seed = 1234;
-    inline int fastrand(unsigned int pSeed) {
+    inline static
+    int fastrand(unsigned int pSeed) {
       pSeed = (214013*pSeed+2531011);
       return (pSeed>>16)&0x7FFF; // bs
     }

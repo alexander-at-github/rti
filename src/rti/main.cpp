@@ -16,6 +16,7 @@
 #include "rti/logger.hpp"
 #include "rti/sphere_geometry_from_gmsh.hpp"
 #include "rti/test_pool.hpp"
+#include "rti/test_result.hpp"
 #include "rti/test_run.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp"
 
@@ -43,6 +44,9 @@ namespace rti {
       }
       BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << maxThreads << " threads";
       static tbb::task_scheduler_init init(maxThreads);
+      BOOST_LOG_SEV(rti::mRLogger, blt::warning)
+        << "tbb::task_scheduler_init::default_num_threads() == "
+        << tbb::task_scheduler_init::default_num_threads();
     }
 
     void print_rtc_device_info(RTCDevice pDevice) {
@@ -95,8 +99,12 @@ int main(int argc, char* argv[]) {
     poolSphr.add_test_run(testRunSphere);
   }
 
-  for (auto & pp : std::vector<rti::test_pool> {poolTrngl, poolDsc, poolSphr})
-    { pp.run(); }
+  for (auto & pp : std::vector<rti::test_pool> {poolTrngl, poolDsc, poolSphr}) {
+    auto results = pp.run();
+    for (auto & result : results) {
+      std::cout << result.to_string() << std::endl;
+    }
+  }
 
   // rtiTPool.add_test_run(std::make_unique<disc_geometry_from_gmsh>(device));
   // rtiTPool.add_test_run(std::make_unique<sphere_geometry_from_gmsh>(device));

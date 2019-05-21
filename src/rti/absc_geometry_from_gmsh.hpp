@@ -15,10 +15,15 @@ class absc_geometry_from_gmsh : public i_geometry_from_gmsh {
   RTCGeometry& get_rtc_geometry() override {
     return mGeometry;
   }
+  std::string get_input_file_path() override {
+    return mGmshReader.get_mesh_file_path();
+  }
   protected:
   RTCDevice mDevice;
+  gmsh_reader& mGmshReader;
   RTCGeometry mGeometry;
-  absc_geometry_from_gmsh(RTCDevice pDevice) :
-    mDevice(pDevice) {}
+  absc_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
+    mDevice(pDevice),
+    mGmshReader(pGmshReader) {}
 };
 } // namespace rti

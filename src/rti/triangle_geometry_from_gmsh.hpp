@@ -14,7 +14,7 @@ namespace rti {
     //   init_this(pDevice);
     // }
     triangle_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
-      absc_geometry_from_gmsh(pDevice) {
+      absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
     }
     void invert_surface_normals() override {

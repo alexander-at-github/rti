@@ -11,7 +11,7 @@ namespace rti {
   class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
   public:
     disc_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
-      absc_geometry_from_gmsh(pDevice) {
+      absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
     }
     void invert_surface_normals() override {
@@ -130,7 +130,7 @@ namespace rti {
         mVVBuffer[idx].xx = std::get<0>(triple);
         mVVBuffer[idx].yy = std::get<1>(triple);
         mVVBuffer[idx].zz = std::get<2>(triple);
-        mVVBuffer[idx].radius = 0.1; // FIXME
+        mVVBuffer[idx].radius = 0.2; // FIXME
       }
 
       std::vector<rti::triple_t<std::size_t> > triangles = pGmshReader.get_triangles();
