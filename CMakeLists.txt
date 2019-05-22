@@ -41,7 +41,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -march=native")
 
 externalproject_add(rti
   DEPENDS
-    boost-external
+    #boost-external
     #gmsh-external
 		#embree-external
     #
