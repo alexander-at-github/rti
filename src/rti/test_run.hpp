@@ -57,7 +57,7 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 29;
+      size_t nrexp = 26;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays;
 

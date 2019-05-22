@@ -6,6 +6,7 @@
 
 #include <embree3/rtcore.h>
 #include <gmsh.h>
+#include <immintrin.h> // Need? Added later
 #include <pmmintrin.h>
 #include <tbb/tbb.h>
 #include <xmmintrin.h>
@@ -42,11 +43,12 @@ namespace rti {
       if ( ! maxThreadsStr.empty()) {
         maxThreads = std::stoul(maxThreadsStr);
       }
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << maxThreads << " threads";
+      //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << maxThreads << " threads";
+      std::cout << "Using " << maxThreads << " threads" << std::endl;
       static tbb::task_scheduler_init init(maxThreads);
-      BOOST_LOG_SEV(rti::mRLogger, blt::warning)
-        << "tbb::task_scheduler_init::default_num_threads() == "
-        << tbb::task_scheduler_init::default_num_threads();
+      // BOOST_LOG_SEV(rti::mRLogger, blt::warning)
+      //   << "tbb::task_scheduler_init::default_num_threads() == "
+      //   << tbb::task_scheduler_init::default_num_threads();
     }
 
     void print_rtc_device_info(RTCDevice pDevice) {
@@ -92,7 +94,7 @@ int main(int argc, char* argv[]) {
   rti::test_pool poolSphr;
 
   // Number of test repetitions (samples).
-  size_t reps = 1;
+  size_t reps = 35;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
     poolDsc.add_test_run(testRunDisc);
