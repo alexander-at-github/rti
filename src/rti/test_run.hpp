@@ -7,14 +7,14 @@
 
 #include "tbb/tbb.h"
 
-#include "rti/i_geometry_from_gmsh.hpp"
+#include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/test_result.hpp"
 
 namespace rti {
   class test_run {
   public:
-    test_run(i_geometry_from_gmsh& pGeo, i_ray_source& pRaySource) :
+    test_run(i_geometry& pGeo, i_ray_source& pRaySource) :
       mGeo(pGeo),
       mRaySource(pRaySource) {};
 
@@ -185,7 +185,7 @@ namespace rti {
       return result;
     }
   private:
-    i_geometry_from_gmsh& mGeo;
+    i_geometry& mGeo;
     i_ray_source& mRaySource;
 
     //unsigned int g_seed = 1234;

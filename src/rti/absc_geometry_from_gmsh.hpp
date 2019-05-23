@@ -1,9 +1,9 @@
 #pragma once
 
-#include "rti/i_geometry_from_gmsh.hpp"
+#include "rti/i_geometry.hpp"
 
 namespace rti {
-class absc_geometry_from_gmsh : public i_geometry_from_gmsh {
+class absc_geometry_from_gmsh : public i_geometry {
   public:
   virtual ~absc_geometry_from_gmsh() {}
   //virtual void invert_surface_normals() = 0;

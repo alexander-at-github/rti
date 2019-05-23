@@ -2,10 +2,10 @@
 
 namespace rti {
   // Interface
-  class i_geometry_from_gmsh {
+  class i_geometry {
   public:
     // virtual destructor
-    virtual ~i_geometry_from_gmsh() {};
+    virtual ~i_geometry() {};
     virtual void invert_surface_normals() = 0;
     // TODO: Remove the function invert_surface_normals() from this interface.
     // The function should be part of a gmsh class

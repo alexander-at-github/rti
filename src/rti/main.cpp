@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main::print_rtc_device_info(device);
 
-  //i_geometry_from_gmsh* geo = std::make_unique<triangle_geometry_from_gmsh>(device, gmshReader);
+  //i_geometry* geo = std::make_unique<triangle_geometry_from_gmsh>(device, gmshReader);
   //i_ray_source* raySource = std::make_unique<dummy_ray_source>();
   rti::dummy_ray_source raySource;
 
