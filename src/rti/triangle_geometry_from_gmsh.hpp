@@ -119,9 +119,9 @@ namespace rti {
       // Write vertices to Embree
       for (size_t idx = 0; idx < vertices.size(); ++idx) {
         auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = std::get<0>(triple);
-        mVVBuffer[idx].yy = std::get<1>(triple);
-        mVVBuffer[idx].zz = std::get<2>(triple);
+        mVVBuffer[idx].xx = triple[0];
+        mVVBuffer[idx].yy = triple[1];
+        mVVBuffer[idx].zz = triple[2];
       }
 
       std::vector<rti::triple_t<size_t> > triangles = pGmshReader.get_triangles();
@@ -144,9 +144,9 @@ namespace rti {
       // Write triangle to Embree
       for (size_t idx = 0; idx < triangles.size(); ++idx) {
         auto& triple = triangles[idx];
-        mTTBuffer[idx].v0 = std::get<0>(triple);
-        mTTBuffer[idx].v1 = std::get<1>(triple);
-        mTTBuffer[idx].v2 = std::get<2>(triple);
+        mTTBuffer[idx].v0 = triple[0];
+        mTTBuffer[idx].v1 = triple[1];
+        mTTBuffer[idx].v2 = triple[2];
         // assert(0 <= mTTBuffer[idx].v0); // not necessary; unsigned
         assert(mTTBuffer[idx].v0 < mNumVertices && "Invalid Vertex");
         assert(mTTBuffer[idx].v1 < mNumVertices && "Invalid Vertex");
