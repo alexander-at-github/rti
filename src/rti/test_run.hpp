@@ -65,7 +65,7 @@ namespace rti {
       // std::cout << "Running 2**" << nrexp << " ray traces on "
       //           << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
 
-      const std::vector<rti::pair_t<float>> ddxys
+      const std::vector<rti::pair<float>> ddxys
       {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
        {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
        {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
@@ -80,8 +80,8 @@ namespace rti {
         raypack[idx].org_y = 0;
         raypack[idx].org_z = 0;
         raypack[idx].dir_x = magic;
-        raypack[idx].dir_y = ddxys[idx][0];
-        raypack[idx].dir_z = ddxys[idx][1];
+        raypack[idx].dir_y = ddxys[idx].frst;
+        raypack[idx].dir_z = ddxys[idx].scnd;
         // start of ray
         raypack[idx].tnear = 0;
         // Maximum length of ray

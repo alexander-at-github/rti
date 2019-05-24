@@ -53,11 +53,11 @@ namespace rti {
     // Code which is not related to the singleton behaviour.
     ////////////////////////////////////////////////////////
   public:
-    std::vector<rti::triple_t<double> > get_vertices() {
+    std::vector<rti::triple<double> > get_vertices() {
       return this->mVertices;
     }
 
-    std::vector<rti::triple_t<std::size_t> > get_triangles() {
+    std::vector<rti::triple<std::size_t> > get_triangles() {
       return this->mTriangles;
     }
 
@@ -69,8 +69,8 @@ namespace rti {
     // Data Members
     ///////////////
     std::string mMshFilePath;
-    std::vector<rti::triple_t<double> > mVertices;
-    std::vector<rti::triple_t<std::size_t> > mTriangles;
+    std::vector<rti::triple<double> > mVertices;
+    std::vector<rti::triple<std::size_t> > mTriangles;
     ////////////
     // Functions
     ////////////
@@ -94,7 +94,7 @@ namespace rti {
     //   return std::string();
     // }
 
-    std::vector<rti::triple_t<double> > read_vertices() {
+    std::vector<rti::triple<double> > read_vertices() {
       std::vector<std::size_t> vvtags;
       std::vector<double> vvxyz;
       std::vector<double> vvuvw;
@@ -114,7 +114,7 @@ namespace rti {
              && "Vertex tag assumption not met");
 
       //std::vector<double> result(vvxyz.size());
-      std::vector<rti::triple_t<double> > result(vvtags.size());
+      std::vector<rti::triple<double> > result(vvtags.size());
       // BOOST_LOG_SEV(rti::mRLogger, blt::debug)
       //   << "result vector created";
       for (size_t idx = 0; idx < vvtags.size(); ++idx) {
@@ -124,14 +124,14 @@ namespace rti {
         size_t vvtag = vvtags[idx];
         //assert(std::is_unsigned<decltype(vvtag)>::value); // not necessary; unsigned type
         assert(vvtag < vvtags.size() && "Error in tag/index computation");
-        rti::triple_t<double> rr {vvxyz[xyzidx], vvxyz[xyzidx+1], vvxyz[xyzidx+2]};
+        rti::triple<double> rr {vvxyz[xyzidx], vvxyz[xyzidx+1], vvxyz[xyzidx+2]};
         // Would this statement use move semantics without explicit call to std::move()?
         result[vvtag] = std::move(rr);
       }
       return result;
     }
 
-    std::vector<rti::triple_t<size_t> > read_triangles() {
+    std::vector<rti::triple<size_t> > read_triangles() {
       std::vector<int> eetypes;
       std::vector<std::vector<std::size_t> > eetags;
       std::vector<std::vector<std::size_t> > nntags;
@@ -169,12 +169,12 @@ namespace rti {
       // Note: we do not consider the element tags (eetags) from Gmsh here. That is, the tags/ids of
       // the triangels may be different than in Gmsh.
 
-      std::vector<rti::triple_t<size_t> > result(numTriangles);
+      std::vector<rti::triple<size_t> > result(numTriangles);
       for (size_t idx = 0; idx < numTriangles; ++idx) {
         size_t ntidx = 3 * idx;
         //assert(0 <= ntidx); // not needed; unsigned type
         assert(ntidx <= selected.size() && "Index out of bounds");
-        rti::triple_t<size_t> rr {selected[ntidx], selected[ntidx+1], selected[ntidx+2]};
+        rti::triple<size_t> rr {selected[ntidx], selected[ntidx+1], selected[ntidx+2]};
         result[idx] = std::move(rr); // Do we need std::move() for move semantics?
       }
       return result;

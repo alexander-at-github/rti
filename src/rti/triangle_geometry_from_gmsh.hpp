@@ -101,7 +101,7 @@ namespace rti {
       // buffer."
       mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
 
-      std::vector<rti::triple_t<double> > vertices = pGmshReader.get_vertices();
+      std::vector<rti::triple<double> > vertices = pGmshReader.get_vertices();
 
       // The vertex buffer contains an array of single precision x, y, z floating
       // point coordinates (RTC_FORMAT_FLOAT3 format).
@@ -119,12 +119,12 @@ namespace rti {
       // Write vertices to Embree
       for (size_t idx = 0; idx < vertices.size(); ++idx) {
         auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = triple[0];
-        mVVBuffer[idx].yy = triple[1];
-        mVVBuffer[idx].zz = triple[2];
+        mVVBuffer[idx].xx = triple.frst;
+        mVVBuffer[idx].yy = triple.scnd;
+        mVVBuffer[idx].zz = triple.thrd;
       }
 
-      std::vector<rti::triple_t<size_t> > triangles = pGmshReader.get_triangles();
+      std::vector<rti::triple<size_t> > triangles = pGmshReader.get_triangles();
       mNumTriangles = triangles.size();
       // Acquire memory from Embree
       mTTBuffer = (triangle_t*)
@@ -144,9 +144,9 @@ namespace rti {
       // Write triangle to Embree
       for (size_t idx = 0; idx < triangles.size(); ++idx) {
         auto& triple = triangles[idx];
-        mTTBuffer[idx].v0 = triple[0];
-        mTTBuffer[idx].v1 = triple[1];
-        mTTBuffer[idx].v2 = triple[2];
+        mTTBuffer[idx].v0 = triple.frst;
+        mTTBuffer[idx].v1 = triple.scnd;
+        mTTBuffer[idx].v2 = triple.thrd;
         // assert(0 <= mTTBuffer[idx].v0); // not necessary; unsigned
         assert(mTTBuffer[idx].v0 < mNumVertices && "Invalid Vertex");
         assert(mTTBuffer[idx].v1 < mNumVertices && "Invalid Vertex");
