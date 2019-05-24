@@ -124,36 +124,40 @@ namespace rti {
                                 mNumVertices);
 
       // Write vertices to Embree
-      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "WARNING: radii of spheres set to some default value"; // TODO
       for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
         auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = std::get<0>(triple);
-        mVVBuffer[idx].yy = std::get<1>(triple);
-        mVVBuffer[idx].zz = std::get<2>(triple);
-        mVVBuffer[idx].radius = 0.2; // Set sphere radius to some default value FIXME
+        mVVBuffer[idx].xx = triple[0];
+        mVVBuffer[idx].yy = triple[1];
+        mVVBuffer[idx].zz = triple[2];
+        mVVBuffer[idx].radius = 0; // Update radius later
       }
 
       std::vector<rti::triple_t<std::size_t> > triangles = pGmshReader.get_triangles();
 
       this->mNumTriangles = triangles.size();
       // Set radii of spheres
-      BOOST_LOG_SEV(rti::mRLogger, blt::error) << "WARNING: input data not used compute radii of spheres"; // TODO
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
-        //assert(false && "TODO: process trinagles");
-        /*  Compute centroid of triangle
-         *  For each vertex of the triangle
-         *    compute distance vertex<->centroid
-         *    vertex.radius = max(vertex.radius, distance vertex<->controid)
-         */
-        //assert(vvtagsminval <= mTTBuffer[idx].v0 && mTTBuffer[idx].v0 <= vvtagsmaxval && "Invalid Vertex");
-        //assert(vvtagsminval <= mTTBuffer[idx].v1 && mTTBuffer[idx].v1 <= vvtagsmaxval && "Invalid Vertex");
-        //assert(vvtagsminval <= mTTBuffer[idx].v2 && mTTBuffer[idx].v2 <= vvtagsmaxval && "Invalid Vertex");
-        /***************************************
-         * Subtracting one to fix the indices. *
-         ***************************************/
-        //mTTBuffer[idx].v0 -= 1;
-        //mTTBuffer[idx].v1 -= 1;
-        //mTTBuffer[idx].v2 -= 1;
+        auto& triangle = triangles[idx];
+        rti::triple_t<rti::triple_t<float> > trnglCoords
+        { rti::triple_t<float> {mVVBuffer[triangle[0]].xx, mVVBuffer[triangle[0]].yy, mVVBuffer[triangle[0]].zz},
+          rti::triple_t<float> {mVVBuffer[triangle[1]].xx, mVVBuffer[triangle[1]].yy, mVVBuffer[triangle[1]].zz},
+          rti::triple_t<float> {mVVBuffer[triangle[2]].xx, mVVBuffer[triangle[2]].yy, mVVBuffer[triangle[2]].zz}};
+        rti::triple_t<float> centroid = this->centroid(trnglCoords);
+        // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
+        //   << "Triangle centroid: (" << centroid[0] << " " << centroid[1] << " " << centroid [2] << ")";
+
+        for (auto& vertex : triangle) {
+          // Do not reuse the coordinates from above, because here we would depend on the ordering introduced
+          // above, which could lead to suddle bugs when changing the code.
+          vertex_f4_t& vbv = mVVBuffer[vertex];
+          rti::triple_t<float> crds = {vbv.xx, vbv.yy, vbv.zz};
+          auto tmp = this->distance({crds, centroid});
+          // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
+          //   << "Centroid distance: " << tmp;
+          if (tmp > vbv.radius) {
+            vbv.radius = tmp;
+          }
+        }
       }
     }
   };
