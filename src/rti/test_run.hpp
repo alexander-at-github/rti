@@ -1,6 +1,6 @@
 #pragma once
 
-#include<boost/timer/timer.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <cmath>
 #include <chrono>
@@ -57,14 +57,15 @@ namespace rti {
       RTCIntersectContext context;
       rtcInitIntersectContext(&context);
 
-      size_t nrexp = 26;
+      // size_t nrexp = 26;
+      size_t nrexp = 24;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays;
 
       // std::cout << "Running 2**" << nrexp << " ray traces on "
       //           << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
 
-      const std::vector<std::pair<float, float>> ddxys
+      const std::vector<rti::pair_t<float>> ddxys
       {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
        {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
        {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
@@ -79,8 +80,8 @@ namespace rti {
         raypack[idx].org_y = 0;
         raypack[idx].org_z = 0;
         raypack[idx].dir_x = magic;
-        raypack[idx].dir_y = ddxys[idx].first;
-        raypack[idx].dir_z = ddxys[idx].second;
+        raypack[idx].dir_y = ddxys[idx][0];
+        raypack[idx].dir_z = ddxys[idx][1];
         // start of ray
         raypack[idx].tnear = 0;
         // Maximum length of ray

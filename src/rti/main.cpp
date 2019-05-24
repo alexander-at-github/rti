@@ -94,26 +94,20 @@ int main(int argc, char* argv[]) {
   rti::test_pool poolSphr;
 
   // Number of test repetitions (samples).
-  size_t reps = 35;
+  //size_t reps = 35;
+  size_t reps = 2;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
     poolDsc.add_test_run(testRunDisc);
     poolSphr.add_test_run(testRunSphere);
   }
 
-  for (auto & pp : std::vector<rti::test_pool> {poolTrngl, poolDsc, poolSphr}) {
+  for (auto& pp : std::vector<rti::test_pool> {poolTrngl, poolDsc, poolSphr}) {
     auto results = pp.run();
-    for (auto & result : results) {
+    for (auto& result : results) {
       std::cout << result.to_string() << std::endl;
     }
   }
-
-  // rtiTPool.add_test_run(std::make_unique<disc_geometry_from_gmsh>(device));
-  // rtiTPool.add_test_run(std::make_unique<sphere_geometry_from_gmsh>(device));
-  //auto results = rtiTPool.run();
-  //for (auto& result : results) {
-  //  std::cout << result.to_string() << std::endl;
-  //}
 
   // gmsh::fltk::run();
 }
