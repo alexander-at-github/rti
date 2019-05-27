@@ -130,6 +130,9 @@ namespace rti {
           // really is the loop.
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
 
+            // We use an index over the coordinates saved in ddxys, which
+            // we have to maintain our selfs.
+            ++rpidx;
             if (rpidx >= ddxys.size()) {
               rpidx = 0;
               rand = fastrand(rand);
