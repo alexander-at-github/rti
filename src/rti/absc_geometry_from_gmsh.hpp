@@ -10,7 +10,6 @@ namespace rti {
 class absc_geometry_from_gmsh : public i_geometry {
   public:
   virtual ~absc_geometry_from_gmsh() {}
-  //virtual void invert_surface_normals() = 0;
   //virtual std::string to_string() = 0;
   //virtual std::string prim_to_string(unsigned int) = 0;
   RTCDevice& get_rtc_device() override {
@@ -30,16 +29,13 @@ class absc_geometry_from_gmsh : public i_geometry {
     mGmshReader(pGmshReader),
     mDevice(pDevice) {}
 
-  // Input an array of triples where each tripple are the x, y and z coordinates of a vertex
-  // of a triangle
+  // Input: a triple of triples where each inner triple holds the x, y and z coordinates
+  // of a vertex of a triangle.
   static rti::triple<float> centroid(rti::triple<rti::triple<float> > pTriangle) {
     rti::triple<float> result;
     result.frst = (pTriangle.frst.frst + pTriangle.scnd.frst + pTriangle.thrd.frst) / 3;
     result.scnd = (pTriangle.frst.scnd + pTriangle.scnd.scnd + pTriangle.thrd.scnd) / 3;
     result.thrd = (pTriangle.frst.thrd + pTriangle.scnd.thrd + pTriangle.thrd.thrd) / 3;
-    // for (auto idx : {0, 1, 2}) {
-    //   result[idx] = (pTriangle[0][idx] + pTriangle[1][idx] + pTriangle[2][idx]) / 3;
-    // }
     return result;
   }
   static float distance(rti::pair<rti::triple<float> > pPnts) {

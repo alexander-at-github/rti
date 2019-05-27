@@ -19,8 +19,6 @@ namespace rti {
                 << numRays << "rays "
                 << timeNanoseconds << "ns"
                 << ")";
-      //          << " startTime " << std::chrono::duration_cast<std::chrono::milliseconds>(startTime);
-      //                << " endTime " << endTime ")";
       return strstream.str();
     }
   };

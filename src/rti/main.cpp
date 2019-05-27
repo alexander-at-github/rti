@@ -46,9 +46,6 @@ namespace rti {
       //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << maxThreads << " threads";
       std::cout << "Using " << maxThreads << " threads" << std::endl;
       static tbb::task_scheduler_init init(maxThreads);
-      // BOOST_LOG_SEV(rti::mRLogger, blt::warning)
-      //   << "tbb::task_scheduler_init::default_num_threads() == "
-      //   << tbb::task_scheduler_init::default_num_threads();
     }
 
     void print_rtc_device_info(RTCDevice pDevice) {
@@ -77,8 +74,6 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main::print_rtc_device_info(device);
 
-  //i_geometry* geo = std::make_unique<triangle_geometry_from_gmsh>(device, gmshReader);
-  //i_ray_source* raySource = std::make_unique<dummy_ray_source>();
   rti::dummy_ray_source raySource;
 
   rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);

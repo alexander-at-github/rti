@@ -1,5 +1,6 @@
 #pragma once
 
+#include <boost/core/demangle.hpp>
 #include <boost/timer/timer.hpp>
 
 #include <cmath>
@@ -16,6 +17,7 @@ namespace rti {
   public:
     test_run(i_geometry& pGeo, i_ray_source& pRaySource) :
       mGeo(pGeo),
+      // mRaySource is not used in the moment!
       mRaySource(pRaySource) {};
 
     rti::test_result run() {
@@ -26,9 +28,6 @@ namespace rti {
       RTCDevice device = mGeo.get_rtc_device();
       RTCScene scene = rtcNewScene(device);
 
-      // BOOST_LOG_SEV(rti::mRLogger, blt::warning) <<"Does mGeo contain a primitive with ID==0 ? "
-      //                                            << mGeo.prim_to_string(0);
-
       // No scene flags for now.
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
       // Selecting higher build quality results in better rendering performance but slower
@@ -37,8 +36,6 @@ namespace rti {
       rtcSetSceneBuildQuality(scene, bbquality);
 
       RTCGeometry geometry = mGeo.get_rtc_geometry();
-      //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << typeid(mGeo).name();
-      // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << mGeo.to_string();
       rtcCommitGeometry(geometry);
 
       (void) rtcAttachGeometry(scene, geometry);
@@ -46,7 +43,7 @@ namespace rti {
       // Release geomtery.
       // The geometry object will be destructed when the scene object is
       // destructed, because the geometry object is attached to the scene
-      // objec = 0t
+      // object.
       rtcReleaseGeometry(geometry);
 
       //////////////////////////////
@@ -60,7 +57,7 @@ namespace rti {
       // size_t nrexp = 26;
       size_t nrexp = 24;
       size_t numRays = std::pow(2,nrexp);
-      result.numRays = numRays;
+      result.numRays = numRays; // Save the number of rays also to the test result
 
       // std::cout << "Running 2**" << nrexp << " ray traces on "
       //           << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
@@ -108,11 +105,8 @@ namespace rti {
 
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
             size_t rpidx = idx % raypack.size();
-            //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
             // raypack[rpidx].tfar = std::numeric_limits<float>::max();
             // If we copy the ray, then this is not overwritten.
-
-            // RTCRayHit rayhit {raypack[rpidx], hit};
 
             if (rpidx == 0) {
               rand = fastrand(rand);
@@ -131,59 +125,20 @@ namespace rti {
 
             // if (rayhit.ray.tfar * raypack[rpidx].dir_x > 1) {
             // if (rayhit.hit.primID == 0) {
-            if ( rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
+            if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
               std::cerr << ">>>>> ERROR: ray did not hit anything"
                         << " rayhit.ray.tfar == " << rayhit.ray.tfar 
                         << " raypack[rpidx].dir_x == " << raypack[rpidx].dir_x
                         << " primID == " << rayhit.hit.primID << std::endl;
             }
-
-            // if (rayhit.ray.tfar > 100 /* magic number*/) {
-            //   // No hit. That's a program error.
-            //   std::cout << "ERROR: ray did not hit anything" << std::endl;
-            //}
           }
         });
 
         result.endTime = std::chrono::high_resolution_clock::now();
 
-        result.timeNanoseconds = timer.elapsed().wall;
-        //boost::timer::cpu_times const elapsed_times(timer.elapsed());
+        result.timeNanoseconds = timer.elapsed().wall; // Using boost timer
 
-
-      // for (size_t idx = 0; idx < numRays; ++idx) { // Do some rays for now.
-
-      //   size_t rpidx = idx % raypack.size();
-      //   //raypack[rpidx].dir_x = raypack[rpidx].dir_x < 1024.f ? raypack[rpidx].dir_x * 1.5f : magic; // increase z axis of ray direction
-      //   // raypack[rpidx].tfar = std::numeric_limits<float>::max();
-      //   // If we copy the ray, then this is not overwritten.
-
-      //   // RTCRayHit rayhit {raypack[rpidx], hit};
-
-      //   if (rpidx == 0) {
-      //     rand = this->fastrand();
-      //   }
-      //   raypack[rpidx].dir_x = static_cast<float>(rand);
-      //   rayhit.ray = raypack[rpidx];
-
-      //   rayhit.ray.tfar = std::numeric_limits<float>::max();
-
-      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Before rtcIntersect1()";
-      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tfar=" << rayhit.ray.tfar;
-      //   rtcIntersect1(scene, &context, &rayhit);
-      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "After rtcIntersect1()";
-      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) <<  "rayhit.ray.tnear=" << rayhit.ray.tnear
-      //   //                                          << " rayhit.ray.tfar=" << rayhit.ray.tfar
-      //   //   // << " rayhit.hit.Ng_x=" << rayhit.hit.Ng_x
-      //   //   // << " rayhit.hit.Ng_y=" << rayhit.hit.Ng_y
-      //   //   // << " rayhit.hit.Ng_z=" << rayhit.hit.Ng_z
-      //   //                                          << " rayhit.hit.primID=" << rayhit.hit.primID;
-      //   // unsigned int primID = rayhit.hit.primID;
-      //   // BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "hit-primID=" << primID
-      //   //                                          << " " << mGeo.prim_to_string(primID);
-      // }
-
-      return result;
+        return result;
     }
   private:
     i_geometry& mGeo;

@@ -17,11 +17,6 @@ namespace rti {
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
     }
-    void invert_surface_normals() override {
-      for (size_t idx = 0; idx < mNumTriangles; ++idx) {
-        std::swap<uint32_t>(mTTBuffer[idx].v1, mTTBuffer[idx].v2);
-      }
-    }
     std::string to_string() override {
       std::stringstream strstream;
       strstream << "(:class triangle_geometry_from_gmsh ";

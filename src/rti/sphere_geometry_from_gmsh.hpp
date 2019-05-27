@@ -14,11 +14,6 @@ namespace rti {
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
     }
-    void invert_surface_normals() override {
-      BOOST_LOG_SEV(rti::mRLogger, blt::info)
-        <<  "Function rti::sphere_geometry_from_gmsh::invert_surface_normals() does not have any functionality";
-      //assert(false && "not implemented");
-    }
     std::string to_string() override {
       std::stringstream strstream;
       strstream << "(:class sphere_geometry_from_gmsh";
@@ -31,7 +26,6 @@ namespace rti {
       return strstream.str();
     }
     std::string prim_to_string(unsigned int pPrimID) override {
-      //assert(false && "not implemented");
       std::stringstream strstream;
       strstream << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
                 << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
@@ -139,9 +133,9 @@ namespace rti {
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
         auto& triangle = triangles[idx];
         rti::triple<rti::triple<float> > trnglCoords
-        { rti::triple<float> {mVVBuffer[triangle.frst].xx, mVVBuffer[triangle.frst].yy, mVVBuffer[triangle.frst].zz},
-          rti::triple<float> {mVVBuffer[triangle.scnd].xx, mVVBuffer[triangle.scnd].yy, mVVBuffer[triangle.scnd].zz},
-          rti::triple<float> {mVVBuffer[triangle.thrd].xx, mVVBuffer[triangle.thrd].yy, mVVBuffer[triangle.thrd].zz}};
+        {{mVVBuffer[triangle.frst].xx, mVVBuffer[triangle.frst].yy, mVVBuffer[triangle.frst].zz},
+         {mVVBuffer[triangle.scnd].xx, mVVBuffer[triangle.scnd].yy, mVVBuffer[triangle.scnd].zz},
+         {mVVBuffer[triangle.thrd].xx, mVVBuffer[triangle.thrd].yy, mVVBuffer[triangle.thrd].zz}};
         rti::triple<float> centroid = this->centroid(trnglCoords);
         // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
         //   << "Triangle centroid: (" << centroid[0] << " " << centroid[1] << " " << centroid [2] << ")";

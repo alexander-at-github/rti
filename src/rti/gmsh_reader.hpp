@@ -6,23 +6,17 @@
 #include "rti/types.hpp"
 
 namespace rti {
-
   class gmsh_reader {
-    ////////////////////////////
     // This is a singleton class
-    ////////////////////////////
-    // For this implementation see suggestions at
-    // https://stackoverflow.com/questions/1008019/c-singleton-design-pattern
   public:
     static gmsh_reader& getInstance() {
       // the static keyword ensures that there is only one instance.
-      // (At least per translation unit).
+      // (per translation unit).
       static gmsh_reader instance;
       return instance;
     }
 
-    // Delete default constructor, copy constructor, and copy assignment operator
-    //gmsh_reader() = delete;
+    // Delete copy constructor, and copy assignment operator
     gmsh_reader(gmsh_reader const&) = delete;
     gmsh_reader& operator=(gmsh_reader const&) = delete;
 
@@ -49,9 +43,7 @@ namespace rti {
       gmsh::finalize();
     }
 
-    ////////////////////////////////////////////////////////
     // Code which is not related to the singleton behaviour.
-    ////////////////////////////////////////////////////////
   public:
     std::vector<rti::triple<double> > get_vertices() {
       return this->mVertices;

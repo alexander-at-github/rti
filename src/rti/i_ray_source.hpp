@@ -7,7 +7,6 @@ namespace rti {
   public:
     // Interface
     virtual~i_ray_source() {}
-    // TODO: all functions added must be pure virtual
     virtual RTCRay get_ray() = 0;
   };
 } // namespace rti
