@@ -18,7 +18,7 @@ namespace rti {
       // optional: set boost log format
 
       // Set logging severity level
-      boost::log::core::get()->set_filter(blt::severity >= blt::trace);
+      boost::log::core::get()->set_filter(blt::severity >= blt::warning);
     }
   }
 }
