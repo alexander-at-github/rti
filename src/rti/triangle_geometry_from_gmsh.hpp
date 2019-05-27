@@ -10,9 +10,6 @@
 namespace rti {
   class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
   public:
-    // triangle_geometry_from_gmsh(RTCDevice& pDevice) {
-    //   init_this(pDevice);
-    // }
     triangle_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
