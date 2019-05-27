@@ -6,6 +6,7 @@
 #include <cmath>
 #include <chrono>
 
+#include "tbb/enumerable_thread_specific.h"
 #include "tbb/tbb.h"
 
 #include "rti/i_geometry.hpp"
@@ -55,7 +56,8 @@ namespace rti {
       rtcInitIntersectContext(&context);
 
       // size_t nrexp = 26;
-      size_t nrexp = 24;
+      // size_t nrexp = 24;
+      size_t nrexp = 22;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -68,22 +70,40 @@ namespace rti {
        {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
        {-3.f,  3.f}, {-1.f,  3.f}, { 1.f,  3.f}, {3.f,  3.f}};
 
-      std::vector<RTCRay> raypack(ddxys.size());
-      float magic = 0.5f; // magic number
+      // std::vector<RTCRay> raypack(ddxys.size());
+      // float magic = 0.5f; // magic number
 
-      for (size_t idx = 0; idx < ddxys.size(); ++idx) {
-        // Origin:
-        raypack[idx].org_x = 1;
-        raypack[idx].org_y = 0;
-        raypack[idx].org_z = 0;
-        raypack[idx].dir_x = magic;
-        raypack[idx].dir_y = ddxys[idx].frst;
-        raypack[idx].dir_z = ddxys[idx].scnd;
-        // start of ray
-        raypack[idx].tnear = 0;
-        // Maximum length of ray
-        raypack[idx].tfar = std::numeric_limits<float>::max();
-        raypack[idx].flags = 0;
+      // for (size_t idx = 0; idx < ddxys.size(); ++idx) {
+      //   // Origin:
+      //   raypack[idx].org_x = 0.1;
+      //   raypack[idx].org_y = 0;
+      //   raypack[idx].org_z = 0;
+      //   raypack[idx].dir_x = magic;
+      //   raypack[idx].dir_y = ddxys[idx].frst;
+      //   raypack[idx].dir_z = ddxys[idx].scnd;
+      //   // start of ray
+      //   raypack[idx].tnear = 0;
+      //   // Maximum length of ray
+      //   raypack[idx].tfar = std::numeric_limits<float>::max();
+      //   raypack[idx].flags = 0;
+      // }
+
+      // Thread local variables
+      tbb::enumerable_thread_specific<unsigned int> randGrp(1234); // some number
+      tbb::enumerable_thread_specific<RTCRayHit> rayhitGrp(RTCRayHit {RTCRay {}, RTCHit {}});
+      tbb::enumerable_thread_specific<size_t> rpidxGrp(0);
+
+      // Initialize rays
+      for (auto& rayhit : rayhitGrp) {
+        rayhit.ray.org_x = 0.1;
+        rayhit.ray.org_y = 0;
+        rayhit.ray.org_z = 0;
+        rayhit.ray.dir_x = 0.5f; // magic number
+        rayhit.ray.dir_y = 0;
+        rayhit.ray.dir_z = 0;
+        rayhit.ray.tnear = 0;
+        rayhit.ray.tfar = std::numeric_limits<float>::max();
+        rayhit.ray.flags = 0;
       }
 
       // Start timing until end of variable scope.
@@ -94,28 +114,30 @@ namespace rti {
       result.startTime = std::chrono::high_resolution_clock::now();
 
       tbb::parallel_for(
-        tbb::blocked_range<size_t>(0,numRays),
+        tbb::blocked_range<size_t>(0, numRays),
         //[raypack = raypack] // C++14; use generalized lambda capture to copy raypack
         //[&] // Capture all by refernce can easily cause errors
-        [&scene, &context, &raypack] // capture by refernce
+        [&scene, &context, &ddxys, &randGrp, &rayhitGrp, &rpidxGrp] // capture by refernce
         (const tbb::blocked_range<size_t>& range) {
-          RTCHit hit{};
-          RTCRayHit rayhit {raypack[0], hit}; // initialize arbitrary
-          unsigned int rand = range.begin(); // some value
+          // tbb::enumerable_thread_specific<unsigned int>::reference rand = randGrp.local();
+          // tbb::enumerable_thread_specific<RTCRayHit>::reference rayhit = rayhitGrp.local();
+          // tbb::enumerable_thread_specific<size_t>::reference rpidx = rpidxGrp.local();
+          auto rand = randGrp.local();
+          auto rayhit = rayhitGrp.local();
+          auto rpidx = rpidxGrp.local();
 
+          // The range often contains only one single element. That is, the tbb::blocked_range() function
+          // really is the loop.
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
-            size_t rpidx = idx % raypack.size();
-            // raypack[rpidx].tfar = std::numeric_limits<float>::max();
-            // If we copy the ray, then this is not overwritten.
 
-            if (rpidx == 0) {
+            if (rpidx >= ddxys.size()) {
+              rpidx = 0;
               rand = fastrand(rand);
             }
-            // raypack[rpidx].dir_x = static_cast<float>(rand);
-            // Read access to raypack. Copy struct RTCRay to rayhit.
-            rayhit.ray = raypack[rpidx];
-            // Modification only in local copy rayhit.ray
+
             rayhit.ray.dir_x = static_cast<float>(rand);
+            rayhit.ray.dir_y = ddxys[rpidx].frst;
+            rayhit.ray.dir_z = ddxys[rpidx].scnd;
 
             rayhit.ray.tfar = std::numeric_limits<float>::max();
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
@@ -128,8 +150,17 @@ namespace rti {
             if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
               std::cerr << ">>>>> ERROR: ray did not hit anything"
                         << " rayhit.ray.tfar == " << rayhit.ray.tfar 
-                        << " raypack[rpidx].dir_x == " << raypack[rpidx].dir_x
+                        << " raypack[rpidx].dir_x == " << rayhit.ray.dir_x
+                        << " raypack[rpidx].dir_y == " << rayhit.ray.dir_y
+                        << " raypack[rpidx].dir_z == " << rayhit.ray.dir_z
                         << " primID == " << rayhit.hit.primID << std::endl;
+            } else {
+              // std::cerr << ">>>>>> no error in this iteration"
+              //           << " rayhit.ray.tfar == " << rayhit.ray.tfar 
+              //           << " raypack[rpidx].dir_x == " << raypack[rpidx].dir_x
+              //           << " raypack[rpidx].dir_y == " << raypack[rpidx].dir_y
+              //           << " raypack[rpidx].dir_z == " << raypack[rpidx].dir_z
+              //           << " primID == " << rayhit.hit.primID << std::endl;
             }
           }
         });
