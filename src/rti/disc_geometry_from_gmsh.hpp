@@ -150,6 +150,7 @@ namespace rti {
           //   << "Centroid distance: " << tmp;
           if (tmp > vbv.radius) {
             vbv.radius = tmp;
+            BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Setting disc radius to " << vbv.radius;
           }
         }
       }
