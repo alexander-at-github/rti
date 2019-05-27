@@ -19,7 +19,7 @@ for dir in ./do/*/; do
     echo "Git HEAD hash: ${GIT_HASH}" >> "${LOG_FILE_NAME}"
     echo "Mesh file name: ${MSH_FILE_NAME}" >> "${LOG_FILE_NAME}"
     echo "Maximum number of threads: ${thrds}" >> "${LOG_FILE_NAME}"
-    ./rtiex --msh-file ${MSH_FILE_NAME} --max-threads "${thrds}" >> "${LOG_FILE_NAME}"
+    ./rtiex --msh-file ${MSH_FILE_NAME} --max-threads "${thrds}" &>> "${LOG_FILE_NAME}"
     date >> "${LOG_FILE_NAME}"
   done
 done
