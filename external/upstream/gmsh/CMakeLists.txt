@@ -24,7 +24,7 @@ externalproject_add(gmsh-external
     # Enable dynamic Gmsh executable (linked with shared lib) (default: OFF)
     -DENABLE_BUILD_DYNAMIC=1
   CMAKE_CACHE_ARGS
-    -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
+    #-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
     -DENV{CASROOT}:PATH=${OCE_INSTALL_PREFIX}
   USES_TERMINAL_DOWNLOAD
