@@ -122,9 +122,12 @@ namespace rti {
           // tbb::enumerable_thread_specific<unsigned int>::reference rand = randGrp.local();
           // tbb::enumerable_thread_specific<RTCRayHit>::reference rayhit = rayhitGrp.local();
           // tbb::enumerable_thread_specific<size_t>::reference rpidx = rpidxGrp.local();
-          auto rand = randGrp.local();
-          auto rayhit = rayhitGrp.local();
-          auto rpidx = rpidxGrp.local();
+          //
+          // Here it is important to use the refernce type explicitly, otherwise we cannot
+          // modify the content.
+          auto& rand = randGrp.local();
+          auto& rayhit = rayhitGrp.local();
+          auto& rpidx = rpidxGrp.local();
 
           // The range often contains only one single element. That is, the tbb::blocked_range() function
           // really is the loop.
@@ -134,10 +137,15 @@ namespace rti {
             // we have to maintain our selfs.
             ++rpidx;
             if (rpidx >= ddxys.size()) {
+              //std::cout << "[rand == " << rand;
               rpidx = 0;
-              rand = fastrand(rand);
+              //rand = fastrand(rand);
+              rand = rand_r(&rand); // stdlib.h
+              //std::cout << " new rand == " << rand << "]";
             }
+            //BOOST_LOG_SEV(rti::mRLogger, blt::warning) << "rpidx == " << rpidx;
 
+            // rayhit.ray.dir_x = std::max<float>(static_cast<float>(rand), 21);
             rayhit.ray.dir_x = static_cast<float>(rand);
             rayhit.ray.dir_y = ddxys[rpidx].frst;
             rayhit.ray.dir_z = ddxys[rpidx].scnd;
@@ -146,6 +154,11 @@ namespace rti {
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
+            // debug
+            // rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
+            // rayhit.ray.tnear = 0;
+
+
             rtcIntersect1(scene, &context, &rayhit);
 
             // if (rayhit.ray.tfar * raypack[rpidx].dir_x > 1) {
@@ -153,16 +166,18 @@ namespace rti {
             if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
               std::cerr << ">>>>> ERROR: ray did not hit anything"
                         << " rayhit.ray.tfar == " << rayhit.ray.tfar 
-                        << " raypack[rpidx].dir_x == " << rayhit.ray.dir_x
-                        << " raypack[rpidx].dir_y == " << rayhit.ray.dir_y
-                        << " raypack[rpidx].dir_z == " << rayhit.ray.dir_z
-                        << " primID == " << rayhit.hit.primID << std::endl;
+                        << " rayhit.ray.dir_x == " << rayhit.ray.dir_x
+                        << " rayhit.ray.dir_y == " << rayhit.ray.dir_y
+                        << " rayhit.ray.dir_z == " << rayhit.ray.dir_z
+                        << " primID == " << rayhit.hit.primID
+                        << "   Terminating parallel for loop" << std::endl; 
+              return;
             } else {
               // std::cerr << ">>>>>> no error in this iteration"
               //           << " rayhit.ray.tfar == " << rayhit.ray.tfar 
-              //           << " raypack[rpidx].dir_x == " << raypack[rpidx].dir_x
-              //           << " raypack[rpidx].dir_y == " << raypack[rpidx].dir_y
-              //           << " raypack[rpidx].dir_z == " << raypack[rpidx].dir_z
+              //           << " rayhit.ray.dir_x == " << rayhit.ray.dir_x
+              //           << " rayhit.ray.dir_y == " << rayhit.ray.dir_y
+              //           << " rayhit.ray.dir_z == " << rayhit.ray.dir_z
               //           << " primID == " << rayhit.hit.primID << std::endl;
             }
           }

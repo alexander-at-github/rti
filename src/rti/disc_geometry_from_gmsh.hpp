@@ -145,12 +145,13 @@ namespace rti {
           // above, which could lead to suddle bugs when changing the code.
           vertex_f4_t& vbv = mVVBuffer[vertex];
           rti::triple<float> crds = {vbv.xx, vbv.yy, vbv.zz};
-          auto tmp = this->distance({crds, centroid});
+          float tmp = this->distance({crds, centroid});
           // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
           //   << "Centroid distance: " << tmp;
           if (tmp > vbv.radius) {
             vbv.radius = tmp;
-            BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "Setting disc radius to " << vbv.radius;
+            BOOST_LOG_SEV(rti::mRLogger, blt::trace)
+              << "Setting disc radius of " << vertex << " " << this->prim_to_string(vertex);
           }
         }
       }
