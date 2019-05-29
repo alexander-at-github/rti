@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iomanip> // std::setprecision()
-
 #include <embree3/rtcore.h>
 #include <gmsh.h>
 
@@ -30,34 +28,16 @@ namespace rti {
     }
     std::string prim_to_string(unsigned int pPrimID) override {
       std::stringstream strstream;
-      strstream << std::setprecision(128)
-        << "(" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
-        << " " << mVVBuffer[mTTBuffer[pPrimID].v0].yy
-        << " " << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
-        << "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
-        << " " << mVVBuffer[mTTBuffer[pPrimID].v1].yy
-        << " " << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
-        << "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
-        << " " << mVVBuffer[mTTBuffer[pPrimID].v2].yy
-        << " " << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
+      strstream << "(" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
+                << " " << mVVBuffer[mTTBuffer[pPrimID].v0].yy
+                << " " << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
+                << "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
+                << " " << mVVBuffer[mTTBuffer[pPrimID].v1].yy
+                << " " << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
+                << "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
+                << " " << mVVBuffer[mTTBuffer[pPrimID].v2].yy
+                << " " << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
       return strstream.str();
-    }
-    rti::triple<rti::triple<float> > prim_to_coords(unsigned int pPrimID) {
-      return
-        { {mVVBuffer[mTTBuffer[pPrimID].v0].xx, mVVBuffer[mTTBuffer[pPrimID].v0].yy, mVVBuffer[mTTBuffer[pPrimID].v0].zz},
-          {mVVBuffer[mTTBuffer[pPrimID].v1].xx, mVVBuffer[mTTBuffer[pPrimID].v1].yy, mVVBuffer[mTTBuffer[pPrimID].v1].zz},
-          {mVVBuffer[mTTBuffer[pPrimID].v2].xx, mVVBuffer[mTTBuffer[pPrimID].v2].yy, mVVBuffer[mTTBuffer[pPrimID].v2].zz}};
-      // rti::triple<rti::triple<float> > result;
-      // result[0][0] = mVVBuffer[mTTBuffer[pPrimID].v0].xx; 
-      // result[0][1] = mVVBuffer[mTTBuffer[pPrimID].v0].yy;
-      // result[0][2] = mVVBuffer[mTTBuffer[pPrimID].v0].zz;
-      // result[1][0] = mVVBuffer[mTTBuffer[pPrimID].v1].xx;
-      // result[1][1] = mVVBuffer[mTTBuffer[pPrimID].v1].yy;
-      // result[1][2] = mVVBuffer[mTTBuffer[pPrimID].v1].zz;
-      // result[2][0] = mVVBuffer[mTTBuffer[pPrimID].v2].xx;
-      // result[2][1] = mVVBuffer[mTTBuffer[pPrimID].v2].yy;
-      // result[2][2] = mVVBuffer[mTTBuffer[pPrimID].v2].zz;
-      // return result;
     }
   private:
     ////////////////////////
