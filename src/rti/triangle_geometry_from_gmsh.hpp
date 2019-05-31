@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iomanip> // std::setprecision()
+
 #include <embree3/rtcore.h>
 #include <gmsh.h>
 
@@ -28,23 +30,41 @@ namespace rti {
     }
     std::string prim_to_string(unsigned int pPrimID) override {
       std::stringstream strstream;
-      strstream << "(" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
-                << " " << mVVBuffer[mTTBuffer[pPrimID].v0].yy
-                << " " << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
-                << "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
-                << " " << mVVBuffer[mTTBuffer[pPrimID].v1].yy
-                << " " << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
-                << "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
-                << " " << mVVBuffer[mTTBuffer[pPrimID].v2].yy
-                << " " << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
+      strstream << std::setprecision(128)
+        << "(" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
+        << " " << mVVBuffer[mTTBuffer[pPrimID].v0].yy
+        << " " << mVVBuffer[mTTBuffer[pPrimID].v0].zz << ")"
+        << "(" << mVVBuffer[mTTBuffer[pPrimID].v1].xx
+        << " " << mVVBuffer[mTTBuffer[pPrimID].v1].yy
+        << " " << mVVBuffer[mTTBuffer[pPrimID].v1].zz << ")"
+        << "(" << mVVBuffer[mTTBuffer[pPrimID].v2].xx
+        << " " << mVVBuffer[mTTBuffer[pPrimID].v2].yy
+        << " " << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
       return strstream.str();
+    }
+    rti::triple<rti::triple<float> > prim_to_coords(unsigned int pPrimID) {
+      return
+        { {mVVBuffer[mTTBuffer[pPrimID].v0].xx, mVVBuffer[mTTBuffer[pPrimID].v0].yy, mVVBuffer[mTTBuffer[pPrimID].v0].zz},
+          {mVVBuffer[mTTBuffer[pPrimID].v1].xx, mVVBuffer[mTTBuffer[pPrimID].v1].yy, mVVBuffer[mTTBuffer[pPrimID].v1].zz},
+          {mVVBuffer[mTTBuffer[pPrimID].v2].xx, mVVBuffer[mTTBuffer[pPrimID].v2].yy, mVVBuffer[mTTBuffer[pPrimID].v2].zz}};
+      // rti::triple<rti::triple<float> > result;
+      // result[0][0] = mVVBuffer[mTTBuffer[pPrimID].v0].xx; 
+      // result[0][1] = mVVBuffer[mTTBuffer[pPrimID].v0].yy;
+      // result[0][2] = mVVBuffer[mTTBuffer[pPrimID].v0].zz;
+      // result[1][0] = mVVBuffer[mTTBuffer[pPrimID].v1].xx;
+      // result[1][1] = mVVBuffer[mTTBuffer[pPrimID].v1].yy;
+      // result[1][2] = mVVBuffer[mTTBuffer[pPrimID].v1].zz;
+      // result[2][0] = mVVBuffer[mTTBuffer[pPrimID].v2].xx;
+      // result[2][1] = mVVBuffer[mTTBuffer[pPrimID].v2].yy;
+      // result[2][2] = mVVBuffer[mTTBuffer[pPrimID].v2].zz;
+      // return result;
     }
   private:
     ////////////////////////
     // Local algebraic types
     ////////////////////////
     struct vertex_f3_t {
-      float xx, yy, zz; // No padding here!
+      float xx, yy, zz, rr; // No padding here!
       // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
       // single precision x, y, z floating point coordinates
       // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred
@@ -52,9 +72,10 @@ namespace rti {
       // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
     };
     // Does Embree need aligned memory?
-    struct alignas(4) triangle_t {
-      uint32_t v0, v1, v2;
-      //int v0, v1, v2;
+    //struct alignas(4) triangle_t {
+    struct triangle_t {
+      //uint32_t v0, v1, v2;
+      int v0, v1, v2;
       // "RTC_GEOMETRY_TYPE_TRIANGLE: The index buffer contains an array of three
       // 32-bit indices per triangle (RTC_FORMAT_UINT format)"
       // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
