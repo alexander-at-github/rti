@@ -1,0 +1,64 @@
+# droped 3 measurments from each sample
+# numbr of threads: 1
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.1.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+1 68742118568.625 68644873621.38476 68839363515.86525
+#
+# droped 3 measurments from each sample
+# numbr of threads: 2
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.2.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+2 34625325398.15625 34535605192.261406 34715045604.051094
+#
+# droped 3 measurments from each sample
+# numbr of threads: 3
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.3.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+3 23053728732.03125 23005692162.50576 23101765301.55674
+#
+# droped 3 measurments from each sample
+# numbr of threads: 4
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.4.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+4 17359810896.3125 17316502741.893654 17403119050.731346
+#
+# droped 3 measurments from each sample
+# numbr of threads: 5
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.5.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+5 16333198402.34375 16303886583.730337 16362510220.957163
+#
+# droped 3 measurments from each sample
+# numbr of threads: 6
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.6.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+6 15582414000.09375 15563959137.963005 15600868862.224495
+#
+# droped 3 measurments from each sample
+# numbr of threads: 7
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.7.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+7 14883951211.5 14866427398.925472 14901475024.074528
+#
+# droped 3 measurments from each sample
+# numbr of threads: 8
+# file-path: ../benchmarks/do/long.cylinder.d/log.thrds.8.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+8 14341006321.8125 14327514037.930708 14354498605.694292
+#
