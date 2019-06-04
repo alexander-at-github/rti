@@ -15,6 +15,7 @@
 #include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/dummy_ray_source.hpp"
 #include "rti/logger.hpp"
+#include "rti/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/sphere_geometry_from_gmsh.hpp"
 #include "rti/test_pool.hpp"
 #include "rti/test_result.hpp"
@@ -77,27 +78,31 @@ int main(int argc, char* argv[]) {
   rti::dummy_ray_source raySource;
 
   rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);
-  rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
   rti::sphere_geometry_from_gmsh sphereGeo(device, gmshReader);
+  rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
+  rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
 
   rti::test_run testRunTriangle(triangleGeo, raySource);
-  rti::test_run testRunDisc(discGeo, raySource);
   rti::test_run testRunSphere(sphereGeo, raySource);
+  rti::test_run testRunOrntdDisc(orntdDiscGeo, raySource);
+  rti::test_run testRunDisc(discGeo, raySource);
 
   rti::test_pool poolTrngl;
-  rti::test_pool poolDsc;
   rti::test_pool poolSphr;
+  rti::test_pool poolOrntdDisc;
+  rti::test_pool poolDsc;
 
   // Number of test repetitions (samples).
-  size_t reps = 35;
-  //size_t reps = 2;
+  //size_t reps = 35;
+  size_t reps = 2;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
-    poolDsc.add_test_run(testRunDisc);
     poolSphr.add_test_run(testRunSphere);
+    poolOrntdDisc.add_test_run(testRunOrntdDisc);
+    poolDsc.add_test_run(testRunDisc);
   }
 
-  for (auto& pp : std::vector<rti::test_pool> {poolTrngl, poolDsc, poolSphr}) {
+  for (auto& pp : std::vector<rti::test_pool> {poolTrngl, poolSphr, poolOrntdDisc, poolDsc}) {
     auto results = pp.run();
     for (auto& result : results) {
       std::cout << result.to_string() << std::endl;
@@ -106,4 +111,3 @@ int main(int argc, char* argv[]) {
 
   // gmsh::fltk::run();
 }
-

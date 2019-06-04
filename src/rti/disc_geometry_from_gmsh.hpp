@@ -140,7 +140,7 @@ namespace rti {
          {mVVBuffer[triangle.thrd].xx, mVVBuffer[triangle.thrd].yy, mVVBuffer[triangle.thrd].zz}};
         rti::triple<float> centroid = this->centroid(trnglCoords);
 
-        for (auto& vertex : triangle.getIterable()) {
+        for (auto& vertex : triangle.get_iterable()) {
           // Do not reuse the coordinates from above, because here we would depend on the ordering introduced
           // above, which could lead to suddle bugs when changing the code.
           vertex_f4_t& vbv = mVVBuffer[vertex];
