@@ -95,7 +95,11 @@
     (list (- mu-hat range) (+ mu-hat range))
     ))
 
-(for* ([filter-str '("triangle_geometry_from_gmsh" "disc_geometry_from_gmsh" "sphere_geometry_from_gmsh")]
+(for* ([filter-str '(
+                     "triangle_geometry_from_gmsh"
+                     "disc_geometry_from_gmsh"
+                     "sphere_geometry_from_gmsh"
+                     )]
        [file file-paths]
        )
   (let* (;; parse file into lines
@@ -125,6 +129,6 @@
     ;; (printf "running times for file ~a: ~a\n" file samples)
     (printf "# droped ~a measurments from each sample\n" drop-num)
     (display (format-function num-threads2 file filter-str sample-size samples))
-    (printf "\n")
+    (printf "#\n")
     ))
 
