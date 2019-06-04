@@ -30,7 +30,11 @@ namespace rti {
       //assert(false && "not implemented");
       std::stringstream strstream;
       strstream << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
-                << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")" << " TODO add normal to output";
+                << "," << mVVBuffer[pPrimID].zz << ", radius: " << mVVBuffer[pPrimID].radius
+                << ", normal_vector: "
+                << "(" << mNNBuffer[pPrimID].xx
+                << "," << mNNBuffer[pPrimID].yy
+                << "," << mNNBuffer[pPrimID].zz << "))";
       return strstream.str();
     }
   private:
