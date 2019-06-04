@@ -97,8 +97,9 @@
 
 (for* ([filter-str '(
                      "triangle_geometry_from_gmsh"
-                     "disc_geometry_from_gmsh"
                      "sphere_geometry_from_gmsh"
+                     "oriented_disc_geometry_from_gmsh"
+                     "disc_geometry_from_gmsh"
                      )]
        [file file-paths]
        )
