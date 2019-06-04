@@ -1,0 +1,27 @@
+# droped 3 measurments from each sample
+# numbr of threads: 8
+# file-path: ../../../benchmarks/do/long.cylinder.d/log.thrds.8.txt
+# fitler string: triangle_geometry_from_gmsh
+#
+# name, number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+#triangles 8 14341006321.8125 14327514037.930708 14354498605.694292
+triangles 8 14.3410063218125 14.327514037930708 14.354498605694292
+#
+# droped 3 measurments from each sample
+# numbr of threads: 8
+# file-path: ../../../benchmarks/do/long.cylinder.d/log.thrds.8.txt
+# fitler string: disc_geometry_from_gmsh
+#
+# name, number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+#discs 8 15436049380.5625 15403875500.973593 15468223260.151407
+discs 8 15.4360493805625 15.403875500973593 15.468223260151407
+#
+# droped 3 measurments from each sample
+# numbr of threads: 8
+# file-path: ../../../benchmarks/do/long.cylinder.d/log.thrds.8.txt
+# fitler string: sphere_geometry_from_gmsh
+#
+# name, number of threads, sample mean, 95 confidence interval low, 95 confidence interval high
+#sphere 8 16036066445.8125 15994967932.965725 16077164958.659275
+sphere 8 16.0360664458125 15.994967932965725 16.077164958659275
+#
