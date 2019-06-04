@@ -5,8 +5,6 @@
 namespace rti {
   class test_result {
   public:
-    // std::chrono::high_resolution_clock::time_point startTime;
-    // std::chrono::high_resolution_clock::time_point endTime;
     boost::int_least64_t timeNanoseconds = 0;
     std::string geometryClassName;
     std::string inputFilePath;

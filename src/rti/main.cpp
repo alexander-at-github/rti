@@ -93,8 +93,8 @@ int main(int argc, char* argv[]) {
   rti::test_pool poolDsc;
 
   // Number of test repetitions (samples).
-  //size_t reps = 35;
-  size_t reps = 2;
+  size_t reps = 35;
+  //size_t reps = 5;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
     poolSphr.add_test_run(testRunSphere);

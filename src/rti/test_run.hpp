@@ -51,7 +51,7 @@ namespace rti {
 
       // size_t nrexp = 27;
       // size_t nrexp = 24;
-      size_t nrexp = 22;
+      size_t nrexp = 20;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -69,28 +69,22 @@ namespace rti {
 
       // 16 coordinates evenly distributed along a square of radius 10
       std::vector<rti::pair<float> > ddxys
-      {{10.f, 0.f}, {9.238795325112868f, 3.826834323650898f}, {7.0710678118654755f, 7.0710678118654755f}, {3.826834323650898f, 9.238795325112868f},
-       {0.f, 10.f}, {-3.826834323650898f, 9.238795325112868f}, {-7.0710678118654755f, 7.0710678118654755f}, {-9.238795325112868f, 3.826834323650898f},
-       {-10.f, 0.f}, {-9.238795325112868f, -3.826834323650898f}, {-7.0710678118654755f, -7.0710678118654755f}, {-3.826834323650898f, -9.238795325112868f},
-       {0.f, -10.f}, {3.826834323650898f, -9.238795325112868f}, {7.0710678118654755f, -7.0710678118654755f}, {9.238795325112868f, -3.826834323650898f}};
-
-      // std::vector<RTCRay> raypack(ddxys.size());
-      // float magic = 0.5f; // magic number
-
-      // for (size_t idx = 0; idx < ddxys.size(); ++idx) {
-      //   // Origin:
-      //   raypack[idx].org_x = 0.1;
-      //   raypack[idx].org_y = 0;
-      //   raypack[idx].org_z = 0;
-      //   raypack[idx].dir_x = magic;
-      //   raypack[idx].dir_y = ddxys[idx].frst;
-      //   raypack[idx].dir_z = ddxys[idx].scnd;
-      //   // start of ray
-      //   raypack[idx].tnear = 0;
-      //   // Maximum length of ray
-      //   raypack[idx].tfar = std::numeric_limits<float>::max();
-      //   raypack[idx].flags = 0;
-      // }
+      {{10.f, 0.f},
+         {9.238795325112868f, 3.826834323650898f},
+         {7.0710678118654755f, 7.0710678118654755f},
+         {3.826834323650898f, 9.238795325112868f},
+       {0.f, 10.f},
+         {-3.826834323650898f, 9.238795325112868f},
+         {-7.0710678118654755f, 7.0710678118654755f},
+         {-9.238795325112868f, 3.826834323650898f},
+       {-10.f, 0.f},
+         {-9.238795325112868f, -3.826834323650898f},
+         {-7.0710678118654755f, -7.0710678118654755f},
+         {-3.826834323650898f, -9.238795325112868f},
+       {0.f, -10.f},
+         {3.826834323650898f, -9.238795325112868f},
+         {7.0710678118654755f, -7.0710678118654755f},
+         {9.238795325112868f, -3.826834323650898f}};
 
       // Thread local variables
       tbb::enumerable_thread_specific<unsigned int> randGrp(1); // some number
@@ -102,38 +96,20 @@ namespace rti {
       tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
 
       // Initialize rays
-      // Initializing here does not work, cause TBB creates the members of a enumerable_thread_specific
-      // object only when a thread requests it. That is, here all these containers are empty.
-      // for (auto& rayhit : rayhitGrp) {
-      //   rayhit.ray.org_x = 0.1;
-      //   rayhit.ray.org_y = 0;
-      //   rayhit.ray.org_z = 0;
+      // Initializing rays here does not work, cause TBB creates the members of an
+      // enumerable_thread_specific object only when a thread requests it. That is,
+      // at this position all enumerable_thread_specific containers are empty.
 
-      //   rayhit.ray.dir_x = 0.5f; // magic number
-      //   rayhit.ray.dir_y = 0;
-      //   rayhit.ray.dir_z = 0;
-      //   rayhit.ray.tnear = 0;
-      //   rayhit.ray.tfar = std::numeric_limits<float>::max();
-      //   rayhit.ray.flags = 0;
-      // }
-
-      // Start timing until end of variable scope.
-      //boost::timer::auto_cpu_timer timerOld;
-
+      // Start timing
       boost::timer::cpu_timer timer; // also calls start
 
-      //result.startTime = std::chrono::high_resolution_clock::now();
-
       tbb::parallel_for(
-        tbb::blocked_range<size_t>(0, numRays, 16),
+        tbb::blocked_range<size_t>(0, numRays, 64),
         //[raypack = raypack] // C++14; use generalized lambda capture to copy raypack
         //[&] // Capture all by refernce can easily cause errors
-        [&scene, &ddxys, &randGrp, &rayhitGrp, &rpidxGrp, &hitcGrp, &nonhitcGrp, &hitpointgrp] //, this] // capture by refernce
+        // capture by refernce
+        [&scene, &ddxys, &randGrp, &rayhitGrp, &rpidxGrp, &hitcGrp, &nonhitcGrp, &hitpointgrp]
         (const tbb::blocked_range<size_t>& range) {
-          // tbb::enumerable_thread_specific<unsigned int>::reference rand = randGrp.local();
-          // tbb::enumerable_thread_specific<RTCRayHit>::reference rayhit = rayhitGrp.local();
-          // tbb::enumerable_thread_specific<size_t>::reference rpidx = rpidxGrp.local();
-          //
           // Here it is important to use the refernce type explicitly, otherwise we cannot
           // modify the content.
           auto& rand = randGrp.local();
@@ -161,18 +137,11 @@ namespace rti {
           for(size_t idx = range.begin(); idx < range.end(); ++idx, ++rpidx /* we also maintain the rpidx here */) {
 
             if (rpidx >= ddxys.size()) {
-              //std::cout << "[rand == " << rand;
               rpidx = 0;
-              //rand = fastrand(rand);
               rand = rand_r(&rand); // stdlib.h
-              /* Right now we do not use randomness */
-              //rand += 1;
-              //std::cout << " new rand == " << rand << "]";
             }
-            //BOOST_LOG_SEV(rti::mRLogger, blt::warning) << "rpidx == " << rpidx;
 
-            // rayhit.ray.dir_x = std::max<float>(static_cast<float>(rand), 21);
-            rayhit.ray.dir_x = static_cast<float>(rand) * 4e-7f; // Numbers chosen by experimentation
+            rayhit.ray.dir_x = static_cast<float>(rand) * 4e-7f; // Number chosen by experimentation
             // Read access to ddxys; no write.
             rayhit.ray.dir_y = ddxys[rpidx].frst;
             rayhit.ray.dir_z = ddxys[rpidx].scnd;
@@ -180,11 +149,6 @@ namespace rti {
             rayhit.ray.tfar = std::numeric_limits<float>::max();
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-
-            // debug
-            // rayhit.hit.primID = RTC_INVALID_GEOMETRY_ID;
-            // rayhit.ray.tnear = 0;
-
 
             // The Embree tutorial uses one context per ray.
             // I think that is not necessary, though.
@@ -278,8 +242,6 @@ namespace rti {
             }
           }
         });
-
-      //result.endTime = std::chrono::high_resolution_clock::now();
 
         result.timeNanoseconds = timer.elapsed().wall; // Using boost timer
 
