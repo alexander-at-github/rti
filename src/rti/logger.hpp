@@ -22,3 +22,31 @@ namespace rti {
     }
   }
 }
+
+
+// CONTINUE: WRITE NEW LOGGER WITH COMPILE TIME FEATURE
+
+// #include <iostream>
+
+// namespace rti {
+//   class logger_t {
+//   public:
+//     logger_t(std::ostream& pOStream) : mOutStream(pOStream) {};
+//     enum class log_level_t {trace = 0, debug, warning, error, fatal, none};
+//     std::ostream& get_outStream() {
+//       return mOutStream;
+//     }
+//     void log(log_level_t pLevel) {
+//       if (this->sLogLevel <= pLevel) {
+//         return this->get_outStream();
+//       }
+//       return ... // TODO
+//     }
+//   private:
+//     std::ostream& mOutStream;
+//     static constexpr log_level_t sLogLevel = log_level_t::warning;
+//   };
+//   logger_t mLogger(std::cout);
+// }
+
+
