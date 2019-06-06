@@ -21,7 +21,7 @@ namespace rti {
       ray.tnear = 0;
       // Maximum length of ray
       ray.tfar = std::numeric_limits<float>::max();
-      BOOST_LOG_SEV(rti::mRLogger, blt::warning) << "WARNING: This is a dummy ray source.";
+      RLOG_WARNING << "WARNING: This is a dummy ray source." << std::endl;
       return ray;
     }
   };

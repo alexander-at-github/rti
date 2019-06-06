@@ -151,7 +151,7 @@ namespace rti {
 
       // Check Embree device error
       if (RTC_ERROR_NONE != rtcGetDeviceError(pDevice)) {
-        BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Embree device error after rtcSetNewGeometryBuffer()";
+        RLOG_DEBUG << "Embree device error after rtcSetNewGeometryBuffer()" << std::endl;
       }
 
       // Write triangle to Embree
@@ -164,7 +164,7 @@ namespace rti {
         assert(mTTBuffer[idx].v0 < mNumVertices && "Invalid Vertex");
         assert(mTTBuffer[idx].v1 < mNumVertices && "Invalid Vertex");
         assert(mTTBuffer[idx].v2 < mNumVertices && "Invalid Vertex");
-        //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "(" << mVVBuffer[mTTBuffer[idx].v0].xx
+        //RLOG_DEBUG << "(" << mVVBuffer[mTTBuffer[idx].v0].xx
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].yy
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].zz << ")"
         //                                  << "(" << mVVBuffer[mTTBuffer[idx].v1].xx
@@ -172,7 +172,7 @@ namespace rti {
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v1].zz << ")"
         //                                  << "(" << mVVBuffer[mTTBuffer[idx].v2].xx
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].yy
-        //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].zz << ")";
+        //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].zz << ")" << std::endl;
       }
     }
   };

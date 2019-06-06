@@ -47,16 +47,16 @@ namespace rti {
     }
     // Private constructor
     command_line_options(int argc, char *argv[]) {
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading command line";
+      RLOG_DEBUG << "Reading command line" << std::endl;
       for (int idx = 0; idx < argc; ++idx) {
-        BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "argv[" << idx << "] == " << argv[idx];
+        RLOG_TRACE << "argv[" << idx << "] == " << argv[idx] << std::endl;
       }
       for (int idx = 0; idx < argc; ++idx) {
         for (auto & oo : options) {
           if (oo.second.optStr.compare(argv[idx]) == 0 && idx < (argc-1)) {
             oo.second.value = argv[idx+1];
-            BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-              << "command line option " << oo.second.optStr << " " << oo.second.value << " found";
+            RLOG_DEBUG
+              << "command line option " << oo.second.optStr << " " << oo.second.value << " found" << std::endl;
             // Break the inner loop
             break;
           }

@@ -137,8 +137,8 @@ namespace rti {
          {mVVBuffer[triangle.scnd].xx, mVVBuffer[triangle.scnd].yy, mVVBuffer[triangle.scnd].zz},
          {mVVBuffer[triangle.thrd].xx, mVVBuffer[triangle.thrd].yy, mVVBuffer[triangle.thrd].zz}};
         rti::triple<float> centroid = this->centroid(trnglCoords);
-        // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
-        //   << "Triangle centroid: (" << centroid[0] << " " << centroid[1] << " " << centroid [2] << ")";
+        // RLOG_TRACE
+        //   << "Triangle centroid: (" << centroid[0] << " " << centroid[1] << " " << centroid [2] << ")" << std::endl;
 
         for (auto& vertex : triangle.get_iterable()) {
           // Do not reuse the coordinates from above, because here we would depend on the ordering introduced
@@ -146,8 +146,8 @@ namespace rti {
           vertex_f4_t& vbv = mVVBuffer[vertex];
           rti::triple<float> crds = {vbv.xx, vbv.yy, vbv.zz};
           auto tmp = this->distance({crds, centroid});
-          // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
-          //   << "Centroid distance: " << tmp;
+          // RLOG_TRACE
+          //   << "Centroid distance: " << tmp << std::endl;
           if (tmp > vbv.radius) {
             vbv.radius = tmp;
           }

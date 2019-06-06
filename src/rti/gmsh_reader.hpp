@@ -31,11 +31,11 @@ namespace rti {
       }
       gmsh::initialize();
       gmsh::option::setNumber("General.Terminal", 1);
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading input file " << mMshFilePath;
+      RLOG_DEBUG << "Reading input file " << mMshFilePath << std::endl;
       gmsh::open(mMshFilePath);
-      // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Will read vertices";
+      // RLOG_DEBUG << "Will read vertices" << std::endl;
       mVertices = read_vertices();
-      // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Will read triangles";
+      // RLOG_DEBUG << "Will read triangles" << std::endl;
       mTriangles = read_triangles();
     }
     // Destructor calls gmsh::finalize(); RAII
@@ -68,16 +68,16 @@ namespace rti {
     ////////////
     // std::string getMshFilePath(int argc, char* argv[]) {
     //   std::string optStr{"--msh-file"};
-    //   BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading command line";
+    //   RLOG_DEBUG << "Reading command line" << std::endl;
     //   for(int idx = 0; idx < argc; ++idx) {
-    //     BOOST_LOG_SEV(rti::mRLogger, blt::trace) << "argv[" << idx << "] == " << argv[idx];
+    //     RLOG_TRACE << "argv[" << idx << "] == " << argv[idx] << std::endl;
     //   }
     //   for(int idx = 0; idx < argc; ++idx) {
-    //     // BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "idx == " << idx << " argv[idx] == " << argv[idx];
+    //     // RLOG_DEBUG << "idx == " << idx << " argv[idx] == " << argv[idx] << std::endl;
     //     if (optStr.compare(argv[idx]) == 0 && idx < (argc-1)) {
     //       std::string filePath(argv[idx+1]);
-    //       BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-    //         << "Found Mesh file option string: '" << argv[idx] << " " << filePath << "' at index " << idx;
+    //       RLOG_DEBUG
+    //         << "Found Mesh file option string: '" << argv[idx] << " " << filePath << "' at index " << idx << std::endl;
     //       // Mesh file path was found in argv.
     //       return filePath;
     //     }
@@ -93,22 +93,22 @@ namespace rti {
       gmsh::model::mesh::getNodes(vvtags, vvxyz, vvuvw);
       assert(vvxyz.size() == 3 * vvtags.size() && "Vertex data missmatch");
 
-      // BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-      //   << "min element is " << *std::min_element(vvtags.begin(), vvtags.end()) << " should be 1";
+      // RLOG_DEBUG
+      //   << "min element is " << *std::min_element(vvtags.begin(), vvtags.end()) << " should be 1" << std::endl;
       // In Gmsh's world node tags start from 1. In our world vertex tags start from 0.
       // We adjust it here. Subtract one from each vertex identifier.
       std::for_each(vvtags.begin(), vvtags.end(), [](auto &tt) {--tt;});
       // assert(*std::min_element(std::begin(vvtags), std::end(vvtags)));
-      // BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-      //   << "min element is " << *std::min_element(vvtags.begin(), vvtags.end()) << " should be 0";
+      // RLOG_DEBUG
+      //   << "min element is " << *std::min_element(vvtags.begin(), vvtags.end()) << " should be 0" << std::endl;
       assert(*std::min_element(vvtags.begin(), vvtags.end()) == 0 && "Vertex tag assumption not met");
       assert(*std::max_element(vvtags.begin(), vvtags.end()) == vvtags.size()-1
              && "Vertex tag assumption not met");
 
       //std::vector<double> result(vvxyz.size());
       std::vector<rti::triple<double> > result(vvtags.size());
-      // BOOST_LOG_SEV(rti::mRLogger, blt::debug)
-      //   << "result vector created";
+      // RLOG_DEBUG
+      //   << "result vector created" << std::endl;
       for (size_t idx = 0; idx < vvtags.size(); ++idx) {
         size_t xyzidx = 3 * idx;
         //assert(std::is_unsigned<decltype(xyzidx)>::value); // not necessary; unsigned type
@@ -143,7 +143,7 @@ namespace rti {
       // Sanity check
       size_t numTriangles = eetags[selectresult].size();
       assert(nntags[selectresult].size() == 3 * numTriangles  && "Size missmatch in triangle data");
-      BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Reading " << eetags[selectresult].size() << " triangles";
+      RLOG_DEBUG << "Reading " << eetags[selectresult].size() << " triangles" << std::endl;
 
       std::vector<std::size_t> selected = nntags[selectresult];
       // Again, like in the get_vertices function, adjust the tags of the vertices to start

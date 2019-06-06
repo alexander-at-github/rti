@@ -166,15 +166,15 @@ namespace rti {
           vertex_f4_t& vbv = mVVBuffer[vertex];
           rti::triple<float> crds = {vbv.xx, vbv.yy, vbv.zz};
           float tmp = this->distance({crds, centroid});
-          // BOOST_LOG_SEV(rti::mRLogger, blt::trace)
-          //   << "Centroid distance: " << tmp;
+          // RLOG_TRACE
+          //   << "Centroid distance: " << tmp << std::endl;
           if (tmp > vbv.radius) {
             /********************************
              * Make discs 68% bigger
              ********************************/
             vbv.radius = 1.68f * tmp;
-            BOOST_LOG_SEV(rti::mRLogger, blt::trace)
-              << "Setting disc radius of " << vertex << " " << this->prim_to_string(vertex);
+            RLOG_TRACE
+              << "Setting disc radius of " << vertex << " " << this->prim_to_string(vertex) << std::endl;
           }
         }
 

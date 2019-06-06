@@ -13,7 +13,7 @@
 
 #include "rti/command_line_options.hpp"
 #include "rti/disc_geometry_from_gmsh.hpp"
-#include "rti/dummy_ray_source.hpp"
+#include "rti/cosine_direction_source.hpp"
 #include "rti/logger.hpp"
 #include "rti/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/sphere_geometry_from_gmsh.hpp"
@@ -44,24 +44,24 @@ namespace rti {
       if ( ! maxThreadsStr.empty()) {
         maxThreads = std::stoul(maxThreadsStr);
       }
-      //BOOST_LOG_SEV(rti::mRLogger, blt::debug) << "Using " << maxThreads << " threads";
+      //RLOG_DEBUG << "Using " << maxThreads << " threads" << std::endl;
       std::cout << "Using " << maxThreads << " threads" << std::endl;
       static tbb::task_scheduler_init init(maxThreads);
     }
 
     void print_rtc_device_info(RTCDevice pDevice) {
-      BOOST_LOG_SEV(rti::mRLogger, blt::info)
+      RLOG_INFO
         << "RTC_DEVICE_PROPERTY_TRIANGLE_GEOMETRY_SUPPORTED == "
-        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_TRIANGLE_GEOMETRY_SUPPORTED);
-      BOOST_LOG_SEV(rti::mRLogger, blt::info)
+        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_TRIANGLE_GEOMETRY_SUPPORTED) << std::endl;
+      RLOG_INFO
         << "RTC_DEVICE_PROPERTY_POINT_GEOMETRY_SUPPORTED == "
-        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_POINT_GEOMETRY_SUPPORTED);
-      BOOST_LOG_SEV(rti::mRLogger, blt::info)
+        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_POINT_GEOMETRY_SUPPORTED) << std::endl;
+      RLOG_INFO
         << "RTC_DEVICE_PROPERTY_TASKING_SYSTEM == "
         << rtcGetDeviceProperty(pDevice,RTC_DEVICE_PROPERTY_TASKING_SYSTEM) << std::endl
         << "0 indicates internal tasking system" << std::endl
         << "1 indicates Intel Threading Building Blocks (TBB)" << std::endl
-        << "2 indicates Parallel Patterns Library (PPL)";
+        << "2 indicates Parallel Patterns Library (PPL)" << std::endl;
     }
   }
 }
@@ -75,7 +75,10 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main::print_rtc_device_info(device);
 
-  rti::dummy_ray_source raySource;
+  for (int ii = 0; ii < INT_MAX; ++ii)
+    RLOG_TRACE << "FOO" << std::endl;
+
+  rti::cosine_direction_source raySource;
 
   rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);
   rti::sphere_geometry_from_gmsh sphereGeo(device, gmshReader);
@@ -93,13 +96,13 @@ int main(int argc, char* argv[]) {
   rti::test_pool poolDsc;
 
   // Number of test repetitions (samples).
-  size_t reps = 35;
-  //size_t reps = 5;
+  //size_t reps = 35;
+  size_t reps = 1;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
-    poolSphr.add_test_run(testRunSphere);
-    poolOrntdDisc.add_test_run(testRunOrntdDisc);
-    poolDsc.add_test_run(testRunDisc);
+    // poolSphr.add_test_run(testRunSphere);
+    // poolOrntdDisc.add_test_run(testRunOrntdDisc);
+    // poolDsc.add_test_run(testRunDisc);
   }
 
   for (auto& pp : std::vector<rti::test_pool> {poolTrngl, poolSphr, poolOrntdDisc, poolDsc}) {

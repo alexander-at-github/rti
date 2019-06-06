@@ -88,6 +88,7 @@ namespace rti {
 
       // Thread local variables
       tbb::enumerable_thread_specific<unsigned int> randGrp(1); // some number
+      tbb::enumerable_thread_specific<rti::cosine_direction_source> sourceGrp;
       tbb::enumerable_thread_specific<RTCRayHit> rayhitGrp(RTCRayHit {RTCRay {}, RTCHit {}});
       tbb::enumerable_thread_specific<size_t> rpidxGrp(0);
       tbb::enumerable_thread_specific<size_t> hitcGrp(0);
@@ -108,11 +109,12 @@ namespace rti {
         //[raypack = raypack] // C++14; use generalized lambda capture to copy raypack
         //[&] // Capture all by refernce can easily cause errors
         // capture by refernce
-        [&scene, &ddxys, &randGrp, &rayhitGrp, &rpidxGrp, &hitcGrp, &nonhitcGrp, &hitpointgrp]
+        [&scene, &ddxys, &randGrp, &sourceGrp, &rayhitGrp, &rpidxGrp, &hitcGrp, &nonhitcGrp, &hitpointgrp]
         (const tbb::blocked_range<size_t>& range) {
           // Here it is important to use the refernce type explicitly, otherwise we cannot
           // modify the content.
-          auto& rand = randGrp.local();
+          //auto& rand = randGrp.local();
+          auto& source = sourceGrp.local();
           auto& rayhit = rayhitGrp.local();
           auto& rpidx = rpidxGrp.local();
           auto& nonhitc = nonhitcGrp.local();
@@ -123,9 +125,10 @@ namespace rti {
           rayhit.ray.org_y = 0;
           rayhit.ray.org_z = 0;
           rayhit.ray.tnear = 0;
-          rayhit.ray.dir_x = 12.0f; // magic number
-          rayhit.ray.dir_y = 0;
-          rayhit.ray.dir_z = 0;
+          // rayhit.ray.dir_x = 12.0f; // magic number
+          // rayhit.ray.dir_y = 0;
+          // rayhit.ray.dir_z = 0;
+
           rayhit.ray.time = 0;
           rayhit.ray.tfar = std::numeric_limits<float>::max();
           rayhit.ray.mask = 0;
@@ -136,15 +139,20 @@ namespace rti {
           // really is the loop.
           for(size_t idx = range.begin(); idx < range.end(); ++idx, ++rpidx /* we also maintain the rpidx here */) {
 
-            if (rpidx >= ddxys.size()) {
-              rpidx = 0;
-              rand = rand_r(&rand); // stdlib.h
-            }
+            // // Generate random direction:w
 
-            rayhit.ray.dir_x = static_cast<float>(rand) * 4e-7f; // Number chosen by experimentation
-            // Read access to ddxys; no write.
-            rayhit.ray.dir_y = ddxys[rpidx].frst;
-            rayhit.ray.dir_z = ddxys[rpidx].scnd;
+            // if (rpidx >= ddxys.size()) {
+            //   rpidx = 0;
+            //   rand = rand_r(&rand); // stdlib.h
+            // }
+
+            // rayhit.ray.dir_x = static_cast<float>(rand) * 4e-7f; // Number chosen by experimentation
+            // // Read access to ddxys; no write.
+            // rayhit.ray.dir_y = ddxys[rpidx].frst;
+            // rayhit.ray.dir_z = ddxys[rpidx].scnd;
+
+            source.set_ray(rayhit.ray);
+
 
             rayhit.ray.tfar = std::numeric_limits<float>::max();
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
