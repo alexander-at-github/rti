@@ -1,5 +1,7 @@
 #pragma once
 
+#include <sstream>
+
 #include <embree3/rtcore.h>
 #include <gmsh.h>
 

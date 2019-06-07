@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 namespace rti {
   template<typename T>
   class pair {
