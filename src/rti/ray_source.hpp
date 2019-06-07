@@ -17,6 +17,7 @@ namespace rti {
 
     // Note: With unique_ptr one cannot return covariant types
     std::unique_ptr<i_ray_source> clone() const override final {
+      RLOG_TRACE << "[ray_source.clone()]" << std::endl;
       return std::make_unique<ray_source>(mOrigin->clone(), mDirection->clone());
     }
 
