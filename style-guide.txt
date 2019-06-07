@@ -1,5 +1,4 @@
-#ifndef NAMESPACE_NAMES_THEN_PRIMARY_CLASS_OR_FUNCTION_THEN_HPP
-#define NAMESPACE_NAMES_THEN_PRIMARY_CLASS_OR_FUNCTION_THEN_HPP
+#pragma once
 
 #include <boost/headers/go/first>
 #include <boost/in_alphabetical/order>
@@ -57,8 +56,3 @@ namespace lowercase_identifers
         complex_type mValue;
     };
 }
-
-#endif
-
-(Do not adopt the Google Style Guide for your code, unless it's for
-something as inconsequential as naming convention.)
