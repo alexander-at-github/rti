@@ -1,7 +1,6 @@
 #pragma once
 
 #include <boost/core/demangle.hpp>
-#include <boost/timer/timer.hpp>
 
 #include <cmath>
 #include <chrono>
@@ -12,6 +11,7 @@
 #include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/test_result.hpp"
+#include "rti/timer.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp" // only debug
 
 namespace rti {
@@ -66,7 +66,7 @@ namespace rti {
       // at this position all enumerable_thread_specific containers are empty.
 
       // Start timing
-      boost::timer::cpu_timer timer; // also calls start
+      rti::timer timer;
 
       tbb::parallel_for(
         tbb::blocked_range<size_t>(0, numRays, 64),
@@ -180,19 +180,19 @@ namespace rti {
           }
         });
 
-        result.timeNanoseconds = timer.elapsed().wall; // Using boost timer
+      result.timeNanoseconds = timer.elapsed_nanoseconds();
 
-        // for (auto& grp : hitpointgrp) {
-        //   for (auto& xyz : grp) {
-        //     gmsh::model::geo::addPoint(xyz.frst, xyz.scnd, xyz.thrd);
-        //   }
-        // }
-        // gmsh::model::geo::synchronize();
+      // for (auto& grp : hitpointgrp) {
+      //   for (auto& xyz : grp) {
+      //     gmsh::model::geo::addPoint(xyz.frst, xyz.scnd, xyz.thrd);
+      //   }
+      // }
+      // gmsh::model::geo::synchronize();
 
-        result.hitc = hitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
-        result.nonhitc = nonhitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
+      result.hitc = hitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
+      result.nonhitc = nonhitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
 
-        return result;
+      return result;
     }
   private:
     i_geometry& mGeo;
