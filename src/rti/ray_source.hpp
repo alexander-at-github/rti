@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cassert>
-
 #include "rti/i_direction.hpp"
 #include "rti/i_origin.hpp"
 #include "rti/i_ray_source.hpp"
