@@ -17,9 +17,11 @@ namespace rti {
     cosine_direction_source(std::function<rti::pair<unsigned int> ()> fun) :
       mS1(fun().frst),
       mS2(fun().scnd) {}
+
     cosine_direction_source(unsigned int pSeed1, unsigned int pSeed2) :
       mS1(pSeed1),
       mS2(pSeed2) {}
+
     cosine_direction_source() :
       mS1((unsigned int) std::hash<std::thread::id>{}(std::this_thread::get_id())),
       mS2((unsigned int) (std::hash<std::thread::id>{}(std::this_thread::get_id())+1)) {
@@ -28,25 +30,9 @@ namespace rti {
       //   <<  std::hash<std::thread::id>{}(std::this_thread::get_id())
       //   << " mS1 == " << mS1 << " mS2 == " << mS2 << std::endl;
     }
-    RTCRay get_ray() override final {
-      RTCRay ray;
-      ray.org_x = 0.1f;
-      ray.org_y = 0;
-      ray.org_z = 0;
-
-      this->set_ray(ray);
-
-      ray.time = 0;
-      ray.tnear = 0;
-      ray.tfar = std::numeric_limits<float>::max();
-      ray.mask = 0;
-      ray.id = 0;
-      ray.flags = 0;
-      return ray;
-    }
 
     // Sets the direction only
-    void set_ray(RTCRay& pRay) override final {
+    void fill_ray(RTCRay& pRay) const override final {
       //std::cerr << "[consine_direction_source::set_ray()] " << std::hash<std::thread::id>{}(std::this_thread::get_id()) << std::endl;
       //const double pi = boost::math::constants::pi<double>();
       const double two_pi = boost::math::constants::two_pi<double>();
@@ -65,6 +51,7 @@ namespace rti {
       pRay.dir_z = cos(two_pi * r1) * sqrt(1 - r2);
       pRay.dir_y = sin(two_pi * r1) * sqrt(1 - r2);
     }
+
   private:
     unsigned int mS1;
     unsigned int mS2;
