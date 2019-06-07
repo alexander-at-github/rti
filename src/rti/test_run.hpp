@@ -17,86 +17,50 @@
 namespace rti {
   class test_run {
   public:
-    test_run(i_geometry& pGeo, i_ray_source& pRaySource) :
+    test_run(i_geometry& pGeo, i_ray_source& pSource) :
       mGeo(pGeo),
-      // mRaySource is not used in the moment!
-      mRaySource(pRaySource) {};
+      mSource(pSource) {}
 
     rti::test_result run() {
-
+      // Prepare a data structure for the result.
       test_result result {};
       result.inputFilePath = mGeo.get_input_file_path();
       result.geometryClassName = boost::core::demangle(typeid(mGeo).name());
 
+      // Prepare Embree
       RTCDevice device = mGeo.get_rtc_device();
       RTCScene scene = rtcNewScene(device);
-
       // No scene flags for now.
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
       // Selecting higher build quality results in better rendering performance but slower3
       // scene commit times. The default build quality for a scene is RTC_BUILD_QUALITY_MEDIUM.
       RTCBuildQuality bbquality = RTC_BUILD_QUALITY_HIGH;
       rtcSetSceneBuildQuality(scene, bbquality);
-
       RTCGeometry geometry = mGeo.get_rtc_geometry();
       rtcCommitGeometry(geometry);
-
       (void) rtcAttachGeometry(scene, geometry);
       rtcCommitScene(scene);
+      // The geometry object will be destructed when the scene object is
+      // destructed, because the geometry object is attached to the scene
+      // object.
+      rtcReleaseGeometry(geometry);
+      //
+      RTCIntersectContext context;
+      rtcInitIntersectContext(&context);
 
-      //////////////////////////////
-      // Ray queries
-      //////////////////////////////
-
-
+      // *Ray queries*
       // size_t nrexp = 27;
-      // size_t nrexp = 24;
       size_t nrexp = 20;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
-      // std::cout << "Running 2**" << nrexp << " ray traces on "
-      //           << boost::core::demangle(typeid(mGeo).name()) << std::endl << std::flush;
-
-      // const std::vector<rti::pair<float>> ddxys
-      // {{-3.f, -3.f}, {-1.f, -3.f}, { 1.f, -3.f}, {3.f, -3.f},
-      //  {-3.f, -1.f}, {-1.f, -1.f}, { 1.f, -1.f}, {3.f, -1.f},
-      //  {-3.f,  1.f}, {-1.f,  1.f}, { 1.f,  1.f}, {3.f,  1.f},
-      //  {-3.f,  3.f}, {-1.f,  3.f}, { 1.f,  3.f}, {3.f,  3.f}};
-      // std::vector<rti::pair<float>> ddxys
-      //   {{-3.f, -3.f}, {3.f, -3.f},
-      //    {-3.f,  3.f}, {3.f,  3.f}};
-
-      // 16 coordinates evenly distributed along a square of radius 10
-      std::vector<rti::pair<float> > ddxys
-      {{10.f, 0.f},
-         {9.238795325112868f, 3.826834323650898f},
-         {7.0710678118654755f, 7.0710678118654755f},
-         {3.826834323650898f, 9.238795325112868f},
-       {0.f, 10.f},
-         {-3.826834323650898f, 9.238795325112868f},
-         {-7.0710678118654755f, 7.0710678118654755f},
-         {-9.238795325112868f, 3.826834323650898f},
-       {-10.f, 0.f},
-         {-9.238795325112868f, -3.826834323650898f},
-         {-7.0710678118654755f, -7.0710678118654755f},
-         {-3.826834323650898f, -9.238795325112868f},
-       {0.f, -10.f},
-         {3.826834323650898f, -9.238795325112868f},
-         {7.0710678118654755f, -7.0710678118654755f},
-         {9.238795325112868f, -3.826834323650898f}};
-
-      // Thread local variables
-      tbb::enumerable_thread_specific<unsigned int> randGrp(1); // some number
-      tbb::enumerable_thread_specific<rti::cosine_direction_source> sourceGrp;
+      // We use both, tbb::enumerable_thread_specific and c++ thread_local variables (further
+      // down).
       tbb::enumerable_thread_specific<RTCRayHit> rayhitGrp(RTCRayHit {RTCRay {}, RTCHit {}});
-      tbb::enumerable_thread_specific<size_t> rpidxGrp(0);
       tbb::enumerable_thread_specific<size_t> hitcGrp(0);
       tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
+      //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
 
-      tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
-
-      // Initialize rays
       // Initializing rays here does not work, cause TBB creates the members of an
       // enumerable_thread_specific object only when a thread requests it. That is,
       // at this position all enumerable_thread_specific containers are empty.
@@ -106,68 +70,39 @@ namespace rti {
 
       tbb::parallel_for(
         tbb::blocked_range<size_t>(0, numRays, 64),
-        //[raypack = raypack] // C++14; use generalized lambda capture to copy raypack
-        //[&] // Capture all by refernce can easily cause errors
         // capture by refernce
-        [&scene, &ddxys, &randGrp, &sourceGrp, &rayhitGrp, &rpidxGrp, &hitcGrp, &nonhitcGrp, &hitpointgrp]
+        [&scene, &hitcGrp, &nonhitcGrp, &rayhitGrp, &context,
+         // The only way to capture member variables is to capture the this-reference.
+         this]
         (const tbb::blocked_range<size_t>& range) {
           // Here it is important to use the refernce type explicitly, otherwise we cannot
           // modify the content.
-          //auto& rand = randGrp.local();
-          auto& source = sourceGrp.local();
           auto& rayhit = rayhitGrp.local();
-          auto& rpidx = rpidxGrp.local();
-          auto& nonhitc = nonhitcGrp.local();
           auto& hitc = hitcGrp.local();
+          auto& nonhitc = nonhitcGrp.local();
 
-          // 0.1f == 0.100000001490116119384765625
-          rayhit.ray.org_x = 0.1f;
-          rayhit.ray.org_y = 0;
-          rayhit.ray.org_z = 0;
+          thread_local auto source = mSource.clone();
+
           rayhit.ray.tnear = 0;
-          // rayhit.ray.dir_x = 12.0f; // magic number
-          // rayhit.ray.dir_y = 0;
-          // rayhit.ray.dir_z = 0;
-
           rayhit.ray.time = 0;
           rayhit.ray.tfar = std::numeric_limits<float>::max();
-          rayhit.ray.mask = 0;
-          rayhit.ray.id = 0;
-          rayhit.ray.flags = 0;
+          // rayhit.ray.mask = 0;
+          // rayhit.ray.id = 0;
+          // rayhit.ray.flags = 0;
 
           // The range often contains only one single element. That is, the tbb::blocked_range() function
           // really is the loop.
-          for(size_t idx = range.begin(); idx < range.end(); ++idx, ++rpidx /* we also maintain the rpidx here */) {
+          for(size_t idx = range.begin(); idx < range.end(); ++idx) {
 
-            // // Generate random direction:w
-
-            // if (rpidx >= ddxys.size()) {
-            //   rpidx = 0;
-            //   rand = rand_r(&rand); // stdlib.h
-            // }
-
-            // rayhit.ray.dir_x = static_cast<float>(rand) * 4e-7f; // Number chosen by experimentation
-            // // Read access to ddxys; no write.
-            // rayhit.ray.dir_y = ddxys[rpidx].frst;
-            // rayhit.ray.dir_z = ddxys[rpidx].scnd;
-
-            source.set_ray(rayhit.ray);
-
+            mSource.fill_ray(rayhit.ray);
 
             rayhit.ray.tfar = std::numeric_limits<float>::max();
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
-            // The Embree tutorial uses one context per ray.
-            // I think that is not necessary, though.
-            RTCIntersectContext context;
-            rtcInitIntersectContext(&context);
-
             // performing ray queries in a scene is thread-safe
             rtcIntersect1(scene, &context, &rayhit);
 
-            // if (rayhit.ray.tfar * raypack[rpidx].dir_x > 1) {
-            // if (rayhit.hit.primID == 0) {
             if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
               nonhitc += 1;
               // std::cerr
@@ -180,16 +115,12 @@ namespace rti {
               //   // << " idx == " << idx
               //   << std::endl;
 
-              // std::cerr << "#";
-
               // Calculate where the hit should be and display it in Gmsh.
-
               // double xxhitp = 1; // Assuming hit at that x-value
               // double tt = (xxhitp - (double) rayhit.ray.org_x) / (double) rayhit.ray.dir_x;
               // double yyhitp = (double) rayhit.ray.org_y + (double) rayhit.ray.dir_y * tt;
               // double zzhitp = (double) rayhit.ray.org_z + (double) rayhit.ray.dir_z * tt;
               // gmsh::model::geo::addPoint(xxhitp, yyhitp, zzhitp);
-
             } else {
               hitc += 1;
               // /************************************************************************************
@@ -226,8 +157,6 @@ namespace rti {
               // hitpoints.push_back({xxahit, yyahit, zzahit});
               // //hitpointgrp.local().push_back({xxahit, yyahit, zzahit});
 
-
-
               // std::cerr
               //   //   << "<<<<<< no error in this iteration"
               //   //   << " rayhit.ray.tfar == " << rayhit.ray.tfar
@@ -253,14 +182,6 @@ namespace rti {
 
         result.timeNanoseconds = timer.elapsed().wall; // Using boost timer
 
-
-        // Release geomtery.
-        // The geometry object will be destructed when the scene object is
-        // destructed, because the geometry object is attached to the scene
-        // object.
-        rtcReleaseGeometry(geometry);
-
-
         // for (auto& grp : hitpointgrp) {
         //   for (auto& xyz : grp) {
         //     gmsh::model::geo::addPoint(xyz.frst, xyz.scnd, xyz.thrd);
@@ -275,7 +196,7 @@ namespace rti {
     }
   private:
     i_geometry& mGeo;
-    i_ray_source& mRaySource;
+    i_ray_source& mSource;
 
     //unsigned int g_seed = 1234;
     inline static

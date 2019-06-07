@@ -13,9 +13,11 @@
 
 #include "rti/command_line_options.hpp"
 #include "rti/disc_geometry_from_gmsh.hpp"
-#include "rti/cosine_direction_source.hpp"
+#include "rti/constant_origin.hpp"
+#include "rti/cosine_direction.hpp"
 #include "rti/logger.hpp"
 #include "rti/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/ray_source.hpp"
 #include "rti/sphere_geometry_from_gmsh.hpp"
 #include "rti/test_pool.hpp"
 #include "rti/test_result.hpp"
@@ -26,8 +28,6 @@ namespace rti {
   namespace main {
 
     void init(int argc, char* argv[]) {
-      // Initialize global logger
-      rti::logger::init();
       rti::command_line_options::init(argc, argv);
       // Enable Flush-to-Zero and Denormals-are-Zero for the MXSCR status and
       // control registers for performance reasons.
@@ -75,20 +75,19 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main::print_rtc_device_info(device);
 
-  for (int ii = 0; ii < INT_MAX; ++ii)
-    RLOG_TRACE << "FOO" << std::endl;
-
-  rti::cosine_direction_source raySource;
+  rti::ray_source<float> source(
+    std::make_unique<rti::constant_origin<float> >(0.1, 0, 0),
+    std::make_unique<rti::cosine_direction<float> >());
 
   rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);
   rti::sphere_geometry_from_gmsh sphereGeo(device, gmshReader);
   rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
   rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
 
-  rti::test_run testRunTriangle(triangleGeo, raySource);
-  rti::test_run testRunSphere(sphereGeo, raySource);
-  rti::test_run testRunOrntdDisc(orntdDiscGeo, raySource);
-  rti::test_run testRunDisc(discGeo, raySource);
+  rti::test_run testRunTriangle(triangleGeo, source);
+  rti::test_run testRunSphere(sphereGeo, source);
+  rti::test_run testRunOrntdDisc(orntdDiscGeo, source);
+  rti::test_run testRunDisc(discGeo, source);
 
   rti::test_pool poolTrngl;
   rti::test_pool poolSphr;
@@ -100,9 +99,9 @@ int main(int argc, char* argv[]) {
   size_t reps = 1;
   for(size_t nn = 0; nn < reps; ++nn) {
     poolTrngl.add_test_run(testRunTriangle);
-    // poolSphr.add_test_run(testRunSphere);
-    // poolOrntdDisc.add_test_run(testRunOrntdDisc);
-    // poolDsc.add_test_run(testRunDisc);
+    poolSphr.add_test_run(testRunSphere);
+    poolOrntdDisc.add_test_run(testRunOrntdDisc);
+    poolDsc.add_test_run(testRunDisc);
   }
 
   for (auto& pp : std::vector<rti::test_pool> {poolTrngl, poolSphr, poolOrntdDisc, poolDsc}) {
