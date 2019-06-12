@@ -85,6 +85,7 @@
 
 ;; Defining t-0.025 for several degrees of freedom (95% confidence)
 (define (t-0.025 freedom)
+  ;;(printf "t-0.025 freedom: ~a\n" freedom)
   (hash-ref
    ;; t-distribution values from a table
    #hash((29 . 2.045) (30 . 2.042) (31 . 2.040) (32 . 2.037) (33 . 2.035) (34 . 2.032) (35 . 2.030))
@@ -96,10 +97,10 @@
     ))
 
 (for* ([filter-str '(
-                     "triangle_geometry_from_gmsh"
-                     "sphere_geometry_from_gmsh"
-                     "oriented_disc_geometry_from_gmsh"
-                     "disc_geometry_from_gmsh"
+                     "rti::triangle_geometry_from_gmsh"
+                     "rti::sphere_geometry_from_gmsh"
+                     "rti::oriented_disc_geometry_from_gmsh"
+                     "rti::disc_geometry_from_gmsh"
                      )]
        [file file-paths]
        )
