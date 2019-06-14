@@ -161,9 +161,9 @@ namespace rti {
         mTTBuffer[idx].v1 = triple.scnd;
         mTTBuffer[idx].v2 = triple.thrd;
         // assert(0 <= mTTBuffer[idx].v0); // not necessary; unsigned
-        assert(mTTBuffer[idx].v0 < mNumVertices && "Invalid Vertex");
-        assert(mTTBuffer[idx].v1 < mNumVertices && "Invalid Vertex");
-        assert(mTTBuffer[idx].v2 < mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v0 < (long long) mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v1 < (long long) mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v2 < (long long) mNumVertices && "Invalid Vertex");
         //RLOG_DEBUG << "(" << mVVBuffer[mTTBuffer[idx].v0].xx
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].yy
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v0].zz << ")"
