@@ -15,6 +15,7 @@
 #include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/constant_origin.hpp"
 #include "rti/cosine_direction.hpp"
+#include "rti/dummy_direction.hpp"
 #include "rti/logger.hpp"
 #include "rti/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/ray_source.hpp"
@@ -77,7 +78,9 @@ int main(int argc, char* argv[]) {
 
   rti::ray_source<float> source(
     std::make_unique<rti::constant_origin<float> >(0.1, 0, 0),
-    std::make_unique<rti::cosine_direction<float> >());
+    //std::make_unique<rti::cosine_direction<float> >()
+    std::make_unique<rti::dummy_direction>()
+                                );
 
   rti::triangle_geometry_from_gmsh triangleGeo(device, gmshReader);
   rti::sphere_geometry_from_gmsh sphereGeo(device, gmshReader);
