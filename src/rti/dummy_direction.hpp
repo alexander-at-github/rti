@@ -20,12 +20,12 @@ namespace rti {
       mXYidx(pXYidx) {}
 
     std::unique_ptr<i_direction<float> > clone() const override final {
-      return std::make_unique<i_direction<float> >(mSeed, mXYidx);
+      return std::make_unique<dummy_direction>(mSeed, mXYidx);
     }
 
     rti::triple<float> get() override final {
       int rr = rand_r(&mSeed); // stdlib.h
-      if (mXYidx >= mXYs.length()) {
+      if (mXYidx >= mXYs.size()) {
         mXYidx = 0;
       }
       float xx = ((float)rr) * 4e-7; // magic number; seems a good value for testing
