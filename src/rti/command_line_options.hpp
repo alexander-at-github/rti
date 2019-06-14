@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 
+#include "rti/enum_class_hash_function.hpp"
 #include "rti/logger.hpp"
 
 namespace rti {
@@ -37,7 +38,7 @@ namespace rti {
       std::string optStr;
       std::string value;
     };
-    std::unordered_map<option_type, option_spec> options {
+    std::unordered_map<option_type, option_spec, rti::enum_class_hash_function> options {
       {option_type::MESH_FILE, option_spec{"mesh file option", "--msh-file", ""}},
       {option_type::MAX_THREADS, option_spec {"maximum number of threads option", "--max-threads", ""}}
     };
