@@ -56,7 +56,10 @@ namespace rti {
 
       // We use both, tbb::enumerable_thread_specific and c++ thread_local variables (further
       // down).
-      tbb::enumerable_thread_specific<RTCRayHit> rayhitGrp(RTCRayHit {RTCRay {}, RTCHit {}});
+      tbb::enumerable_thread_specific<RTCRayHit>
+        rayhitGrp(
+            RTCRayHit {
+            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
       tbb::enumerable_thread_specific<size_t> hitcGrp(0);
       tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
       //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
