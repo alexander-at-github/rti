@@ -24,10 +24,14 @@
 ;; define parameters
 (define file-paths-a (make-parameter null))
 (define machine-readable-mode (make-parameter #f))
+(define time-in-seconds (make-parameter #f))
+(define raw-data-mode (make-parameter #f))
 
 ;; read command line argument and write it to the parameter
 (command-line
   #:multi [("-m" "--machine-readable") "Produce machine reable output" (machine-readable-mode #t)]
+          [("-s" "--time-in-seconds") "Convert results from nanoseconds to seconds" (time-in-seconds #t)]
+          [("-r" "--print-raw-data") "Print raw data" (raw-data-mode #t)]
   #:args args (file-paths-a args))
 
 ;; Filter file paths
@@ -116,8 +120,9 @@
          [time-list2 (get-matching time-list1 "\\d+")]
          [time-list3 (m-drop time-list2 drop-num)]
          [samples (map string->number time-list3)]
+         [samples1 (if (time-in-seconds) (map (lambda (aa) (* aa 1e-9)) samples) samples)]
          ;; size of sample
-         [sample-size (length samples)]
+         [sample-size (length samples1)]
          ;; Script output format
          [format-function (if (machine-readable-mode) format-machine-summary format-human-summary)]
          )
@@ -128,9 +133,15 @@
     ;; (println "time-list2")
     ;; (println time-list2)
     ;; (println num-threads2)
-    ;; (printf "running times for file ~a: ~a\n" file samples)
+    ;; (printf "running times for file ~a: ~a\n" file samples1)
     (printf "# droped ~a measurments from each sample\n" drop-num)
-    (display (format-function num-threads2 file filter-str sample-size samples))
+    (display (format-function num-threads2 file filter-str sample-size samples1))
+    (if (raw-data-mode)
+      ((lambda ()
+         (printf "#\n")
+         (display samples1)))
+
+      #f) ;; #f here is simply a no-operation
     (printf "#\n")
     ))
 
