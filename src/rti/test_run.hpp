@@ -97,7 +97,7 @@ namespace rti {
           // really is the loop.
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
 
-            mSource.fill_ray(rayhit.ray);
+            source->fill_ray(rayhit.ray);
 
             rayhit.ray.tfar = std::numeric_limits<float>::max();
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;

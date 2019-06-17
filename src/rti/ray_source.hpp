@@ -18,18 +18,18 @@ namespace rti {
     // Note: With unique_ptr one cannot return covariant types
     std::unique_ptr<i_ray_source> clone() const override final {
       RLOG_TRACE << "[ray_source.clone()]" << std::endl;
-      return std::make_unique<ray_source>(mOrigin->clone(), mDirection->clone());
+      return std::make_unique<ray_source<T> >(mOrigin->clone(), mDirection->clone());
     }
 
     void fill_ray(RTCRay& pRay) override final {
       auto origin = mOrigin->get();
-      pRay.org_x = origin.frst;
-      pRay.org_y = origin.scnd;
-      pRay.org_z = origin.thrd;
+      pRay.org_x = (float) origin.frst;
+      pRay.org_y = (float) origin.scnd;
+      pRay.org_z = (float) origin.thrd;
       auto direction = mDirection->get();
-      pRay.dir_x = direction.frst;
-      pRay.dir_y = direction.scnd;
-      pRay.dir_z = direction.thrd;
+      pRay.dir_x = (float) direction.frst;
+      pRay.dir_y = (float) direction.scnd;
+      pRay.dir_z = (float) direction.thrd;
     }
 
   private:
