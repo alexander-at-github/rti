@@ -18,5 +18,6 @@ for dir in ./do/*/; do
   # you also have the necessary link libraries in your rpath.
   #export LD_LIBRARY_PATH=/home/alexander/local/opt/intel/system_studio_2019/compilers_and_libraries_2019.4.235/linux/compiler/lib/intel64_lin:$LD_LIBRARY_PATH
   #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/home/alexander/local/opt/intel/system_studio_2019/bin/icc -DCMAKE_CXX_COMPILER=/home/alexander/local/opt/intel/system_studio_2019/bin/icc -G Ninja ../../..
+  #cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=/home/alexander/local/opt/bin/gcc -DCMAKE_CXX_COMPILER=/home/alexander/local/opt/bin/g++ -G Ninja ../../..
   cmake --build . --target rti
 done
