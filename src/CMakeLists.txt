@@ -61,8 +61,9 @@ message(STATUS "TODO: use tbb-malloc")
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # We set this property later on the executable itself.
 
-add_executable(rtiex rti/main_testing_rt.cpp)
 
+# Executable for testing the ray tracing code
+add_executable(rtiex rti/main_testing_rt.cpp)
 target_include_directories(rtiex
   PRIVATE
 	  ${CMAKE_CURRENT_LIST_DIR}
@@ -79,20 +80,50 @@ target_link_libraries(rtiex
 		${GMSH_LIBRARY}
     ${TBB_LIBRARY}
   )
-
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
 install(TARGETS rtiex
   DESTINATION "."
   # If one wants to install the executable somewhere else, then one should consider
   # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
   )
-
 # One needs to set the RPATH, otherwise the installed executable does not have dynamic
 # link libraries set correctly.
-set_target_properties(rtiex PROPERTIES
+set_target_properties(rtiex
+  PROPERTIES
   INSTALL_RPATH_USE_LINK_PATH TRUE
   )
 
+
+# Executable to perform ray tracing
+add_executable(rti_m rti/main_rt.cpp)
+target_include_directories(rti_m
+  PRIVATE
+	  ${CMAKE_CURRENT_LIST_DIR}
+    ${EMBREE_INCLUDE_DIRS}
+	  ${GMSH_INCLUDE_DIR}
+    ${TBB_INCLUDE_DIR}
+  )
+target_link_libraries(rti_m
+  PRIVATE
+    Boost::log
+    Boost::system
+    Boost::timer
+    ${EMBREE_LIBRARY}
+		${GMSH_LIBRARY}
+    ${TBB_LIBRARY}
+  )
+# Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
+install(TARGETS rti_m
+  DESTINATION "."
+  # If one wants to install the executable somewhere else, then one should consider
+  # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
+  )
+# One needs to set the RPATH, otherwise the installed executable does not have dynamic
+# link libraries set correctly.
+set_target_properties(rti_m
+  PROPERTIES
+  INSTALL_RPATH_USE_LINK_PATH TRUE
+  )
 
 
 
