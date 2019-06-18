@@ -26,7 +26,7 @@
 #include "rti/triangle_geometry_from_gmsh.hpp"
 
 namespace rti {
-  namespace main {
+  namespace main_testing_rt {
 
     void init(int argc, char* argv[]) {
       rti::command_line_options::init(argc, argv);
@@ -68,13 +68,13 @@ namespace rti {
 }
 
 int main(int argc, char* argv[]) {
-  rti::main::init(argc, argv);
+  rti::main_testing_rt::init(argc, argv);
   rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance();
 
   // Enable huge page support.
   const std::string device_config = "hugepages=1";
   RTCDevice device = rtcNewDevice(device_config.c_str());
-  rti::main::print_rtc_device_info(device);
+  rti::main_testing_rt::print_rtc_device_info(device);
 
   rti::ray_source<float> source(
     std::make_unique<rti::constant_origin<float> >(0.1, 0, 0),

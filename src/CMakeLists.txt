@@ -61,7 +61,7 @@ message(STATUS "TODO: use tbb-malloc")
 #set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 # We set this property later on the executable itself.
 
-add_executable(rtiex rti/main.cpp)
+add_executable(rtiex rti/main_testing_rt.cpp)
 
 target_include_directories(rtiex
   PRIVATE
