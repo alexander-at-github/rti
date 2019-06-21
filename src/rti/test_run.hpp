@@ -49,7 +49,7 @@ namespace rti {
       rtcInitIntersectContext(&context);
 
       // *Ray queries*
-      size_t nrexp = 27;
+      size_t nrexp = 28;
       //size_t nrexp = 20;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
