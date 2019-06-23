@@ -1,11 +1,13 @@
+cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
+
 ## Convert compiler ID to TBB format.
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
   #MESSAGE("Clang")
   set(TBB_COMPILER "clang")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU")
   #MESSAGE("Clang")
   set(TBB_COMPILER "gcc")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
   #MESSAGE("Clang")
   set(TBB_COMPILER "icc")
 endif()
@@ -28,9 +30,9 @@ externalproject_add(tbb-external
     ""
   #
   BUILD_COMMAND
-  cd <SOURCE_DIR>
-  #COMMAND make ${TBB_COMPONENTS} compiler=${TBB_COMPILER} stdver=c++${CMAKE_CXX_STANDARD} tbb_build_dir=<BINARY_DIR>
-  COMMAND make ${TBB_COMPONENTS} compiler=${TBB_COMPILER} stdver=c++${CMAKE_CXX_STANDARD} tbb_build_prefix=lib
+  cd <SOURCE_DIR> && make ${TBB_COMPONENTS} compiler=${TBB_COMPILER} stdver=c++${CMAKE_CXX_STANDARD} tbb_build_prefix=lib
+  ##COMMAND make ${TBB_COMPONENTS} compiler=${TBB_COMPILER} stdver=c++${CMAKE_CXX_STANDARD} tbb_build_dir=<BINARY_DIR>
+  #COMMAND make ${TBB_COMPONENTS} compiler=${TBB_COMPILER} stdver=c++${CMAKE_CXX_STANDARD} tbb_build_prefix=lib
 
   # No install
   INSTALL_COMMAND
