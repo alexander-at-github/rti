@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include "rti/i_intersection_handler.hpp"
 
 namespace rti {
@@ -47,6 +49,21 @@ namespace rti {
       size_t bucket = (size_t) rr; // floor(rr)
       assert(bucket < mCounts.size() && "Error in bucket calculation");
       mCounts[bucket] += 1;
+    }
+
+    void print(std::ostream& pOs) const {
+      size_t totalCount = 0;
+      for (auto const& count : mCounts) {
+        totalCount += count;
+      }
+      for (size_t idx = 0; idx < mCounts.size(); ++idx) {
+        // One needs to make sure that there is no division by 0.
+        double normalizedCount =
+          totalCount == 0 ?
+          0 :
+          ((double) mCounts[idx]) / totalCount;
+        pOs << (((double) idx) / (mCounts.size() - 1)) << " " << normalizedCount << std::endl;
+      }
     }
 
   private:

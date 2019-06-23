@@ -53,8 +53,8 @@ namespace rti {
       rtcInitIntersectContext(&context);
 
       // *Ray queries*
-      size_t nrexp = 27;
-      //size_t nrexp = 20;
+      //size_t nrexp = 27;
+      size_t nrexp = 14;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -125,7 +125,13 @@ namespace rti {
       result.hitc = hitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
       result.nonhitc = nonhitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
       std::vector<rti::bucket_counter> countCollection(bucketCounterGrp.begin(), bucketCounterGrp.end());
-      // TODO: accumulate the results in this vecotr into one instance.
+      rti::bucket_counter countAccumulation(countCollection);
+
+      for (auto bc : bucketCounterGrp) {
+        std::cout << bc << std::endl;
+      }
+
+      std::cout << countAccumulation << std::endl;
 
       return result;
     }

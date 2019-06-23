@@ -19,7 +19,11 @@ namespace rti {
 
     void print(std::ostream& pOs) const {
       pOs
-        << "[TODO write data (in trace_result)]";
+        << geometryClassName << " "
+        << inputFilePath << " "
+        << numRays << "rays "
+        << hitc << "hits "
+        << nonhitc << "nonhits" << std::endl;
     }
   };
 } // namespace rti
