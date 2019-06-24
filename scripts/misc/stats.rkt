@@ -76,10 +76,10 @@
     (string-append
      (format "# numbr of threads: ~a\n" num-threads)
      (format "# file-path: ~a\n" file-path)
-     (format "# fitler string: ~a\n" filter-str)
+     (format "# filter string: ~a\n" filter-str)
      (format "#\n")
-     (format "# number of threads, sample mean, 95 confidence interval low, 95 confidence interval high\n")
-     (format "~a ~a ~a ~a\n" num-threads mu-hat mu-hat-low mu-hat-high))
+     (format "# name, number of threads, sample mean, 95 confidence interval low, 95 confidence interval high\n")
+     (format "\"~a\" ~a ~a ~a ~a\n" filter-str num-threads mu-hat mu-hat-low mu-hat-high))
   ))
 
 (define (m-drop lst num)
