@@ -54,7 +54,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 14;
+      size_t nrexp = 27;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -66,7 +66,7 @@ namespace rti {
       tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
       //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
 
-      rti::bucket_counter bucketCounterPrototype(45, 100); // lenght 45 and 100 buckets
+      rti::bucket_counter bucketCounterPrototype(45, 101); // lenght 45 and 100 buckets
       tbb::enumerable_thread_specific<rti::bucket_counter> bucketCounterGrp(bucketCounterPrototype);
 
       // Initializing rays here does not work, cause TBB creates the members of an
@@ -124,14 +124,9 @@ namespace rti {
 
       result.hitc = hitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
       result.nonhitc = nonhitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
-      std::vector<rti::bucket_counter> countCollection(bucketCounterGrp.begin(), bucketCounterGrp.end());
-      rti::bucket_counter countAccumulation(countCollection);
-
-      for (auto bc : bucketCounterGrp) {
-        std::cout << bc << std::endl;
-      }
-
-      std::cout << countAccumulation << std::endl;
+      rti::bucket_counter bucketResult =
+        bucketCounterGrp.combine([](rti::bucket_counter b1, rti::bucket_counter b2) { return rti::bucket_counter::combine(b1, b2); });
+      std::cout << bucketResult << std::endl;
 
       return result;
     }

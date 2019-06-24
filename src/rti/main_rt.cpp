@@ -86,9 +86,9 @@ int main(int argc, char* argv[]) {
                                 );
 
   rti::triangle_geometry_from_gmsh geometry(device, gmshReader);
-  // rti::sphere_geometry_from_gmsh sphereGeo(device, gmshReader);
-  // rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
-  // rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
+  //rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
+  //rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
+  //rti::sphere_geometry_from_gmsh geometry(device, gmshReader);
 
   rti::tracer tracer(geometry, source);
 

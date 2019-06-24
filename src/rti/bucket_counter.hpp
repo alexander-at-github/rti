@@ -20,7 +20,12 @@ namespace rti {
 
     // Copy constructor (for tbb::enumerable_thread_specific)
     bucket_counter(const bucket_counter& pOther) :
-      bucket_counter(pOther.mLength, pOther.mNumBuckets) {}
+      bucket_counter(pOther.mLength, pOther.mNumBuckets) {
+      // Copy content to new object
+      for (size_t idx = 0; idx < mCounts.size(); ++idx) {
+        mCounts[idx] = pOther.mCounts[idx];
+      }
+    }
 
     bucket_counter(std::vector<bucket_counter> pOthers) :
       bucket_counter(pOthers[0].mLength, pOthers[0].mNumBuckets) {
@@ -49,21 +54,48 @@ namespace rti {
       size_t bucket = (size_t) rr; // floor(rr)
       assert(bucket < mCounts.size() && "Error in bucket calculation");
       mCounts[bucket] += 1;
+      //std::cout << "[bucket_counter::use()] mCounts[bucket] ==" << mCounts[bucket] << std::endl;
     }
 
     void print(std::ostream& pOs) const {
+      print_normalized(pOs);
+      //print_percentage(pOs);
+    }
+
+    void print_percentage(std::ostream& pOs) const {
       size_t totalCount = 0;
       for (auto const& count : mCounts) {
         totalCount += count;
       }
       for (size_t idx = 0; idx < mCounts.size(); ++idx) {
         // One needs to make sure that there is no division by 0.
-        double normalizedCount =
+        double percentageCount =
           totalCount == 0 ?
           0 :
           ((double) mCounts[idx]) / totalCount;
+        pOs << (((double) idx) / (mCounts.size() - 1)) << " " << percentageCount << std::endl;
+      }
+    }
+
+    void print_normalized(std::ostream& pOs) const {
+      size_t maxCount = *std::max_element(mCounts.begin(), mCounts.end());
+      for (size_t idx = 0; idx < mCounts.size(); ++idx) {
+        // One needs to make sure that there is no division by 0.
+        double normalizedCount =
+          maxCount == 0 ?
+          0 :
+          ((double) mCounts[idx]) / maxCount;
         pOs << (((double) idx) / (mCounts.size() - 1)) << " " << normalizedCount << std::endl;
       }
+    }
+
+    static bucket_counter combine(bucket_counter pBc1, bucket_counter pBc2) {
+      // Copy constructor copies entries to new object
+      bucket_counter newBc(pBc1);
+      for(size_t idx = 0; idx < newBc.mCounts.size(); ++idx) {
+        newBc.mCounts[idx] += pBc2.mCounts[idx];
+      }
+      return newBc;
     }
 
   private:
