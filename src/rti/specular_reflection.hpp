@@ -5,12 +5,10 @@
 namespace rti {
   class specular_reflection : public i_reflection_model {
   public:
-    // Decides whether or not to reflect. If a reflection should happen, it sets the origin and direction
-    // in pRayhit and returns true. If no reflection should happen, then it does not change pRayhit and
-    // returns false.
-    bool use(const RTCRayHit& pRayhit) override final {
+    bool use(const RTCRayHit& pRayhit) const override final {
       assert(false && "Not implemented");
       return false;
     }
+    // TODO: create modular random number abstraction
   };
 } // namespace rti

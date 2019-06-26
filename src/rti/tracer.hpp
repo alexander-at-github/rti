@@ -11,6 +11,7 @@
 #include "rti/bucket_counter.hpp"
 #include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
+#include "rti/specular_reflection.hpp"
 #include "rti/timer.hpp"
 #include "rti/trace_result.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp" // only debug
@@ -73,13 +74,16 @@ namespace rti {
       // enumerable_thread_specific object only when a thread requests it. That is,
       // at this position all enumerable_thread_specific containers are empty.
 
+      rti::specular_reflection reflectionModel;
+
       // Start timing
       rti::timer timer;
 
       tbb::parallel_for(
         tbb::blocked_range<size_t>(0, numRays, 64), // magic number: number of elements in one blocked range
         // capture by refernce
-        [&scene, &hitcGrp, &nonhitcGrp, &rayhitGrp, &bucketCounterGrp, &context,
+        [&scene, &hitcGrp, &nonhitcGrp, &rayhitGrp, &bucketCounterGrp,
+         &context, &reflectionModel,
          // The only way to capture member variables is to capture the this-reference.
          this]
         (const tbb::blocked_range<size_t>& range) {
@@ -102,21 +106,24 @@ namespace rti {
 
             source->fill_ray(rayhit.ray);
 
-            rayhit.ray.tfar = std::numeric_limits<float>::max();
-            rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-            rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+            do {
+              rayhit.ray.tfar = std::numeric_limits<float>::max();
+              rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+              rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
-            // performing ray queries in a scene is thread-safe
-            rtcIntersect1(scene, &context, &rayhit);
+              // performing ray queries in a scene is thread-safe
+              rtcIntersect1(scene, &context, &rayhit);
 
-            if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
-              // No  hit
-              nonhitc += 1;
-            } else {
+              if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
+                // No  hit
+                nonhitc += 1;
+                break; // break do-while loop
+              }
+              // else
               // A hit
-              bucketCounter.use(rayhit);
               hitc += 1;
-            }
+              bool reflect = reflectionModel.use(rayhit);
+            } while (reflect);
           }
         });
 
