@@ -2,10 +2,10 @@
 
 #include <ostream>
 
-#include "rti/i_intersection_handler.hpp"
+#include "rti/i_hit_counter.hpp"
 
 namespace rti {
-  class bucket_counter : public i_intersection_handler {
+  class bucket_counter : public i_hit_counter {
   public:
 
     bucket_counter(double pLength, size_t pNumBuckets) :

@@ -11,6 +11,7 @@
 #include "rti/bucket_counter.hpp"
 #include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
+#include "rti/lambertian_reflection.hpp"
 #include "rti/specular_reflection.hpp"
 #include "rti/timer.hpp"
 #include "rti/trace_result.hpp"
@@ -55,7 +56,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 27;
+      size_t nrexp = 25;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -74,21 +75,24 @@ namespace rti {
       // enumerable_thread_specific object only when a thread requests it. That is,
       // at this position all enumerable_thread_specific containers are empty.
 
-      rti::specular_reflection reflectionModel;
+      //rti::specular_reflection reflectionModel;
+      rti::lambertian_reflection reflectionModel;
 
       // Start timing
       rti::timer timer;
 
       tbb::parallel_for(
-        tbb::blocked_range<size_t>(0, numRays, 64), // magic number: number of elements in one blocked range
+        // magic number: number of elements in one blocked range
+        tbb::blocked_range<size_t>(0, numRays, 64),
         // capture by refernce
         [&scene, &hitcGrp, &nonhitcGrp, &rayhitGrp, &bucketCounterGrp,
          &context, &reflectionModel,
-         // The only way to capture member variables is to capture the this-reference.
+         // The only way to capture member variables is to capture the
+         // this-reference.
          this]
         (const tbb::blocked_range<size_t>& range) {
-          // Here it is important to use the refernce type explicitly, otherwise we cannot
-          // modify the content.
+          // Here it is important to use the refernce type explicitly, otherwise
+          // we cannot modify the content.
           auto& rayhit = rayhitGrp.local();
           auto& hitc = hitcGrp.local();
           auto& nonhitc = nonhitcGrp.local();
@@ -100,8 +104,8 @@ namespace rti {
           rayhit.ray.time = 0;
           rayhit.ray.tfar = std::numeric_limits<float>::max();
 
-          // The range may contain only one single element. That is, the tbb::blocked_range() function
-          // really is the loop.
+          // The range may contain only one single element. That is, the
+          // tbb::blocked_range() function really is the loop.
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
 
             source->fill_ray(rayhit.ray);
@@ -123,7 +127,7 @@ namespace rti {
               // else
               // A hit
               hitc += 1;
-              reflect = reflectionModel.use(rayhit);
+              reflect = reflectionModel.use(rayhit, this->mGeo, bucketCounter);
             } while (reflect);
           }
         });

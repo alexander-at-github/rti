@@ -5,7 +5,7 @@
 namespace rti {
   class specular_reflection : public i_reflection_model {
   public:
-    bool use(const RTCRayHit& pRayhit) const override final {
+    bool use(RTCRayHit& pRayhit, const i_geometry& pGeometry, i_hit_counter& pHitcounter) const override final {
       assert(false && "Not implemented");
       return false;
     }
