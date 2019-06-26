@@ -106,6 +106,7 @@ namespace rti {
 
             source->fill_ray(rayhit.ray);
 
+            bool reflect;
             do {
               rayhit.ray.tfar = std::numeric_limits<float>::max();
               rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
@@ -122,7 +123,7 @@ namespace rti {
               // else
               // A hit
               hitc += 1;
-              bool reflect = reflectionModel.use(rayhit);
+              reflect = reflectionModel.use(rayhit);
             } while (reflect);
           }
         });
