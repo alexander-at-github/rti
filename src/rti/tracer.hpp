@@ -134,7 +134,10 @@ namespace rti {
       result.hitc = hitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
       result.nonhitc = nonhitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
       rti::bucket_counter bucketResult =
-        bucketCounterGrp.combine([](rti::bucket_counter b1, rti::bucket_counter b2) { return rti::bucket_counter::combine(b1, b2); });
+        bucketCounterGrp.combine(
+          [](rti::bucket_counter b1, rti::bucket_counter b2) {
+            return rti::bucket_counter::combine(b1, b2);
+          });
       std::cout << bucketResult << std::endl;
 
       return result;
