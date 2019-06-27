@@ -11,7 +11,9 @@ namespace rti {
     // Not thread safe. See direction classes for reasons.
   public:
 
-    ray_source(std::unique_ptr<rti::i_origin<T> > pOrigin, std::unique_ptr<rti::i_direction<T> > pDirection) :
+    ray_source(
+        std::unique_ptr<rti::i_origin<T> > pOrigin,
+        std::unique_ptr<rti::i_direction<T> > pDirection) :
       mOrigin(std::move(pOrigin)),
       mDirection(std::move(pDirection)) {}
 

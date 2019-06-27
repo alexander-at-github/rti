@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   for (auto& pp : std::vector<rti::test_pool> {poolTrngl, poolSphr, poolOrntdDisc, poolDsc}) {
     auto results = pp.run();
     for (auto& result : results) {
-      std::cout << result.to_string() << std::endl;
+      std::cout << result << std::endl;
     }
   }
 

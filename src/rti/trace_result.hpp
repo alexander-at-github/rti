@@ -1,7 +1,6 @@
 #pragma once
 
 #include <chrono>
-#include <ostream>
 
 // include ostream overload template to provide out stream functionality
 // by means of the print function.
@@ -10,7 +9,7 @@
 namespace rti {
   class trace_result {
   public:
-    boost::int_least64_t timeNanoseconds = 0;
+    uint64_t timeNanoseconds = 0;
     std::string geometryClassName;
     std::string inputFilePath;
     size_t numRays;

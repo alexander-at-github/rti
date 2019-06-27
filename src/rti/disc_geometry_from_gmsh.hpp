@@ -17,24 +17,26 @@ namespace rti {
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
     }
-    std::string to_string() override {
-      std::stringstream strstream;
-      strstream << "(:class disc_geometry_from_gmsh ";
+
+    void print(std::ostream& pOs) const override final {
+      pOs << "(:class disc_geometry_from_gmsh ";
       if (mVVBuffer != nullptr) {
         for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
-          strstream << this->prim_to_string(idx);
+          pOs << this->prim_to_string(idx);
         }
       }
-      strstream << ")";
-      return strstream.str();
+      pOs << ")";
     }
-    std::string prim_to_string(unsigned int pPrimID) override {
+
+    std::string prim_to_string(unsigned int pPrimID) const override final {
       //assert(false && "not implemented");
       std::stringstream strstream;
-      strstream << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
-                << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
+      strstream
+        << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
+        << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
       return strstream.str();
     }
+
   private:
     ////////////////////////
     // Local algebraic types

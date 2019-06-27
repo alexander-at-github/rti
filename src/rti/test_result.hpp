@@ -2,26 +2,27 @@
 
 #include <chrono>
 
+#include "rti/ostream_overload_template.hpp"
+
 namespace rti {
   class test_result {
   public:
-    boost::int_least64_t timeNanoseconds = 0;
+    uint64_t timeNanoseconds = 0;
     std::string geometryClassName;
     std::string inputFilePath;
     size_t numRays;
     size_t hitc;
     size_t nonhitc;
 
-    std::string to_string() {
-      std::stringstream strstream;
-      strstream << "(:class test_result " << inputFilePath << " "
-                << geometryClassName << " "
-                << hitc << "hits "
-                << nonhitc << "non-hits "
-                << numRays << "rays "
-                << timeNanoseconds << "ns"
-                << ")";
-      return strstream.str();
+    void print(std::ostream& pOs) const {
+      pOs
+        << "(:class test_result " << inputFilePath << " "
+        << geometryClassName << " "
+        << hitc << "hits "
+        << nonhitc << "non-hits "
+        << numRays << "rays "
+        << timeNanoseconds << "ns"
+        << ")";
     }
   };
 } // namespace rti

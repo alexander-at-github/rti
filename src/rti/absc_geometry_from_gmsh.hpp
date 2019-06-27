@@ -9,16 +9,16 @@
 namespace rti {
 class absc_geometry_from_gmsh : public i_geometry {
   public:
+
   virtual ~absc_geometry_from_gmsh() {}
-  //virtual std::string to_string() = 0;
-  //virtual std::string prim_to_string(unsigned int) = 0;
-  RTCDevice& get_rtc_device() override {
+
+  RTCDevice& get_rtc_device() override final {
     return mDevice;
   }
-  RTCGeometry& get_rtc_geometry() override {
+  RTCGeometry& get_rtc_geometry() override final {
     return mGeometry;
   }
-  std::string get_input_file_path() override {
+  std::string get_input_file_path() override final {
     return mGmshReader.get_mesh_file_path();
   }
   protected:

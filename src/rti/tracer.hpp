@@ -17,9 +17,6 @@
 #include "rti/trace_result.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp" // only debug
 
-// TODO: CONTINUE HERE
-
-
 namespace rti {
   class tracer {
   public:

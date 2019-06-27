@@ -21,12 +21,13 @@ namespace rti {
       return time_stamp_now() - mStartTime;
     }
 
-  protected:
+  private:
     static std::uint64_t time_stamp_now() {
       return std::chrono::duration_cast<std::chrono::nanoseconds>
         (std::chrono::steady_clock::now().time_since_epoch()).count();
     }
-  private:
+
     std::uint64_t mStartTime;
+
   };
 } // namespace rti

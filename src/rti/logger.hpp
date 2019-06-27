@@ -45,4 +45,5 @@ namespace rti {
 #else
 #define RLOG_ERROR if (true) {} else rti::mLStream
 #endif
-}
+
+} // namespace rti

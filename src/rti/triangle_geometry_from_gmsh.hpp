@@ -12,23 +12,24 @@
 namespace rti {
   class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
   public:
+
     triangle_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
       init_this(pDevice, pGmshReader);
     }
-    std::string to_string() override {
-      std::stringstream strstream;
-      strstream << "(:class triangle_geometry_from_gmsh ";
+
+    void print(std::ostream& pOs) const override final {
+      pOs << "(:class triangle_geometry_from_gmsh ";
       for (size_t idxA = 0; idxA < mNumTriangles; ++idxA) {
-        strstream << this->prim_to_string(idxA);
+        pOs << this->prim_to_string(idxA);
         if (idxA < mNumTriangles-1) {
-          strstream << " ";
+          pOs << " ";
         }
       }
-      strstream << ")";
-      return strstream.str();
+      pOs << ")";
     }
-    std::string prim_to_string(unsigned int pPrimID) override {
+
+    std::string prim_to_string(unsigned int pPrimID) const override final {
       std::stringstream strstream;
       strstream << std::setprecision(128)
         << "(" << mVVBuffer[mTTBuffer[pPrimID].v0].xx
@@ -42,6 +43,7 @@ namespace rti {
         << " " << mVVBuffer[mTTBuffer[pPrimID].v2].zz << ")";
       return strstream.str();
     }
+
     rti::triple<rti::triple<float> > prim_to_coords(unsigned int pPrimID) {
       return
         { {mVVBuffer[mTTBuffer[pPrimID].v0].xx, mVVBuffer[mTTBuffer[pPrimID].v0].yy, mVVBuffer[mTTBuffer[pPrimID].v0].zz},

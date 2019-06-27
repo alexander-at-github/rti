@@ -3,7 +3,7 @@
 #include "rti/i_rng.hpp"
 
 namespace rti {
-  class linux_rng : public rti::i_rng {
+  class cstdlib_rng : public rti::i_rng {
   public:
 
     // Define the state for this RNG
