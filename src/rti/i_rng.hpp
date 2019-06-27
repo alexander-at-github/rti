@@ -12,10 +12,13 @@ namespace rti {
     virtual ~i_rng() {}
 
     // A definition of the interface of a state
-    struct i_state {};
+    struct i_state {
+      // Polymorphism seems to work only if there is at least one virtual function
+      virtual ~i_state() {}
+    };
 
     // A definition of this function will most likely alter the content of its
     // argument.
-    virtual uint64_t get(i_state* pState) const;
+    virtual uint64_t get(i_state* pState) const = 0;
   };
 } // namespace rti

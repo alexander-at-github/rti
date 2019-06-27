@@ -2,22 +2,42 @@
 
 #include <cmath>
 
+#include "rti/cstdlib_rng.hpp"
 #include "rti/i_reflection_model.hpp"
+#include "rti/i_rng.hpp"
 
 namespace rti {
   class lambertian_reflection : public i_reflection_model {
   public:
+    lambertion_reflection(double pStickingC) :
+      mStickingC(pStickingC) {}
+
     bool use(RTCRayHit& pRayhit, const i_geometry& pGeometry, i_hit_counter& pHitcounter) const override final {
+      RLOG_ERROR << "TODO: Initialize the seed the of the random number generator in the lambertian reflection" << std::endl;
+      static std::unique_ptr<rti::i_rng> rng = std::make_unique<rti::cstdlib_rng>();
+
+      // TODO
+      // Question: How do we initialize this variable?
+      thread_local static rti::cstdlib_rng::state seed {123456};
+
       // TODO: Get random number and decide whether or not to reflect.
+      uint64_t rndm = rng->get(&seed);
+      if (rndm < rng->max() * mStickingC) {
+        // Do not reflect
+        pHitcounter.use(pRayhit);
+        return false;
+      }
+      // Reflect
       // TODO: get surface normal at intersection
       // TODO: Compute lambertian reflection with respect to surface normal
 
-      // TODO: FIX
-      pHitcounter.use(pRayhit);
-      return false;
+      return true;
     }
 
   private:
+    // The sticking coefficient
+    double mStickingC;
+
     // Returns some orthonormal basis containing a the input vector pVector.
     // Is deterministic, i.e., for one input it will return always the same
     // result.
@@ -71,7 +91,7 @@ namespace rti {
     }
 
     template<typename T>
-    T dot_product(rti::triple<T> pFrst, rti::triple pScnd) {
+    T dot_product(rti::triple<T> pFrst, rti::triple<T> pScnd) {
       return pFrst.frst * pScnd.frst + pFrst.scnd * pScnd.scnd + pFrst.thrd * pScnd.thrd;
     }
   };
