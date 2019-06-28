@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "rti/types.hpp"
+#include "rti/utils.hpp"
 
 namespace rti {
   template<typename T>

@@ -8,7 +8,7 @@
 #include "rti/absc_geometry_from_gmsh.hpp"
 #include "rti/gmsh_reader.hpp"
 #include "rti/logger.hpp"
-#include "rti/types.hpp"
+#include "rti/utils.hpp"
 
 namespace rti {
   class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
@@ -35,6 +35,12 @@ namespace rti {
         << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
         << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
       return strstream.str();
+    }
+
+    rti::triple<float> get_normal(unsigned int primID) const {
+      assert(false && "Not implemented");
+      rti::triple<float> rr;
+      return rr;
     }
 
   private:

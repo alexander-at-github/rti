@@ -53,7 +53,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 25;
+      size_t nrexp = 2;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -73,7 +73,7 @@ namespace rti {
       // at this position all enumerable_thread_specific containers are empty.
 
       //rti::specular_reflection reflectionModel;
-      rti::lambertian_reflection reflectionModel;
+      rti::lambertian_reflection reflectionModel(0.4);
 
       // Start timing
       rti::timer timer;

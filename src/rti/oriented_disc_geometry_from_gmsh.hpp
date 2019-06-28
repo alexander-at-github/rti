@@ -6,7 +6,7 @@
 #include "rti/absc_geometry_from_gmsh.hpp"
 #include "rti/gmsh_reader.hpp"
 #include "rti/logger.hpp"
-#include "rti/types.hpp"
+#include "rti/utils.hpp"
 
 namespace rti {
   class oriented_disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
@@ -37,6 +37,12 @@ namespace rti {
         << "," << mNNBuffer[pPrimID].yy
         << "," << mNNBuffer[pPrimID].zz << "))";
       return strstream.str();
+    }
+
+    rti::triple<float> get_normal(unsigned int primID) const {
+      assert(false && "Not implemented");
+      rti::triple<float> rr;
+      return rr;
     }
 
   private:

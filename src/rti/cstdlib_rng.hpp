@@ -8,6 +8,9 @@ namespace rti {
 
     // Define the state for this RNG
     struct state : public rti::i_rng::i_state {
+      state() : mSeed(1) {}
+      state(unsigned int pSeed) :
+         mSeed(pSeed) {}
       unsigned int mSeed;
     };
 
@@ -23,6 +26,10 @@ namespace rti {
       assert(typeid(*pState) == typeid(stateObjectForAssertion) && "Error: precondition violated");
 
       return (uint64_t) rand_r(&(reinterpret_cast<state*>(pState)->mSeed));
+    }
+
+    uint64_t max() const {
+      return RAND_MAX;
     }
   };
 } // namespace rti

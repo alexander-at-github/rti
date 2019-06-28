@@ -20,5 +20,7 @@ namespace rti {
     // A definition of this function will most likely alter the content of its
     // argument.
     virtual uint64_t get(i_state* pState) const = 0;
+
+    virtual uint64_t max() const = 0;
   };
 } // namespace rti

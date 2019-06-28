@@ -44,7 +44,7 @@ namespace rti {
       return strstream.str();
     }
 
-    rti::triple<rti::triple<float> > prim_to_coords(unsigned int pPrimID) {
+    rti::triple<rti::triple<float> > prim_to_coords(unsigned int pPrimID) const {
       return
         { {mVVBuffer[mTTBuffer[pPrimID].v0].xx, mVVBuffer[mTTBuffer[pPrimID].v0].yy, mVVBuffer[mTTBuffer[pPrimID].v0].zz},
           {mVVBuffer[mTTBuffer[pPrimID].v1].xx, mVVBuffer[mTTBuffer[pPrimID].v1].yy, mVVBuffer[mTTBuffer[pPrimID].v1].zz},
@@ -61,6 +61,28 @@ namespace rti {
       // result[2][2] = mVVBuffer[mTTBuffer[pPrimID].v2].zz;
       // return result;
     }
+
+    rti::triple<float> get_normal(unsigned int pPrimID) const {
+      auto cc = prim_to_coords(pPrimID);
+      // Let point uu be equal to p2 - p1
+      //rti::triple<float> uu {
+      //  cc.scnd.frst - cc.frst.frst,
+      //  cc.scnd.scnd - cc.frst.scnd,
+      //  cc.scnd.thrd - cc.frst.thrd};
+      auto uu = rti::diff(cc.scnd, cc.frst);
+      // Let point vv be equal to p3 - p1
+      //rti::triple<float> vv {
+      //  cc.thrd.frst - cc.frst.frst,
+      //  cc.thrd.scnd - cc.frst.scnd,
+      //  cc.thrd.thrd - cc.frst.thrd};
+      auto vv = rti::diff(cc.thrd, cc.frst);
+      // Let result be equal to the cross product of uu and vv
+      return rti::cross_product(uu, vv);
+
+      // assert(false && "Not implemented");
+      // return rr;
+    }
+
   private:
     ////////////////////////
     // Local algebraic types

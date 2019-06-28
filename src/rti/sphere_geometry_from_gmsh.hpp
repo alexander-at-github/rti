@@ -32,6 +32,13 @@ namespace rti {
         << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
       return strstream.str();
     }
+
+    rti::triple<float> get_normal(unsigned int primID) const {
+      assert(false && "Not implemented");
+      rti::triple<float> rr;
+      return rr;
+    }
+
   private:
     ////////////////////////
     // Local algebraic types

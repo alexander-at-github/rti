@@ -3,7 +3,7 @@
 #include <gmsh.h>
 
 #include "rti/logger.hpp"
-#include "rti/types.hpp"
+#include "rti/utils.hpp"
 
 namespace rti {
   class gmsh_reader {

@@ -4,7 +4,7 @@
 
 #include "rti/gmsh_reader.hpp"
 #include "rti/i_geometry.hpp"
-#include "rti/types.hpp"
+#include "rti/utils.hpp"
 
 namespace rti {
 class absc_geometry_from_gmsh : public i_geometry {
