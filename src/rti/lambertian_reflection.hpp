@@ -42,11 +42,11 @@ namespace rti {
       float yyahit = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
       float zzahit = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
       { // DEBUG
-        RLOG_ERROR << std::endl;
-        RLOG_ERROR << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
-        RLOG_ERROR << "normal from rayhit.hit: " << normalO << std::endl;
+        RLOG_DEBUG << std::endl;
+        RLOG_DEBUG << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
+        RLOG_DEBUG << "normal from rayhit.hit: " << normalO << std::endl;
         auto geoNormal = pGeometry.get_normal(pRayhit.hit.primID);
-        RLOG_ERROR << "normal from geometry object: " << geoNormal << std::endl;
+        RLOG_DEBUG << "normal from geometry object: " << geoNormal << std::endl;
       } // DEBUG
       // Sanity check
       auto diff = rti::diff(normalO, pGeometry.get_normal(pRayhit.hit.primID));

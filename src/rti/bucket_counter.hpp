@@ -11,11 +11,14 @@ namespace rti {
     bucket_counter(double pLength, size_t pNumBuckets) :
       mLength(pLength),
       mNumBuckets(pNumBuckets),
-      mSlap(pLength / pNumBuckets),
+      mSlap(pLength / (pNumBuckets - 1)),
       mCounts(pNumBuckets) {
       for (auto& count : mCounts) {
         count = 0;
       }
+      // We assign a seperate bucket to the area starting from pLength,
+      // otherwise the plain defined by x == pLength has not bucket assigned.
+      // For that reason we let mSlap be equal to pLength / (pNumBuckets - 1)
     }
 
     // Copy constructor (for tbb::enumerable_thread_specific)
@@ -44,15 +47,18 @@ namespace rti {
     }
 
     void use(const RTCRayHit& pRayHit) override final {
-      //double hit_x = pRayHit.ray.org_x + pRayHit.ray.dir_x * pRayHit.ray.tfar;
-      double hit_offset_x = pRayHit.ray.dir_x * pRayHit.ray.tfar;
-      //RLOG_DEBUG << "hit_offset_x == " << hit_offset_x << std::endl;
-      assert(0 <= hit_offset_x && hit_offset_x <= mLength && "Hit-x-value not within expected range");
+      double epsilon = 1e-5;
 
-      double rr = hit_offset_x / mSlap;
-      assert(0 <= rr && "Error in bucket calculation");
+      double hit_x = pRayHit.ray.org_x + pRayHit.ray.dir_x * pRayHit.ray.tfar;
+      RLOG_DEBUG << "hit_x == " << hit_x << std::endl;
+      assert (-epsilon <= hit_x && hit_x <= mLength + epsilon && "Hit-x-value not within expected range");
+
+      double rr = hit_x / mSlap;
+      RLOG_DEBUG << "rr == " << rr << std::endl;
+      assert (-epsilon <= rr && "Error in bucket calculation");
       size_t bucket = (size_t) rr; // floor(rr)
-      assert(bucket < mCounts.size() && "Error in bucket calculation");
+      assert (bucket < mCounts.size() && "Error in bucket calculation");
+      RLOG_DEBUG << "bucket == " << bucket << std::endl;
       mCounts[bucket] += 1;
       //std::cout << "[bucket_counter::use()] mCounts[bucket] ==" << mCounts[bucket] << std::endl;
     }
