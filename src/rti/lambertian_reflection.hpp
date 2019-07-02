@@ -24,6 +24,13 @@ namespace rti {
       // Question: How do we initialize this variable?
       thread_local static rti::cstdlib_rng::state seed = {123456};
 
+      float epsilon = 1e-4;
+      // THIS CODE IS HAND-CRAFTED FOR THE CYLINDER WITH SOURCE PLANE AT X == 0.
+      if (pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar <= epsilon) {
+        // Don't reflect and don't count
+        return false;
+      }
+
       /* Get random number and decide whether or not to reflect. */
       uint64_t rndm = rng->get(&seed);
       if (rndm < (rng->max() * mStickingC)) {
@@ -61,7 +68,7 @@ namespace rti {
       auto orthonormalBasis = get_orthonormal_basis<float>(normal);
       // TODO: continue here
 
-      // Set pRayhit
+      // Set new origin and direction in pRayhit
       pRayhit.ray.org_x = xxahit;
       pRayhit.ray.org_y = yyahit;
       pRayhit.ray.org_z = zzahit;

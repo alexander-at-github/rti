@@ -11,7 +11,7 @@ namespace rti {
     bucket_counter(double pLength, size_t pNumBuckets) :
       mLength(pLength),
       mNumBuckets(pNumBuckets),
-      mSlap(pLength / (pNumBuckets - 1)),
+      mSlap(pLength / pNumBuckets),
       mCounts(pNumBuckets) {
       for (auto& count : mCounts) {
         count = 0;
@@ -57,6 +57,11 @@ namespace rti {
       RLOG_DEBUG << "rr == " << rr << std::endl;
       assert (-epsilon <= rr && "Error in bucket calculation");
       size_t bucket = (size_t) rr; // floor(rr)
+      if (bucket >= mCounts.size()) {
+        // that can happen for numeric reasons
+        assert (bucket == mCounts.size() && "Error");
+        bucket -= 1; // Move the hit to the last bucket
+      }
       assert (bucket < mCounts.size() && "Error in bucket calculation");
       RLOG_DEBUG << "bucket == " << bucket << std::endl;
       mCounts[bucket] += 1;

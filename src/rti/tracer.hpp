@@ -53,7 +53,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 22;
+      size_t nrexp = 25;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -65,7 +65,7 @@ namespace rti {
       tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
       //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
 
-      rti::bucket_counter bucketCounterPrototype(45, 102); // lenght 45 and 100 buckets
+      rti::bucket_counter bucketCounterPrototype(45, 101); // lenght 45 and 100 buckets
       tbb::enumerable_thread_specific<rti::bucket_counter> bucketCounterGrp(bucketCounterPrototype);
 
       // Initializing rays here does not work, cause TBB creates the members of an
@@ -73,7 +73,7 @@ namespace rti {
       // at this position all enumerable_thread_specific containers are empty.
 
       //rti::specular_reflection reflectionModel;
-      rti::lambertian_reflection reflectionModel(0.4);
+      rti::lambertian_reflection reflectionModel(0.015625);
 
       // Start timing
       rti::timer timer;

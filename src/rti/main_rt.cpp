@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
   rti::main_rt::print_rtc_device_info(device);
 
   rti::ray_source<float> source(
-    std::make_unique<rti::disc_origin_x<float> >(0.05, 0, 0, 0.475),
+    std::make_unique<rti::disc_origin_x<float> >(1e-6, 0, 0, 0.5-(1e-6)),
     std::make_unique<rti::cosine_direction<float> >()
     //std::make_unique<rti::dummy_direction>()
                                 );
