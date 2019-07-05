@@ -9,7 +9,16 @@ namespace rti {
   class cos_hemi {
   public:
     template<typename T>
-    static rti::triple<T> get(const rti::triple<rti::triple<T> >& pBasis, rti::i_rng* pRng, rti::i_rng::i_state* pRngState) {
+    static rti::triple<T> get(const rti::triple<rti::triple<T> >& pBasis,
+                              rti::i_rng* pRng,
+                              rti::i_rng::i_state* pRngState) {
+      // Precondition: pBasis is normalized
+      float epsilon = 1e-6;
+      for (auto vec : pBasis.get_iterable()) {
+        T length = std::sqrt(vec.frst * vec.frst + vec.scnd * vec.scnd + vec.thrd * vec.thrd);
+        assert(1 - epsilon <= length && length <= 1 + epsilon && "Precondition: pBasis is normal");
+      }
+
       double r1 = ((double) pRng->get(pRngState)) / pRng->max();
       double r2 = ((double) pRng->get(pRngState)) / pRng->max();
       assert (0 <= r1 && r1 <= 1 && "Error in computing random number in the interval [0, 1]");

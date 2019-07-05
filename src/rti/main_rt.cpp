@@ -15,6 +15,7 @@
 #include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/constant_origin.hpp"
 #include "rti/cosine_direction.hpp"
+#include "rti/cosine_direction_new.hpp"
 #include "rti/disc_origin_x.hpp"
 #include "rti/dummy_direction.hpp"
 #include "rti/logger.hpp"
@@ -79,9 +80,13 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main_rt::print_rtc_device_info(device);
 
+  auto rng = std::make_unique<rti::cstdlib_rng>();
+  auto rngSeed = std::make_unique<rti::cstdlib_rng::state>(123456);
+
   rti::ray_source<float> source(
-    std::make_unique<rti::disc_origin_x<float> >(1e-6, 0, 0, 0.5-(1e-6)),
-    std::make_unique<rti::cosine_direction<float> >()
+    std::make_unique<rti::disc_origin_x<float> >(0, 0, 0, 0.5),
+    std::make_unique<rti::cosine_direction_new<float> >(rti::triple<rti::triple<float> > {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}, rng.get(), rngSeed.get())
+    //std::make_unique<rti::cosine_direction<float> >()
     //std::make_unique<rti::dummy_direction>()
                                 );
 

@@ -58,8 +58,8 @@ namespace rti {
       assert (-epsilon <= rr && "Error in bucket calculation");
       size_t bucket = (size_t) rr; // floor(rr)
       if (bucket >= mCounts.size()) {
-        // that can happen for numeric reasons
-        assert (bucket == mCounts.size() && "Error");
+        // bucket >= mCounts.size() can happen for numeric reasons
+        assert (bucket == mCounts.size() && "Hit out of range");
         bucket -= 1; // Move the hit to the last bucket
       }
       assert (bucket < mCounts.size() && "Error in bucket calculation");

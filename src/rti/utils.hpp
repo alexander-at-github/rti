@@ -16,7 +16,7 @@ namespace rti {
 
     // A hack to not need to implement the c++ STL iterator.
     // This iterator cannot modify the content.
-    std::vector<T> get_iterable() {
+    std::vector<T> get_iterable() const {
       return {frst, scnd, thrd};
     }
 

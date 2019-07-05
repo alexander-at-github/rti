@@ -33,11 +33,12 @@ namespace rti {
 
       /* Get random number and decide whether or not to reflect. */
       uint64_t rndm = rng->get(&seed);
-      if (rndm < (rng->max() * mStickingC)) {
+      if (rndm <= (rng->max() * mStickingC)) {
         // Do not reflect
         pHitcounter.use(pRayhit);
         return false;
       }
+
       /* Reflect */
       //
       /* Get surface normal at intersection */
@@ -65,8 +66,7 @@ namespace rti {
       auto normal = rti::inv(normalO);
 
       /* Compute lambertian reflection with respect to surface normal */
-      auto orthonormalBasis = get_orthonormal_basis<float>(normal);
-      // TODO: continue here
+      auto orthonormalBasis = get_orthonormal_basis<float>(normalO);
 
       // Set new origin and direction in pRayhit
       pRayhit.ray.org_x = xxahit;

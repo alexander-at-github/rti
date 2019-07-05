@@ -53,7 +53,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 25;
+      size_t nrexp = 1;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -65,7 +65,7 @@ namespace rti {
       tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
       //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
 
-      rti::bucket_counter bucketCounterPrototype(45, 101); // lenght 45 and 100 buckets
+      rti::bucket_counter bucketCounterPrototype(45, 100); // lenght 45 and 100 buckets
       tbb::enumerable_thread_specific<rti::bucket_counter> bucketCounterGrp(bucketCounterPrototype);
 
       // Initializing rays here does not work, cause TBB creates the members of an
@@ -73,7 +73,8 @@ namespace rti {
       // at this position all enumerable_thread_specific containers are empty.
 
       //rti::specular_reflection reflectionModel;
-      rti::lambertian_reflection reflectionModel(0.015625);
+      //rti::lambertian_reflection reflectionModel(0.015625);
+      rti::lambertian_reflection reflectionModel(0.25);
 
       // Start timing
       rti::timer timer;
@@ -105,6 +106,7 @@ namespace rti {
           // tbb::blocked_range() function really is the loop.
           for(size_t idx = range.begin(); idx < range.end(); ++idx) {
 
+            RLOG_DEBUG << "Preparing new ray from source" << std::endl;
             source->fill_ray(rayhit.ray);
 
             bool reflect;
@@ -113,6 +115,12 @@ namespace rti {
               rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
               rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
+              RLOG_DEBUG
+                << "preparing ray == ("
+                << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+                << ") ("
+                << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+                << ")" << std::endl;
               // performing ray queries in a scene is thread-safe
               rtcIntersect1(scene, &context, &rayhit);
 
