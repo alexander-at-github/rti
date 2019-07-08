@@ -15,13 +15,13 @@
     '((separator-chars #\ ))))
 
 (define next-row-x
-  (make-reader (open-input-file "original/position_sp_1_ar_45.txt")))
+  (make-reader (open-input-file "original/position.sp.0.1.ar.45.txt")))
 (define xx
   (let ([nrx (map string->number (next-row-x))])
     (map (lambda (oo) (/ oo (argmax identity nrx))) nrx)))
 
 (define next-row-y
-  (make-reader (open-input-file "original/flux_sp_1_ar_45.txt")))
+  (make-reader (open-input-file "original/flux.sp.0.1.ar.45.txt")))
 (define yy
   (let ([nry (map string->number (next-row-y))])
     (map (lambda (oo) (/ oo (argmax identity nry))) nry)))

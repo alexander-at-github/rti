@@ -39,14 +39,20 @@ plot \
   using 1:2 with line linestyle 1 linewidth 1 title "Analytical 1", \
   'data/sp.1.data' \
   using 1:2 with line linestyle 2 linewidth 2 title "8d380e6, Simulated 1", \
-  'data/sp.1.v2.data' \
-  using 1:2 with line linestyle 3 linewidth 2 title "Simulated 1 v2", \
-  'data/sp.1.v3.data'  \
-  using 1:2 with line linestyle 4 linewidth 2 title "Simulated 1 v3", \
-  'data/sp.1.commit.c0a49d3.data'  \
-  using 1:2 with line linestyle 10 linewidth 1 title "c0a49d3 (pre reflection) spheres, Simulated 1", \
-  'data/sp.1.commit.c0a49d3.v2.data'  \
-  using 1:2 with line linestyle 11 linewidth 1 title "c0a49d3 (pre reflection) triangles, Simulated 1"
+  \
+  "analytical_solution/sp.0.1.data" \
+  using 1:2 with line linestyle 6 linewidth 1 title "Analytical 0.1", \
+  'data/sp.0.1.v2.data' \
+  using 1:2 with line linestyle 7 linewidth 2 title "Simulated 0.1"
+  #'data/sp.1.v2.data' \
+  #using 1:2 with line linestyle 3 linewidth 2 title "Simulated 1 v2", \
+  #'data/sp.1.v3.data'  \
+  #using 1:2 with line linestyle 4 linewidth 2 title "Simulated 1 v3", \
+  #'data/sp.1.commit.c0a49d3.data'  \
+  #using 1:2 with line linestyle 10 linewidth 1 title "c0a49d3 (pre reflection) spheres, Simulated 1", \
+  #'data/sp.1.commit.c0a49d3.v2.data'  \
+  #using 1:2 with line linestyle 11 linewidth 1 title "c0a49d3 (pre reflection) triangles, Simulated 1", \
+  #
 #  "analytical_solution/sp_0_0625.data" \
 #  using 1:2 with line linestyle 4 linewidth 1 title "Analytical 0.0625", \
 #  'data/sp.0.0625.data' \
