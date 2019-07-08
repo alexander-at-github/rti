@@ -49,6 +49,11 @@ namespace rti {
     void use(const RTCRayHit& pRayHit) override final {
       double epsilon = 1e-5;
 
+      RLOG_DEBUG << "pRayHit.ray.org_x == " << pRayHit.ray.org_x << std::endl;
+      RLOG_DEBUG << "pRayHit.ray.dir_x == " << pRayHit.ray.dir_x << std::endl;
+      RLOG_DEBUG << "pRayHit.ray.tfar == " << pRayHit.ray.tfar << std::endl;
+
+
       double hit_x = pRayHit.ray.org_x + pRayHit.ray.dir_x * pRayHit.ray.tfar;
       RLOG_DEBUG << "hit_x == " << hit_x << std::endl;
       assert (-epsilon <= hit_x && hit_x <= mLength + epsilon && "Hit-x-value not within expected range");

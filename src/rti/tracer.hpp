@@ -53,7 +53,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 1;
+      size_t nrexp = 26;
       size_t numRays = std::pow(2,nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -65,7 +65,7 @@ namespace rti {
       tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
       //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
 
-      rti::bucket_counter bucketCounterPrototype(45, 100); // lenght 45 and 100 buckets
+      rti::bucket_counter bucketCounterPrototype(45, 101); // lenght 45 and 100 buckets
       tbb::enumerable_thread_specific<rti::bucket_counter> bucketCounterGrp(bucketCounterPrototype);
 
       // Initializing rays here does not work, cause TBB creates the members of an
@@ -74,7 +74,7 @@ namespace rti {
 
       //rti::specular_reflection reflectionModel;
       //rti::lambertian_reflection reflectionModel(0.015625);
-      rti::lambertian_reflection reflectionModel(0.25);
+      rti::lambertian_reflection reflectionModel(0.1);
 
       // Start timing
       rti::timer timer;
@@ -132,6 +132,10 @@ namespace rti {
               // else
               // A hit
               hitc += 1;
+
+              RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
+              RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
+
               reflect = reflectionModel.use(rayhit, this->mGeo, bucketCounter);
             } while (reflect);
           }

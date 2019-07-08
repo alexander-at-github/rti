@@ -24,7 +24,7 @@ namespace rti {
       // Question: How do we initialize this variable?
       thread_local static rti::cstdlib_rng::state seed = {123456};
 
-      float epsilon = 1e-4;
+      float epsilon = 1e-6;
       // THIS CODE IS HAND-CRAFTED FOR THE CYLINDER WITH SOURCE PLANE AT X == 0.
       if (pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar <= epsilon) {
         // Don't reflect and don't count
@@ -43,7 +43,6 @@ namespace rti {
       //
       /* Get surface normal at intersection */
       //rti::triple<float> pGeometry.get_normal(pRayhit.hit.geomID);
-      // Is that the normal at the hit location?
       rti::triple<float> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
 
       float xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
@@ -66,12 +65,16 @@ namespace rti {
       auto normal = rti::inv(normalO);
 
       /* Compute lambertian reflection with respect to surface normal */
-      auto orthonormalBasis = get_orthonormal_basis<float>(normalO);
+      auto orthonormalBasis = get_orthonormal_basis<float>(normal);
 
       // Set new origin and direction in pRayhit
-      pRayhit.ray.org_x = xxahit;
-      pRayhit.ray.org_y = yyahit;
-      pRayhit.ray.org_z = zzahit;
+      // We add a small epsilon to the origin to make sure that we do not intersect the same surface again.
+      // Without that the simulation does not work.
+      double epsilonOrg = 1e-6;
+      auto obFirst = orthonormalBasis.frst; // normalized surface normal
+      pRayhit.ray.org_x = xxahit + obFirst.frst * epsilonOrg;
+      pRayhit.ray.org_y = yyahit + obFirst.scnd * epsilonOrg;
+      pRayhit.ray.org_z = zzahit + obFirst.thrd * epsilonOrg;
       // Calling rng.get() on the smart-pointer returns a raw pointer.
       // Incidentally i_rng has also a function called get(). To call
       // i_rng::get() one writes rng->get().
@@ -88,9 +91,9 @@ namespace rti {
     double mStickingC;
 
     // Returns some orthonormal basis containing a the input vector pVector
-    // (possibly scaled) as the first element of the returned triple.
-    // Is deterministic, i.e., for one input it will return always the same
-    // result.
+    // (possibly scaled) as the first element of the return value.
+    // This function is deterministic, i.e., for one input it will return always
+    // the same result.
     template<typename T>
     rti::triple<rti::triple<T> > get_orthonormal_basis(const rti::triple<T> pVector) const {
       rti::triple<rti::triple<T> > rr;
