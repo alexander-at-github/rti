@@ -9,32 +9,25 @@ namespace rti {
   public:
 
     disc_origin_x(T pX, T pY, T pZ, T pRadius) :
-      disc_origin_x(pX, pY, pZ, pRadius, 1) {}
-
-    disc_origin_x(T pX, T pY, T pZ, T pRadius, unsigned int pSeed) :
       mX(pX),
       mY(pY),
       mZ(pZ),
-      mRadius(pRadius),
-      mSeed(pSeed) {}
+      mRadius(pRadius) {}
 
-    // With unique_ptr one cannot return covariant types
-    std::unique_ptr<i_origin<T> > clone() const override final {
-      return std::make_unique<disc_origin_x<T> >(mX, mY, mZ, mRadius, mSeed);
-    }
-
-    rti::triple<T> get() override final {
+    rti::triple<T>get(rti::i_rng& pRng, rti::i_rng::i_state& pRngState) const override final {
       T r1 = 1;
       T r2 = 1;
       do {
-        r1 = (T) rand_r(&mSeed); // stdlib.h
-        r2 = (T) rand_r(&mSeed); // stdlib.h
-        r1 -= RAND_MAX/2;
-        r2 -= RAND_MAX/2;
-        r1 = r1 / (RAND_MAX/2) * mRadius;
-        r2 = r2 / (RAND_MAX/2) * mRadius;
-        assert(-mRadius <= r1 && r1 <= mRadius && "Error in computin random number in the interval [-mRadius, +mRadius]");
-        assert(-mRadius <= r2 && r2 <= mRadius && "Error in computin random number in the interval [-mRadius, +mRadius]");
+        r1 = (T) pRng.get(pRngState);
+        r2 = (T) pRng.get(pRngState);
+        r1 -= pRng.max()/2;
+        r2 -= pRng.max()/2;
+        r1 = r1 / (pRng.max()/2) * mRadius;
+        r2 = r2 / (pRng.max()/2) * mRadius;
+        assert(-mRadius <= r1 && r1 <= mRadius &&
+               "Error in computin random number in the interval [-mRadius, +mRadius]");
+        assert(-mRadius <= r2 && r2 <= mRadius &&
+               "Error in computin random number in the interval [-mRadius, +mRadius]");
       } while ( sqrt(r1*r1 + r2*r2) > mRadius );
       return {mX, mY+r1, mZ+r2};
     }
@@ -44,6 +37,5 @@ namespace rti {
     T mY;
     T mZ;
     T mRadius;
-    unsigned int mSeed;
   };
 } // namespace rti

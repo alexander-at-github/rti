@@ -46,6 +46,15 @@ namespace rti {
       }
     }
 
+    // // Not thread safe
+    // void add(const bucket_counter& pO) {
+    //   assert(this->mLength == pO.mLength && "Precondition");
+    //   assert(this->mNumBuckets == pO.mNumBuckets && "Precondition");
+    //   for (size_t idx = 0; idx < mCounts.size(); ++idx) {
+    //     mCounts[idx] += pO.mCounts[idx];
+    //   }
+    // }
+
     void use(const RTCRayHit& pRayHit) override final {
       double epsilon = 1e-5;
 

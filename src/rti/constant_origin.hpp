@@ -13,14 +13,10 @@ namespace rti {
       mY(pY),
       mZ(pZ) {}
 
-    // With unique_ptr one cannot return covariant types
-    std::unique_ptr<i_origin<T> > clone() const override final {
-      return std::make_unique<constant_origin<T> >(mX, mY, mZ);
-    }
-
-    rti::triple<T> get() override final {
+    rti::triple<T> get(rti::i_rng& pRng, rti::i_rng::i_state& pRngState) const override final {
       return {mX, mY, mZ};
     }
+
   private:
     T mX;
     T mY;

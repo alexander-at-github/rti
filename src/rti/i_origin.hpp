@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "rti/i_rng.hpp"
 #include "rti/utils.hpp"
 
 namespace rti {
@@ -11,8 +12,6 @@ namespace rti {
     virtual ~i_origin() {}
     // Specifies an origin as a subset of R^3.
     // Gives a way to obtain a location from the origin (e.g. in a random manner)
-    // Clone function, copies the object
-    virtual std::unique_ptr<i_origin<T> > clone() const = 0;
-    virtual rti::triple<T> get() = 0;
+    virtual rti::triple<T> get(rti::i_rng&, rti::i_rng::i_state&) const = 0;
   };
 } // namespace rti

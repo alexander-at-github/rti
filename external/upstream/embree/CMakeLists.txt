@@ -1,13 +1,13 @@
-# Embree-TBB specific
-externalproject_get_property(tbb-external SOURCE_DIR)
-set(TBB_SOURCE_DIR ${SOURCE_DIR})
-unset(SOURCE_DIR)
+# # Embree-TBB specific
+# externalproject_get_property(tbb-external SOURCE_DIR)
+# set(TBB_SOURCE_DIR ${SOURCE_DIR})
+# unset(SOURCE_DIR)
 
 #message(STATUS "[embree/CMakeLists.txt] TBB_SOURCE_DIR=${TBB_SOURCE_DIR}")
 
 externalproject_add(embree-external
   DEPENDS
-    tbb-external
+    #tbb-external
   GIT_REPOSITORY
     https://github.com/embree/embree.git
   # Hash of tags/v3.5.2
@@ -28,10 +28,12 @@ externalproject_add(embree-external
     #-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
     -DEMBREE_ISPC_SUPPORT:BOOL=${EMBREE_ISPC_SUPPORT}
-    # Embree TBB specific
-    # Embree reads this variable in its own CMakeLists.txt.
-    # (TBB_ROOT is not used according to the convetion of CMake).
-    -DTBB_ROOT:PATH=${TBB_SOURCE_DIR}
+    # # Embree TBB specific
+    # # Embree reads this variable in its own CMakeLists.txt.
+    # # (TBB_ROOT is not used according to the convetion of CMake).
+    # -DTBB_ROOT:PATH=${TBB_SOURCE_DIR}
+    # We use Embree's internal tasking system
+    -DEMBREE_TASKING_SYSTEM:STRING=INTERNAL
   # Do not install
   # If one installes it and tries to use the installed library, then there exists a linkage
   # problem with TBB. Simply use the generated files in the binary directory.

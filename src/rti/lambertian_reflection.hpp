@@ -12,17 +12,15 @@ namespace rti {
   public:
     lambertian_reflection(double pStickingC) :
       mStickingC(pStickingC) {
-      RLOG_ERROR
-        << "TODO: Initialize the seed the of the random number generator in the "
-        << "lambertian reflection" << std::endl;
+      RLOG_ERROR << "WARNING: This code inverts the surface normals (gmsh input)" << std::endl;
     }
 
-    bool use(RTCRayHit& pRayhit, const i_geometry& pGeometry, i_hit_counter& pHitcounter) const override final {
-      static std::unique_ptr<rti::i_rng> rng = std::make_unique<rti::cstdlib_rng>();
-
-      // TODO
-      // Question: How do we initialize this variable?
-      thread_local static rti::cstdlib_rng::state seed = {123456};
+    bool use(
+             RTCRayHit& pRayhit,
+             rti::i_rng& pRng,
+             rti::i_rng::i_state& pRngState,
+             const i_geometry& pGeometry,
+             i_hit_counter& pHitcounter) const override final {
 
       float epsilon = 1e-6;
       // THIS CODE IS HAND-CRAFTED FOR THE CYLINDER WITH SOURCE PLANE AT X == 0.
@@ -32,8 +30,8 @@ namespace rti {
       }
 
       /* Get random number and decide whether or not to reflect. */
-      uint64_t rndm = rng->get(&seed);
-      if (rndm <= (rng->max() * mStickingC)) {
+      uint64_t rndm = pRng.get(pRngState);
+      if (rndm <= (pRng.max() * mStickingC)) {
         // Do not reflect
         pHitcounter.use(pRayhit);
         return false;
@@ -75,10 +73,7 @@ namespace rti {
       pRayhit.ray.org_x = xxahit + obFirst.frst * epsilonOrg;
       pRayhit.ray.org_y = yyahit + obFirst.scnd * epsilonOrg;
       pRayhit.ray.org_z = zzahit + obFirst.thrd * epsilonOrg;
-      // Calling rng.get() on the smart-pointer returns a raw pointer.
-      // Incidentally i_rng has also a function called get(). To call
-      // i_rng::get() one writes rng->get().
-      auto direction = rti::cos_hemi::get(orthonormalBasis, rng.get(), &seed);
+      auto direction = rti::cos_hemi::get(orthonormalBasis, pRng, pRngState);
       pRayhit.ray.dir_x = direction.frst;
       pRayhit.ray.dir_y = direction.scnd;
       pRayhit.ray.dir_z = direction.thrd;

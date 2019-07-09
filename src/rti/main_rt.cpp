@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <iostream>
+#include <omp.h>
 #include <string>
 
 #include <assert.h>
@@ -8,7 +9,6 @@
 #include <gmsh.h>
 #include <immintrin.h> // Need? Added later
 #include <pmmintrin.h>
-#include <tbb/tbb.h>
 #include <xmmintrin.h>
 
 #include "rti/command_line_options.hpp"
@@ -22,9 +22,7 @@
 #include "rti/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/ray_source.hpp"
 #include "rti/sphere_geometry_from_gmsh.hpp"
-#include "rti/test_pool.hpp"
 #include "rti/test_result.hpp"
-#include "rti/test_run.hpp"
 #include "rti/tracer.hpp"
 #include "rti/trace_result.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp"
@@ -36,22 +34,29 @@ namespace rti {
       rti::command_line_options::init(argc, argv);
       // Enable Flush-to-Zero and Denormals-are-Zero for the MXSCR status and
       // control registers for performance reasons.
+      //
+      // "If using a different tasking system, make sure each rendering thread has the proper mode set."
       // See: https://embree.github.io/api.html#mxcsr-control-and-status-register
-      _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-      _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+      #pragma omp parallel
+      {
+        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+      }
 
-      // tbb
-      // do we need that? Not necessary. But one can set the number of threads.
-      //static tbb::task_scheduler_init init(tbb::task_scheduler_init::automatic);
       std::string maxThreadsStr = rti::command_line_options::get_instance().
         get_option_value(rti::command_line_options::option_type::MAX_THREADS);
-      unsigned int maxThreads = tbb::task_scheduler_init::default_num_threads();
-      if ( ! maxThreadsStr.empty()) {
-        maxThreads = std::stoul(maxThreadsStr);
+      if ( ! maxThreadsStr.empty() ) {
+        unsigned long maxThreadsTmp = std::stoul(maxThreadsStr);
+        //assert(0 <= maxThreadsTmp); // Always true
+        assert(maxThreadsTmp <= std::numeric_limits<int>::max() &&
+               "Number of threads violate assumption");
+        int maxThreads = (int) maxThreadsTmp;
+
+        if (maxThreads < omp_get_max_threads()) {
+          omp_set_num_threads(maxThreads);
+        }
       }
-      //RLOG_DEBUG << "Using " << maxThreads << " threads" << std::endl;
-      std::cout << "Using " << maxThreads << " threads" << std::endl;
-      static tbb::task_scheduler_init init(maxThreads);
+      std::cout << "Using " << omp_get_max_threads() << " threads" << std::endl;
     }
 
     void print_rtc_device_info(RTCDevice pDevice) {
@@ -80,15 +85,21 @@ int main(int argc, char* argv[]) {
   RTCDevice device = rtcNewDevice(device_config.c_str());
   rti::main_rt::print_rtc_device_info(device);
 
-  auto rng = std::make_unique<rti::cstdlib_rng>();
-  auto rngSeed = std::make_unique<rti::cstdlib_rng::state>(123456);
+  rti::disc_origin_x<float> origin(0, 0, 0, 0.5);
+  rti::cosine_direction_new<float> direction(
+    {{1.f, 0.f, 0.f},
+     {0.f, 1.f, 0.f},
+     {0.f, 0.f, 1.f}});
 
-  rti::ray_source<float> source(
-    std::make_unique<rti::disc_origin_x<float> >(0, 0, 0, 0.5),
-    std::make_unique<rti::cosine_direction_new<float> >(rti::triple<rti::triple<float> > {{1.f, 0.f, 0.f}, {0.f, 1.f, 0.f}, {0.f, 0.f, 1.f}}, rng.get(), rngSeed.get())
-    //std::make_unique<rti::cosine_direction<float> >()
-    //std::make_unique<rti::dummy_direction>()
-                                );
+  rti::ray_source<float> source(origin, direction);
+
+  // rti::ray_source<float> source(
+  //   std::make_unique<rti::disc_origin_x<float> >(0, 0, 0, 0.5),
+  //   std::make_unique<rti::cosine_direction_new<float> >(
+  //     rti::triple<rti::triple<float> > {
+  //       {1.f, 0.f, 0.f},
+  //       {0.f, 1.f, 0.f},
+  //       {0.f, 0.f, 1.f}}));
 
   rti::triangle_geometry_from_gmsh geometry(device, gmshReader);
   //rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);

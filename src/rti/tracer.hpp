@@ -4,9 +4,7 @@
 
 #include <cmath>
 #include <chrono>
-
-#include "tbb/enumerable_thread_specific.h"
-#include "tbb/tbb.h"
+#include <omp.h>
 
 #include "rti/bucket_counter.hpp"
 #include "rti/i_geometry.hpp"
@@ -42,7 +40,15 @@ namespace rti {
       RTCGeometry geometry = mGeo.get_rtc_geometry();
       rtcCommitGeometry(geometry);
       (void) rtcAttachGeometry(scene, geometry);
-      rtcCommitScene(scene);
+
+      // Use openMP for parallelization
+      #pragma omp parallel
+      {
+        rtcJoinCommitScene(scene);
+        // TODO: move to the other parallel region at the bottom
+      }
+
+
       // The geometry object will be destructed when the scene object is
       // destructed, because the geometry object is attached to the scene
       // object.
@@ -53,104 +59,96 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 26;
-      size_t numRays = std::pow(2,nrexp);
+      size_t nrexp = 20;
+      size_t numRays = std::pow(2, nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
-
-      // We use both, tbb::enumerable_thread_specific and c++ thread_local variables (further
-      // down).
-      tbb::enumerable_thread_specific<RTCRayHit> rayhitGrp(
-        RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
-      tbb::enumerable_thread_specific<size_t> hitcGrp(0);
-      tbb::enumerable_thread_specific<size_t> nonhitcGrp(0);
-      //tbb::enumerable_thread_specific<std::vector<rti::triple<float> > > hitpointgrp;
-
-      rti::bucket_counter bucketCounterPrototype(45, 101); // lenght 45 and 100 buckets
-      tbb::enumerable_thread_specific<rti::bucket_counter> bucketCounterGrp(bucketCounterPrototype);
-
-      // Initializing rays here does not work, cause TBB creates the members of an
-      // enumerable_thread_specific object only when a thread requests it. That is,
-      // at this position all enumerable_thread_specific containers are empty.
 
       //rti::specular_reflection reflectionModel;
       //rti::lambertian_reflection reflectionModel(0.015625);
       rti::lambertian_reflection reflectionModel(0.1);
 
+      size_t hitc = 0;
+      size_t nonhitc = 0;
+      rti::bucket_counter bucketCounter(45, 101);
+      #pragma omp declare \
+        reduction(bucket_counter_combine : \
+                  rti::bucket_counter : \
+                  omp_out = rti::bucket_counter::combine(omp_out, omp_in)) \
+        initializer(omp_priv = rti::bucket_counter(omp_orig))
+        //initializer(omp_priv = bucketCounter(45, 101))
+      // TODO: IS THAT CORRECT? (see also the copy constructor of bucket_counter)
+
+      // omp_set_dynamic(false);
+
+      // The random number generator itself is stateless (has no members which
+      // are modified). Hence, it may be shared by threads.
+      auto rng = std::make_unique<rti::cstdlib_rng>();
+
       // Start timing
       rti::timer timer;
 
-      tbb::parallel_for(
-        // magic number: number of elements in one blocked range
-        tbb::blocked_range<size_t>(0, numRays, 64),
-        // capture by refernce
-        [&scene, &hitcGrp, &nonhitcGrp, &rayhitGrp, &bucketCounterGrp,
-         &context, &reflectionModel,
-         // The only way to capture member variables is to capture the
-         // this-reference.
-         this]
-        (const tbb::blocked_range<size_t>& range) {
-          // Here it is important to use the refernce type explicitly, otherwise
-          // we cannot modify the content.
-          auto& rayhit = rayhitGrp.local();
-          auto& hitc = hitcGrp.local();
-          auto& nonhitc = nonhitcGrp.local();
-          auto& bucketCounter = bucketCounterGrp.local();
+      #pragma omp parallel \
+        reduction(+ : hitc, nonhitc) \
+        reduction(bucket_counter_combine : bucketCounter)
+      {
+        // Thread local data goes here, if it is not needed anymore after the
+        // execution of the parallel region.
+        RTCRayHit rayhit = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-          thread_local auto source = mSource.clone();
+        // REMARK: All data which is modified in the parallel loop should be
+        // handled here explicitely.
+        unsigned int seed = omp_get_thread_num();
+        auto rngSeed = std::make_unique<rti::cstdlib_rng::state>(seed);
+        // TODO: move this initialization to, e.g., the constructor
+
+        #pragma omp for
+        for (size_t idx = 0; idx < numRays; ++idx) {
 
           rayhit.ray.tnear = 0;
           rayhit.ray.time = 0;
           rayhit.ray.tfar = std::numeric_limits<float>::max();
 
-          // The range may contain only one single element. That is, the
-          // tbb::blocked_range() function really is the loop.
-          for(size_t idx = range.begin(); idx < range.end(); ++idx) {
+          RLOG_DEBUG << "Preparing new ray from source" << std::endl;
+          mSource.fill_ray(rayhit.ray, *rng, *rngSeed);
 
-            RLOG_DEBUG << "Preparing new ray from source" << std::endl;
-            source->fill_ray(rayhit.ray);
+          bool reflect;
+          do {
+            rayhit.ray.tfar = std::numeric_limits<float>::max();
+            rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+            rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
-            bool reflect;
-            do {
-              rayhit.ray.tfar = std::numeric_limits<float>::max();
-              rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-              rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+            RLOG_DEBUG
+              << "preparing ray == ("
+              << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+              << ") ("
+              << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+              << ")" << std::endl;
+            // performing ray queries in a scene is thread-safe
+            rtcIntersect1(scene, &context, &rayhit);
 
-              RLOG_DEBUG
-                << "preparing ray == ("
-                << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
-                << ") ("
-                << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
-                << ")" << std::endl;
-              // performing ray queries in a scene is thread-safe
-              rtcIntersect1(scene, &context, &rayhit);
+            if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
+              // No  hit
+              nonhitc += 1;
+              break; // break do-while loop
+            }
+            // else
+            // A hit
+            hitc += 1;
 
-              if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
-                // No  hit
-                nonhitc += 1;
-                break; // break do-while loop
-              }
-              // else
-              // A hit
-              hitc += 1;
+            RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
+            RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
 
-              RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
-              RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
-
-              reflect = reflectionModel.use(rayhit, this->mGeo, bucketCounter);
-            } while (reflect);
-          }
-        });
+            reflect = reflectionModel.use(rayhit, *rng, *rngSeed, this->mGeo, bucketCounter);
+          } while (reflect);
+        }
+      }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
 
-      result.hitc = hitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
-      result.nonhitc = nonhitcGrp.combine([](size_t xx, size_t yy){ return xx + yy; });
-      rti::bucket_counter bucketResult =
-        bucketCounterGrp.combine(
-          [](rti::bucket_counter b1, rti::bucket_counter b2) {
-            return rti::bucket_counter::combine(b1, b2);
-          });
-      std::cout << bucketResult << std::endl;
+      // // Turn dynamic adjustment of number of threads on again
+      // omp_set_dynamic(true);
+
+      std::cout << bucketCounter << std::endl;
 
       return result;
     }

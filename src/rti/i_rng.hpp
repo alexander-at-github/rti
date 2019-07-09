@@ -13,13 +13,13 @@ namespace rti {
 
     // A definition of the interface of a state
     struct i_state {
-      // Polymorphism seems to work only if there is at least one virtual function
       virtual ~i_state() {}
+      virtual std::unique_ptr<i_state> clone() const = 0;
     };
 
     // A definition of this function will most likely alter the content of its
     // argument.
-    virtual uint64_t get(i_state* pState) const = 0;
+    virtual uint64_t get(i_state& pState) const = 0;
 
     virtual uint64_t max() const = 0;
   };

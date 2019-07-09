@@ -11,31 +11,23 @@ namespace rti {
     // Not thread safe. See direction classes for reasons.
   public:
 
-    ray_source(
-        std::unique_ptr<rti::i_origin<T> > pOrigin,
-        std::unique_ptr<rti::i_direction<T> > pDirection) :
-      mOrigin(std::move(pOrigin)),
-      mDirection(std::move(pDirection)) {}
+    ray_source(rti::i_origin<T>& pOrigin, rti::i_direction<T>& pDirection) :
+      mOrigin(pOrigin),
+      mDirection(pDirection) {}
 
-    // Note: With unique_ptr one cannot return covariant types
-    std::unique_ptr<i_ray_source> clone() const override final {
-      RLOG_TRACE << "[ray_source.clone()]" << std::endl;
-      return std::make_unique<ray_source<T> >(mOrigin->clone(), mDirection->clone());
-    }
-
-    void fill_ray(RTCRay& pRay) override final {
-      auto origin = mOrigin->get();
+    void fill_ray(RTCRay& pRay, rti::i_rng& pRng, rti::i_rng::i_state& pRngState) const override final {
+      auto origin = mOrigin.get(pRng, pRngState);
       pRay.org_x = (float) origin.frst;
       pRay.org_y = (float) origin.scnd;
       pRay.org_z = (float) origin.thrd;
-      auto direction = mDirection->get();
+      auto direction = mDirection.get(pRng, pRngState);
       pRay.dir_x = (float) direction.frst;
       pRay.dir_y = (float) direction.scnd;
       pRay.dir_z = (float) direction.thrd;
     }
 
   private:
-    std::unique_ptr<i_origin<T> > mOrigin;
-    std::unique_ptr<i_direction<T> > mDirection;
+    i_origin<T>& mOrigin;
+    i_direction<T>& mDirection;
   };
 } // namespace rti

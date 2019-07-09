@@ -5,39 +5,20 @@
 namespace rti {
   // Since it is a dummy anyway it provides only a float implementation
   class dummy_direction : public i_direction<float> {
-    // This class is not thread safe, because of the use of rand_r(),
-    // the seed as member variable, and the index variable mXYidx.
   public:
 
-    dummy_direction() :
-      mSeed(1) {} // magic number
+    dummy_direction() {}
 
-    dummy_direction(unsigned int pSeed) :
-      mSeed(pSeed) {}
-
-    dummy_direction(unsigned int pSeed, size_t pXYidx) :
-      mSeed(pSeed),
-      mXYidx(pXYidx) {}
-
-    std::unique_ptr<i_direction<float> > clone() const override final {
-      return std::make_unique<dummy_direction>(mSeed, mXYidx);
-    }
-
-    rti::triple<float> get() override final {
-      int rr = rand_r(&mSeed); // stdlib.h
-      if (mXYidx >= mXYs.size()) {
-        mXYidx = 0;
-      }
+    rti::triple<float> get(rti::i_rng& pRng, rti::i_rng::i_state& pRngState) const override final {
+      uint64_t rr = pRng.get(pRngState);
+      uint64_t mXYidx = pRng.get(pRngState) % mXYs.size();
       float xx = ((float)rr) * 4e-7; // magic number; seems a good value for testing
       float yy = mXYs[mXYidx].frst;
       float zz = mXYs[mXYidx].scnd;
-      mXYidx += 1;
       return {xx, yy, zz};
     }
 
   private:
-    unsigned int mSeed;
-    size_t mXYidx = 0;
     // 16 coordinates evenly distributed around a circle of radius 10
     std::vector<rti::pair<float> > mXYs
     {{10.f, 0.f},

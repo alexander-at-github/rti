@@ -35,25 +35,26 @@ find_library(GMSH_LIBRARY NAMES gmsh libgmsh
   PATHS "${GMSH_DIR}/lib"
   NO_DEFAULT_PATH
 )
-# TBB
-message(STATUS "TBB_DIR == ${TBB_DIR}")
-find_path(TBB_INCLUDE_DIR NAMES tbb/task_scheduler_init.h
-  PATHS "${TBB_DIR}/include" # ${TBB_DIR}/include/tbb/task_scheduler_init.h
-  NO_DEFAULT_PATH
-)
-find_library(TBB_LIBRARY NAMES tbb libtbb
-  PATHS "${TBB_DIR}/build/lib_release" # ${TBB_DIR}/build/lib_release/libtbb.so
-  NO_DEFAULT_PATH
-  )
-find_library(TBB_MALLOC_LIBRARY NAMES tbbmalloc libtbbmalloc
-  PATHS "${TBB_DIR}/build/lib_release"
-  NO_DEFAULT_PATH
-  )
-message(STATUS "TBB_INCLUDE_DIR == ${TBB_INCLUDE_DIR}")
-message(STATUS "TBB_LIBRARY == ${TBB_LIBRARY}")
-message(STATUS "TBB_MALLOC_LIBRARY == ${TBB_MALLOC_LIBRARY}")
-message(STATUS "TODO: use tbb-malloc")
+# # TBB
+# message(STATUS "TBB_DIR == ${TBB_DIR}")
+# find_path(TBB_INCLUDE_DIR NAMES tbb/task_scheduler_init.h
+#   PATHS "${TBB_DIR}/include" # ${TBB_DIR}/include/tbb/task_scheduler_init.h
+#   NO_DEFAULT_PATH
+# )
+# find_library(TBB_LIBRARY NAMES tbb libtbb
+#   PATHS "${TBB_DIR}/build/lib_release" # ${TBB_DIR}/build/lib_release/libtbb.so
+#   NO_DEFAULT_PATH
+#   )
+# find_library(TBB_MALLOC_LIBRARY NAMES tbbmalloc libtbbmalloc
+#   PATHS "${TBB_DIR}/build/lib_release"
+#   NO_DEFAULT_PATH
+#   )
+# message(STATUS "TBB_INCLUDE_DIR == ${TBB_INCLUDE_DIR}")
+# message(STATUS "TBB_LIBRARY == ${TBB_LIBRARY}")
+# message(STATUS "TBB_MALLOC_LIBRARY == ${TBB_MALLOC_LIBRARY}")
+# message(STATUS "TODO: use tbb-malloc")
 
+find_package(OpenMP REQUIRED)
 
 # One needs to set the RPATH, otherwise the installed executable does not have dynamic
 # link libraries set correctly.
@@ -62,36 +63,35 @@ message(STATUS "TODO: use tbb-malloc")
 # We set this property later on the executable itself.
 
 
-# Executable for testing the ray tracing code
-add_executable(rtiex rti/main_testing_rt.cpp)
-target_include_directories(rtiex
-  PRIVATE
-	  ${CMAKE_CURRENT_LIST_DIR}
-    ${EMBREE_INCLUDE_DIRS}
-	  ${GMSH_INCLUDE_DIR}
-    ${TBB_INCLUDE_DIR}
-  )
-target_link_libraries(rtiex
-  PRIVATE
-    Boost::log
-    Boost::system
-    Boost::timer
-    ${EMBREE_LIBRARY}
-		${GMSH_LIBRARY}
-    ${TBB_LIBRARY}
-  )
-# Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
-install(TARGETS rtiex
-  DESTINATION "."
-  # If one wants to install the executable somewhere else, then one should consider
-  # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
-  )
-# One needs to set the RPATH, otherwise the installed executable does not have dynamic
-# link libraries set correctly.
-set_target_properties(rtiex
-  PROPERTIES
-  INSTALL_RPATH_USE_LINK_PATH TRUE
-  )
+# # Executable for testing the ray tracing code
+# add_executable(rtiex rti/main_testing_rt.cpp)
+# target_include_directories(rtiex
+#   PRIVATE
+# 	  ${CMAKE_CURRENT_LIST_DIR}
+#     ${EMBREE_INCLUDE_DIRS}
+# 	  ${GMSH_INCLUDE_DIR}
+#   )
+# target_link_libraries(rtiex
+#   PRIVATE
+#     OpenMP::OpenMP_CXX # this line also takes care for flags
+#     Boost::log
+#     Boost::system
+#     Boost::timer
+#     ${EMBREE_LIBRARY}
+# 		${GMSH_LIBRARY}
+#   )
+# # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
+# install(TARGETS rtiex
+#   DESTINATION "."
+#   # If one wants to install the executable somewhere else, then one should consider
+#   # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
+#   )
+# # One needs to set the RPATH, otherwise the installed executable does not have dynamic
+# # link libraries set correctly.
+# set_target_properties(rtiex
+#   PROPERTIES
+#   INSTALL_RPATH_USE_LINK_PATH TRUE
+#   )
 
 
 # Executable to perform ray tracing
@@ -101,16 +101,16 @@ target_include_directories(rti_m
 	  ${CMAKE_CURRENT_LIST_DIR}
     ${EMBREE_INCLUDE_DIRS}
 	  ${GMSH_INCLUDE_DIR}
-    ${TBB_INCLUDE_DIR}
   )
 target_link_libraries(rti_m
+  PUBLIC
+    OpenMP::OpenMP_CXX # this line also takes care for flags
   PRIVATE
     Boost::log
     Boost::system
     Boost::timer
     ${EMBREE_LIBRARY}
 		${GMSH_LIBRARY}
-    ${TBB_LIBRARY}
   )
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
 install(TARGETS rti_m
