@@ -59,13 +59,13 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 24;
+      size_t nrexp = 26;
       size_t numRays = std::pow(2, nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
       //rti::specular_reflection reflectionModel;
       //rti::diffuse_reflection reflectionModel(0.015625);
-      rti::diffuse_reflection reflectionModel(0.1);
+      rti::diffuse_reflection reflectionModel(0.01);
 
       size_t hitc = 0;
       size_t nonhitc = 0;
@@ -97,8 +97,12 @@ namespace rti {
 
         // REMARK: All data which is modified in the parallel loop should be
         // handled here explicitely.
-        unsigned int seed = omp_get_thread_num();
-        auto rngSeed = std::make_unique<rti::cstdlib_rng::state>(seed);
+        unsigned int seed = (omp_get_thread_num() + 1) * 29; // multiply by magic number (prime)
+        // It seems really important to use two separate seeds / states for
+        // sampling the source and sampling reflections. When we use only one
+        // state for both, then the variance is very high.
+        auto rngSeed1 = std::make_unique<rti::cstdlib_rng::state>(seed);
+        auto rngSeed2 = std::make_unique<rti::cstdlib_rng::state>(seed+2);
         // TODO: move this initialization to, e.g., the constructor
 
         #pragma omp for
@@ -109,10 +113,17 @@ namespace rti {
           rayhit.ray.tfar = std::numeric_limits<float>::max();
 
           RLOG_DEBUG << "Preparing new ray from source" << std::endl;
-          mSource.fill_ray(rayhit.ray, *rng, *rngSeed);
+          mSource.fill_ray(rayhit.ray, *rng, *rngSeed1);
 
           bool reflect;
           do {
+            // { // Debug
+            //   #pragma omp critical
+            //   {
+            //     std::cout << "thread " << omp_get_thread_num() << " rng-state " << rngSeed->mSeed << std::endl;
+            //   }
+            // } // Debug
+
             rayhit.ray.tfar = std::numeric_limits<float>::max();
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -138,12 +149,14 @@ namespace rti {
             RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
             RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
 
-            reflect = reflectionModel.use(rayhit, *rng, *rngSeed, this->mGeo, bucketCounter);
+            reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo, bucketCounter);
           } while (reflect);
         }
       }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
+      result.hitc = hitc;
+      result.nonhitc = nonhitc;
 
       // // Turn dynamic adjustment of number of threads on again
       // omp_set_dynamic(true);
