@@ -15,7 +15,7 @@
 #include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/constant_origin.hpp"
 #include "rti/cosine_direction.hpp"
-#include "rti/cosine_direction_new.hpp"
+#include "rti/cosine_direction.hpp"
 #include "rti/disc_origin_x.hpp"
 #include "rti/dummy_direction.hpp"
 #include "rti/logger.hpp"
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
   rti::main_rt::print_rtc_device_info(device);
 
   rti::disc_origin_x<float> origin(0, 0, 0, 0.5);
-  rti::cosine_direction_new<float> direction(
+  rti::cosine_direction<float> direction(
     {{1.f, 0.f, 0.f},
      {0.f, 1.f, 0.f},
      {0.f, 0.f, 1.f}});
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
   // rti::ray_source<float> source(
   //   std::make_unique<rti::disc_origin_x<float> >(0, 0, 0, 0.5),
-  //   std::make_unique<rti::cosine_direction_new<float> >(
+  //   std::make_unique<rti::cosine_direction<float> >(
   //     rti::triple<rti::triple<float> > {
   //       {1.f, 0.f, 0.f},
   //       {0.f, 1.f, 0.f},
