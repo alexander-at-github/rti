@@ -5,7 +5,6 @@ add_subdirectory(boost)
 # Alternatively one can use OCC instead of OCE
 add_subdirectory(oce)
 add_subdirectory(gmsh)
-add_subdirectory(tbb)
 add_subdirectory(embree)
 
 add_subdirectory(gperftools)
