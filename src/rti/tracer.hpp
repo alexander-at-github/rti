@@ -9,7 +9,7 @@
 #include "rti/bucket_counter.hpp"
 #include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
-#include "rti/lambertian_reflection.hpp"
+#include "rti/diffuse_reflection.hpp"
 #include "rti/specular_reflection.hpp"
 #include "rti/timer.hpp"
 #include "rti/trace_result.hpp"
@@ -64,8 +64,8 @@ namespace rti {
       result.numRays = numRays; // Save the number of rays also to the test result
 
       //rti::specular_reflection reflectionModel;
-      //rti::lambertian_reflection reflectionModel(0.015625);
-      rti::lambertian_reflection reflectionModel(0.1);
+      //rti::diffuse_reflection reflectionModel(0.015625);
+      rti::diffuse_reflection reflectionModel(0.1);
 
       size_t hitc = 0;
       size_t nonhitc = 0;

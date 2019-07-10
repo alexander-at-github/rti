@@ -8,9 +8,9 @@
 #include "rti/i_rng.hpp"
 
 namespace rti {
-  class lambertian_reflection : public i_reflection_model {
+  class diffuse_reflection : public i_reflection_model {
   public:
-    lambertian_reflection(double pStickingC) :
+    diffuse_reflection(double pStickingC) :
       mStickingC(pStickingC) {
       RLOG_ERROR << "WARNING: This code inverts the surface normals (gmsh input)" << std::endl;
     }
