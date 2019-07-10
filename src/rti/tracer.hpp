@@ -10,7 +10,7 @@
 #include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/diffuse_reflection.hpp"
-#include "rti/specular_reflection.hpp"
+//#include "rti/specular_reflection.hpp"
 #include "rti/timer.hpp"
 #include "rti/trace_result.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp" // only debug
@@ -59,7 +59,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 20;
+      size_t nrexp = 24;
       size_t numRays = std::pow(2, nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 
