@@ -8,7 +8,7 @@ cd <rti-base-directory>
 mkdir build
 cd build
 ````
-The following commands will download and build Boost, OCE, Gmsh, TBB, and Embree in the folder `<rti-base-directory>/dependencies`. This may take some time. You need to build them only once:
+The following commands will download and build Boost, OCE, Gmsh, and Embree in the folder `<rti-base-directory>/dependencies`. This may take some time. You need to build them only once:
 ````
 cmake ..
 cmake --build . --target boost-external
