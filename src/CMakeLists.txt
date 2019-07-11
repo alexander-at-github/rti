@@ -27,14 +27,19 @@ find_package(embree 3 REQUIRED
   )
 # Gmsh does not provide a config of a module for find_package().
 # We find the files ourselfs.
-find_path(GMSH_INCLUDE_DIR NAMES gmsh.h
+find_path(GMSH_INCLUDE_DIRS NAMES gmsh.h
   PATHS "${GMSH_DIR}/include"
 	NO_DEFAULT_PATH
 	)
-find_library(GMSH_LIBRARY NAMES gmsh libgmsh
+find_library(GMSH_LIBRARIES NAMES gmsh libgmsh
   PATHS "${GMSH_DIR}/lib"
   NO_DEFAULT_PATH
-)
+  )
+# message(STATUS "VTK_DIR == ${VTK_DIR}")
+find_package(VTK 8.2 REQUIRED
+  PATHS ${VTK_DIR}
+  NO_DEFAULT_PATH
+  )
 
 find_package(OpenMP REQUIRED)
 
@@ -82,7 +87,8 @@ target_include_directories(rti_m
   PRIVATE
 	  ${CMAKE_CURRENT_LIST_DIR}
     ${EMBREE_INCLUDE_DIRS}
-	  ${GMSH_INCLUDE_DIR}
+	  ${GMSH_INCLUDE_DIRS}
+    ${VTK_INCLUDE_DIRS}
   )
 target_link_libraries(rti_m
   PUBLIC
@@ -91,8 +97,9 @@ target_link_libraries(rti_m
     Boost::log
     Boost::system
     Boost::timer
-    ${EMBREE_LIBRARY}
-		${GMSH_LIBRARY}
+    ${EMBREE_LIBRARIES}
+		${GMSH_LIBRARIES}
+    ${VTK_LIBRARIES}
   )
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
 install(TARGETS rti_m

@@ -6,5 +6,6 @@ add_subdirectory(boost)
 add_subdirectory(oce)
 add_subdirectory(gmsh)
 add_subdirectory(embree)
+add_subdirectory(vtk)
 
 add_subdirectory(gperftools)
