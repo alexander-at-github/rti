@@ -91,9 +91,8 @@ target_include_directories(rti_m
     ${VTK_INCLUDE_DIRS}
   )
 target_link_libraries(rti_m
-  PUBLIC
-    OpenMP::OpenMP_CXX # this line also takes care for flags
   PRIVATE
+    OpenMP::OpenMP_CXX # this line also takes care for flags
     Boost::log
     Boost::system
     Boost::timer
