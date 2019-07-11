@@ -13,46 +13,50 @@
 
 #define NAMESPACE_NAMES_THEN_MACRO_NAME(pMacroNames) ARE_ALL_CAPS
 
-namespace lowercase_identifers
-{
-    class separated_by_underscores
-    {
-    public:
-        void because_underscores_are() const
-        {
-            volatile int mostLikeSpaces = 0; // but local names are condensed
+namespace lowercase_identifers {
 
-            while (!mostLikeSpaces)
-                single_statements(); // don't need braces
+  class separated_by_underscores {
+  public:
 
-            for (size_t i = 0; i < 100; ++i)
-            {
-                but_multiple(i);
-                statements_do();
-            }
-        }
+    void because_underscores_are() const {
+      volatile int mostLikeSpaces = 0; // but local names are condensed
 
-        const complex_type& value() const
-        {
-            return mValue; // no conflict with value here
-        }
+      while (!mostLikeSpaces) {
+        single::statements(); // need braces
+      }
 
-        void value(const complex_type& pValue)
-        {
-            mValue = pValue ; // or here
-        }
+      for (size_t i = 0; i < 100; ++i) {
+        and::multiple(i);
+        statements::too();
+      }
+    }
 
-    protected:
-        // the more public it is, the more important it is,
-        // so order: public on top, then protected then private
+    const complex_type& value() const {
+      return mValue; // no conflict with value here
+    }
 
-        template <typename Template, typename Parameters>
-        void are_upper_camel_case()
-        {
-            // gman was here
-        }
+    void value(const complex_type& pValue) {
+      mValue = pValue ; // or here
+    }
 
-    private:
-        complex_type mValue;
-    };
-}
+    void run() {
+      using super_namespace;
+      // names from another namespace should have one explicite namespace name and
+      // scope resolution operator for qualified name lookup
+      names::from_another_namespace();
+    }
+
+  protected:
+    // the more public it is, the more important it is,
+    // so order: public on top, then protected then private
+
+    template <typename Template, typename Parameters>
+    void are_upper_camel_case() {
+      // gman was here
+    }
+
+  private:
+
+    complex_type mValue;
+  };
+} // namespace lowercase_identifier
