@@ -27,7 +27,7 @@ namespace rti {
         get_option_value(rti::command_line_options::option_type::MESH_FILE);
       if (mMshFilePath.empty()) {
         // Try default path
-        mMshFilePath = "../resources/cylinder/c45.msh";
+        mMshFilePath = "../resources/gmsh-based/cylinder/c45.msh";
       }
       gmsh::initialize();
       gmsh::option::setNumber("General.Terminal", 1);
