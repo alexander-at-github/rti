@@ -18,7 +18,7 @@ externalproject_add(gmsh-external
     -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
     -DCMAKE_CXX_EXTENSIONS=${CMAKE_CXX_EXTENSIONS}
     -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
-    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR> # strange that we need that at all
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DENABLE_FLTK=1 # One may disable the compilation of the GUI components, if not needed.
     #-DENABLE_BUILD_LIB=1
     -DENABLE_BUILD_SHARED=1

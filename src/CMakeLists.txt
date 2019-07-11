@@ -6,14 +6,14 @@ project(
   LANGUAGES CXX
   )
 
-message(STATUS "CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
-message(STATUS "CMAKE_BUILD_TYPE == '${CMAKE_BUILD_TYPE}'")
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  message(STATUS "CMAKE_CXX_FLAGS_DEBUG == ${CMAKE_CXX_FLAGS_DEBUG}")
-endif()
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-  message(STATUS "CMAKE_CXX_FLAGS_RELEASE == ${CMAKE_CXX_FLAGS_RELEASE}")
-endif()
+# message(STATUS "CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
+# message(STATUS "CMAKE_BUILD_TYPE == '${CMAKE_BUILD_TYPE}'")
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#   message(STATUS "CMAKE_CXX_FLAGS_DEBUG == ${CMAKE_CXX_FLAGS_DEBUG}")
+# endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Release")
+#   message(STATUS "CMAKE_CXX_FLAGS_RELEASE == ${CMAKE_CXX_FLAGS_RELEASE}")
+# endif()
 
 set(BUILD_SHARED_LIBS ON) # A particularity of Boost 1.70
 
@@ -35,24 +35,6 @@ find_library(GMSH_LIBRARY NAMES gmsh libgmsh
   PATHS "${GMSH_DIR}/lib"
   NO_DEFAULT_PATH
 )
-# # TBB
-# message(STATUS "TBB_DIR == ${TBB_DIR}")
-# find_path(TBB_INCLUDE_DIR NAMES tbb/task_scheduler_init.h
-#   PATHS "${TBB_DIR}/include" # ${TBB_DIR}/include/tbb/task_scheduler_init.h
-#   NO_DEFAULT_PATH
-# )
-# find_library(TBB_LIBRARY NAMES tbb libtbb
-#   PATHS "${TBB_DIR}/build/lib_release" # ${TBB_DIR}/build/lib_release/libtbb.so
-#   NO_DEFAULT_PATH
-#   )
-# find_library(TBB_MALLOC_LIBRARY NAMES tbbmalloc libtbbmalloc
-#   PATHS "${TBB_DIR}/build/lib_release"
-#   NO_DEFAULT_PATH
-#   )
-# message(STATUS "TBB_INCLUDE_DIR == ${TBB_INCLUDE_DIR}")
-# message(STATUS "TBB_LIBRARY == ${TBB_LIBRARY}")
-# message(STATUS "TBB_MALLOC_LIBRARY == ${TBB_MALLOC_LIBRARY}")
-# message(STATUS "TODO: use tbb-malloc")
 
 find_package(OpenMP REQUIRED)
 
@@ -145,8 +127,3 @@ set_target_properties(rti_m
 #message(STATUS "[src/CMakeLists.txt] GMSH_LIBRARYDIR == ${GMSH_LIBRARYDIR}")
 #message(STATUS "[src/CMakeLists.txt] GMSH_INCLUDE_DIR == ${GMSH_INCLUDE_DIR}")
 #message(STATUS "[src/CMakeLists.txt] GMSH_LIBRARY == ${GMSH_LIBRARY}")
-#message(STATUS "[src/CMakeLists.txt] TBB_DIR == ${TBB_DIR}")
-#message(STATUS "[src/CMakeLists.txt] TBB_LIBRARY == ${TBB_LIBRARY}")
-#message(STATUS "[src/CMakeLists.txt] TBB_LIBRARIES == ${TBB_LIBRARIES}")
-#message(STATUS "[src/CMakeLists.txt] TBB_FOUND == ${TBB_FOUND}")
-#message(STATUS "[src/CMakeLists.txt] CUSTOM_TBB_LIBRARY == ${CUSTOM_TBB_LIBRARY}")
