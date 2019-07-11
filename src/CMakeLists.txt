@@ -46,8 +46,7 @@ find_package(OpenMP REQUIRED)
 # One needs to set the RPATH, otherwise the installed executable does not have dynamic
 # link libraries set correctly.
 # CMAKE_INSTALL_RPATH_USE_LINK_PATH needs to be set before the executables are added.
-#set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-# We set this property later on the executable itself.
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 # # Executable for testing the ray tracing code
@@ -100,20 +99,35 @@ target_link_libraries(rti_m
 		${GMSH_LIBRARIES}
     ${VTK_LIBRARIES}
   )
+# # One needs to set the RPATH, otherwise the installed executable does not have dynamic
+# # link libraries set correctly.
+# set_target_properties(rti_m
+#   PROPERTIES
+#   INSTALL_RPATH_USE_LINK_PATH TRUE
+#   )
+
+
+
+# Executable to read text input files
+include(${VTK_USE_FILE}) # VTK specific
+add_executable(read_dsv rti/dsv_reader.cpp)
+target_include_directories(read_dsv
+  PRIVATE
+  ${VTK_INCLUDE_DIRS}
+  )
+target_link_libraries(read_dsv
+  PRIVATE
+  ${VTK_LIBRARIES}
+  )
+
+
+
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
-install(TARGETS rti_m
+install(TARGETS rti_m read_dsv
   DESTINATION "."
   # If one wants to install the executable somewhere else, then one should consider
   # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
   )
-# One needs to set the RPATH, otherwise the installed executable does not have dynamic
-# link libraries set correctly.
-set_target_properties(rti_m
-  PROPERTIES
-  INSTALL_RPATH_USE_LINK_PATH TRUE
-  )
-
-
 
 
 
