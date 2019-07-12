@@ -58,5 +58,7 @@ namespace lowercase_identifers {
   private:
 
     complex_type mValue;
+    // do not use single charaters as variable names
+    unsigned long xx;
   };
 } // namespace lowercase_identifier
