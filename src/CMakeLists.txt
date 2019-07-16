@@ -113,6 +113,7 @@ include(${VTK_USE_FILE}) # VTK specific
 add_executable(read_dsv rti/dsv_reader.cpp)
 target_include_directories(read_dsv
   PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
   ${VTK_INCLUDE_DIRS}
   )
 target_link_libraries(read_dsv
