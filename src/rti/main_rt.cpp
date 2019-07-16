@@ -77,6 +77,7 @@ namespace rti {
 }
 
 int main(int argc, char* argv[]) {
+
   rti::main_rt::init(argc, argv);
   rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance();
 
@@ -113,4 +114,5 @@ int main(int argc, char* argv[]) {
   std::cout << result << std::endl;
 
   //gmsh::fltk::run();
+  return EXIT_SUCCESS;
 }
