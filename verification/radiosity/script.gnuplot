@@ -44,9 +44,26 @@ plot \
   using 1:2 with line linestyle 3 linewidth 1 title "Analytical 0.1", \
   'data/sp.0.1.v2.data' \
   using 1:2 with line linestyle 3 linewidth 2 title "Simulated 0.1", \
+  '../../build/output.new.cyl.ar.45.sp.1.threads8.oneSeed.txt' \
+  using 1:2 with line linestyle 8 linewidth 2 title "New Thrds8 OneSeed Simulated 1", \
+  '../../build/output.new.cyl.ar.45.sp.1.threads8.multipleSeeds.txt' \
+  using 1:2 with line linestyle 9 linewidth 2 title "New Thrds8 MultSeeds Simulated 1", \
   \
   "analytical_solution/sp.0.01.data" \
   using 1:2 with line linestyle 4 linewidth 1 title "Analytical 0.01", \
   'data/sp.0.01.data' \
-  using 1:2 with line linestyle 4 linewidth 2 title "Simulated 0.01"
+  using 1:2 with line linestyle 4 linewidth 5 title "Simulated 0.01", \
+  '../../build/output.new.cyl.ar.45.sp.0.01.threads8.multipleSeeds.txt' \
+  using 1:2 with line linestyle 5 linewidth 4 title "New Simulated 0.01", \
+  '../../build/output.new.cyl.ar.45.sp.0.01.threads8.multipleSeeds.v2.txt' \
+  using 1:2 with line linestyle 6 linewidth 3 title "New Simulated T8 v2 0.01", \
+  '../../build/output.new.cyl.ar.45.sp.0.01.threads4.multipleSeeds.v2.txt' \
+  using 1:2 with line linestyle 7 linewidth 2 title "New Simulated T4 v2 0.01", \
+  '../../build/output.new.cyl.ar.45.sp.0.01.threads8.multipleSeeds.v2.twoSeedsPerThread.txt' \
+  using 1:2 with line linestyle 8 linewidth 1 title "New Simulated T8 v2 twoSeedsPerThread 0.01"
 
+  #'../../build/output.new.cyl.ar.45.sp.0.1.txt' \
+  #using 1:2 with line linestyle 6 linewidth 2 title "New Simulated 0.1", \
+
+  #'../../build/output.new.cyl.ar.45.sp.0.1.threads1.txt' \
+  #using 1:2 with line linestyle 6 linewidth 2 title "New Thrds1 Simulated 0.1", \
