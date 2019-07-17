@@ -21,13 +21,12 @@ namespace lowercase_identifers {
     void because_underscores_are() const {
       volatile int mostLikeSpaces = 0; // but local names are condensed
 
-      while (!mostLikeSpaces) {
-        single::statements(); // need braces
-      }
+      while (!mostLikeSpaces)
+        single::statements_do_not(need, braces);
 
       for (size_t i = 0; i < 100; ++i) {
-        and::multiple(i);
-        statements::too();
+        but::multiple();
+        statements::do();
       }
     }
 
