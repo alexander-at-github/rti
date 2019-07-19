@@ -2,3 +2,5 @@ dependencies/
 build/
 tmp/
 resources/silvaco
+benchmarks/*/
+notes/
