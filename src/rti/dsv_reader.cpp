@@ -1,4 +1,3 @@
-#include <boost/core/demangle.hpp> // debug // remove!
 #include <boost/algorithm/string.hpp>
 
 #include <cmath>
@@ -11,7 +10,6 @@
 #include "vtkDoubleArray.h"
 #include "vtkGlyph3D.h"
 #include "vtkPoints.h"
-#include "vtkPointData.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkRenderer.h"
 #include "vtkRenderWindow.h"
@@ -29,7 +27,7 @@
 // ( https://vtk.org/Wiki/VTK/Tutorials/TriangleGeometryVertices )
 
 namespace rti::dsv {
-  enum class cml_opt_type {INFILE_NAME, OUTFILE_NAME, FILTER_COVERED, DISPLAY};
+  enum class cml_opt_type {INFILE_NAME, OUTFILE_NAME, FILTER_COVERED, RENDER};
   class command_line_options {
     // A simple command line options implementation
   public:
@@ -61,7 +59,7 @@ namespace rti::dsv {
       {cml_opt_type::INFILE_NAME, option_spec {"input file name", "--infile", ""}},
       {cml_opt_type::OUTFILE_NAME, option_spec {"output file name", "--write", ""}},
       {cml_opt_type::FILTER_COVERED, option_spec {"filter covered points", "--filter-covered", "false"}},
-      {cml_opt_type::DISPLAY, option_spec{"display the input on GUI", "--display", "false"}}
+      {cml_opt_type::RENDER, option_spec{"render the input on GUI", "--render", "false"}}
     };
   };
 
@@ -70,7 +68,8 @@ namespace rti::dsv {
 void print_usage(std::string pName) {
   std::cout
     << "Usage: " << pName
-    << " [--write <outfile-name>] [--filter-covered [true | false]] [--display [true | false]] --infile <infile-name>" << std::endl;
+    << " [--write <outfile-name>] [--filter-covered [true | false]]"
+    << " [--render [true | false]] --infile <infile-name>" << std::endl;
 }
 
 
@@ -87,8 +86,8 @@ int main(int argc, char* argv[]) {
   std::string outfilename = options.get_value(rti::dsv::cml_opt_type::OUTFILE_NAME);
   bool filterCovered =
     options.get_value(rti::dsv::cml_opt_type::FILTER_COVERED) == "true" ? true : false;
-  bool display =
-    options.get_value(rti::dsv::cml_opt_type::DISPLAY) == "true" ? true : false;
+  bool render =
+    options.get_value(rti::dsv::cml_opt_type::RENDER) == "true" ? true : false;
   if (filterCovered) {
     std::cout << "Filtering points with cover flag set to a value not equal zero." << std::endl;
   }
@@ -115,12 +114,11 @@ int main(int argc, char* argv[]) {
     std::stringstream linestream;
     linestream << line;
     double xx, yy, zz;
-    linestream >> xx >> yy >> zz;
     double nx, ny, nz;
     int32_t mid;
     double area;
     int32_t cover;
-    linestream >> nx >> ny >> nz >> mid >> area >> cover;
+    linestream >> xx >> yy >> zz >> nx >> ny >> nz >> mid >> area >> cover;
     if (filterCovered && cover != 0) {
       // Skip that point. It is covered by another point on a finer level
       continue;
@@ -178,15 +176,17 @@ int main(int argc, char* argv[]) {
   polydata->GetCellData()->AddArray(sqrtOfAreaVtkArray);
   polydata->GetCellData()->AddArray(coverVtkArray);
 
-  if (display) {
+  if (render) {
     // Visualize
     //auto glyphFilter = vtkSmartPointer<vtkVertexGlyphFilter>::New();
     //glyphFilter->SetInputData(polydata);
     //glyphFilter->Update();
 
     auto sphere = vtkSmartPointer<vtkSphereSource>::New();
+    sphere->SetThetaResolution(16); // magic number; only for rendering
+    sphere->SetPhiResolution(16); // magic number; only for rendering
     //sphere->SetRadius(0.07); // magic number
-    sphere->SetRadius(0.8); // magic number
+    sphere->SetRadius(std::sqrt(2) / 2 * (1 + 1/32 /* increase by about 3% */)); // magic number
     auto glyph = vtkSmartPointer<vtkGlyph3D>::New();
     //glyph->SetInputConnection(glyphFilter->GetOutputPort());
     glyph->SetInputData(polydata);
