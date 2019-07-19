@@ -43,6 +43,7 @@ externalproject_add(rti
     #boost-external
     #gmsh-external
 		#embree-external
+    #vtk-external
     #
     # The project depends on gmsh-external and embree-external. We do not add it here,
     # because otherwise the build system is very slow when rebuilding the project.
