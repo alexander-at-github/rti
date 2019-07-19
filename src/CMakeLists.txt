@@ -118,6 +118,7 @@ target_include_directories(read_dsv
   )
 target_link_libraries(read_dsv
   PRIVATE
+  Boost::system
   ${VTK_LIBRARIES}
   )
 
