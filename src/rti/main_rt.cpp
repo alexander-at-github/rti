@@ -20,12 +20,14 @@
 #include "rti/dummy_direction.hpp"
 #include "rti/logger.hpp"
 #include "rti/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/point_cloud_geometry.hpp"
 #include "rti/ray_source.hpp"
 #include "rti/sphere_geometry_from_gmsh.hpp"
 #include "rti/test_result.hpp"
 #include "rti/tracer.hpp"
 #include "rti/trace_result.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp"
+#include "rti/vtp_point_cloud_reader.hpp"
 
 namespace rti {
   namespace main_rt {
@@ -46,11 +48,12 @@ namespace rti {
       std::string maxThreadsStr = rti::command_line_options::get_instance().
         get_option_value(rti::command_line_options::option_type::MAX_THREADS);
       if ( ! maxThreadsStr.empty() ) {
-        unsigned long maxThreadsTmp = std::stoul(maxThreadsStr);
-        //assert(0 <= maxThreadsTmp); // Always true
-        assert(maxThreadsTmp <= std::numeric_limits<int>::max() &&
-               "Number of threads violate assumption");
-        int maxThreads = (int) maxThreadsTmp;
+        // unsigned long maxThreadsTmp = std::stoul(maxThreadsStr);
+        // //assert(0 <= maxThreadsTmp); // Always true
+        // assert(maxThreadsTmp <= std::numeric_limits<int>::max() &&
+        //        "Number of threads violate assumption");
+        // int maxThreads = (int) maxThreadsTmp;
+        int maxThreads = std::stoi(maxThreadsStr);
 
         if (maxThreads < omp_get_max_threads()) {
           omp_set_num_threads(maxThreads);
@@ -79,7 +82,9 @@ namespace rti {
 int main(int argc, char* argv[]) {
 
   rti::main_rt::init(argc, argv);
-  rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance();
+  //rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance();
+  auto infilename = rti::command_line_options::get_instance().
+    get_option_value(rti::command_line_options::option_type::INFILE_NAME);
 
   // Enable huge page support.
   const std::string device_config = "hugepages=1";
@@ -88,9 +93,9 @@ int main(int argc, char* argv[]) {
 
   rti::disc_origin_x<float> origin(0, 0, 0, 0.5);
   rti::cosine_direction<float> direction(
-    {{1.f, 0.f, 0.f},
-     {0.f, 1.f, 0.f},
-     {0.f, 0.f, 1.f}});
+    {rti::triple<float> {1.f, 0.f, 0.f},
+     rti::triple<float> {0.f, 1.f, 0.f},
+     rti::triple<float> {0.f, 0.f, 1.f}});
 
   rti::ray_source<float> source(origin, direction);
 
@@ -102,17 +107,19 @@ int main(int argc, char* argv[]) {
   //       {0.f, 1.f, 0.f},
   //       {0.f, 0.f, 1.f}}));
 
-  rti::triangle_geometry_from_gmsh geometry(device, gmshReader);
+  //rti::triangle_geometry_from_gmsh geometry(device, gmshReader);
   //rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
   //rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
   //rti::sphere_geometry_from_gmsh geometry(device, gmshReader);
 
-  rti::tracer tracer(geometry, source);
+  rti::vtp_point_cloud_reader<float> pntCldReader (infilename);
+  rti::point_cloud_geometry<float> geometry (device, pntCldReader);
+
+  rti::tracer tracer (geometry, source);
 
   rti::trace_result result = tracer.run();
 
   std::cout << result << std::endl;
 
-  //gmsh::fltk::run();
   return EXIT_SUCCESS;
 }

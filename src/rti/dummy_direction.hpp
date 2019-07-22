@@ -13,8 +13,8 @@ namespace rti {
       uint64_t rr = pRng.get(pRngState);
       uint64_t mXYidx = pRng.get(pRngState) % mXYs.size();
       float xx = ((float)rr) * 4e-7; // magic number; seems a good value for testing
-      float yy = mXYs[mXYidx].frst;
-      float zz = mXYs[mXYidx].scnd;
+      float yy = mXYs[mXYidx][0];
+      float zz = mXYs[mXYidx][1];
       return {xx, yy, zz};
     }
 

@@ -171,6 +171,7 @@ int main(int argc, char* argv[]) {
     sqrtOfAreaVtkArray->SetTuple(idx, &sqrtOfArea);
     coverVtkArray->SetTypedTuple(idx, &coverList[idx]);
   }
+  // One could also do polydata->GetPointData()->AddArray(...)
   polydata->GetCellData()->AddArray(matIdVtkArray);
   polydata->GetCellData()->AddArray(areaVtkArray);
   polydata->GetCellData()->AddArray(sqrtOfAreaVtkArray);
@@ -186,7 +187,7 @@ int main(int argc, char* argv[]) {
     sphere->SetThetaResolution(16); // magic number; only for rendering
     sphere->SetPhiResolution(16); // magic number; only for rendering
     //sphere->SetRadius(0.07); // magic number
-    sphere->SetRadius(std::sqrt(2) / 2 * (1 + 1/32 /* increase by about 3% */)); // magic number
+    sphere->SetRadius(std::sqrt(3) / 2 * (1 + 1/32 /* increase by about 3% */)); // magic number
     auto glyph = vtkSmartPointer<vtkGlyph3D>::New();
     //glyph->SetInputConnection(glyphFilter->GetOutputPort());
     glyph->SetInputData(polydata);

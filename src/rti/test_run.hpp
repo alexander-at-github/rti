@@ -131,9 +131,9 @@ namespace rti {
               //  ************************************************************************************/
               // rti::triple<rti::triple<float> > coords =
               //   dynamic_cast<rti::triangle_geometry_from_gmsh*>(&mGeo)->prim_to_coords(rayhit.hit.primID);
-              // // gmsh::model::geo::addPoint(coords.frst.frst, coords.frst.scnd, coords.frst.thrd);
-              // // gmsh::model::geo::addPoint(coords.scnd.frst, coords.scnd.scnd, coords.scnd.thrd);
-              // // gmsh::model::geo::addPoint(coords.thrd.frst, coords.thrd.scnd, coords.thrd.thrd);
+              // // gmsh::model::geo::addPoint(coords[0][0], coords[0][1], coords[0][2]);
+              // // gmsh::model::geo::addPoint(coords[1][0], coords[1][1], coords[1][2]);
+              // // gmsh::model::geo::addPoint(coords[2][0], coords[2][1], coords[2][2]);
 
               // // Barycentric coordinates
               // // Note the ordering here is important! rayhit.ray.u corresponds to the y-ccordinate and
@@ -141,9 +141,9 @@ namespace rti {
               // float ss = rayhit.hit.u;
               // float tt = rayhit.hit.v;
               // float rr = (1.0f - ss) - tt;
-              // float xxbhit = rr * coords.frst.frst + ss * coords.scnd.frst + tt * coords.thrd.frst;
-              // float yybhit = rr * coords.frst.scnd + ss * coords.scnd.scnd + tt * coords.thrd.scnd;
-              // float zzbhit = rr * coords.frst.thrd + ss * coords.scnd.thrd + tt * coords.thrd.thrd;
+              // float xxbhit = rr * coords[0][0] + ss * coords[1][0] + tt * coords[2][0];
+              // float yybhit = rr * coords[0][1] + ss * coords[1][1] + tt * coords[2][1];
+              // float zzbhit = rr * coords[0][2] + ss * coords[1][2] + tt * coords[2][2];
               // float xxahit = rayhit.ray.org_x + rayhit.ray.dir_x * rayhit.ray.tfar;
               // float yyahit = rayhit.ray.org_y + rayhit.ray.dir_y * rayhit.ray.tfar;
               // float zzahit = rayhit.ray.org_z + rayhit.ray.dir_z * rayhit.ray.tfar;
@@ -187,7 +187,7 @@ namespace rti {
 
       // for (auto& grp : hitpointgrp) {
       //   for (auto& xyz : grp) {
-      //     gmsh::model::geo::addPoint(xyz.frst, xyz.scnd, xyz.thrd);
+      //     gmsh::model::geo::addPoint(xyz[0], xyz[1], xyz[2]);
       //   }
       // }
       // gmsh::model::geo::synchronize();

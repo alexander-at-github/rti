@@ -14,8 +14,8 @@ namespace rti {
                               rti::i_rng::i_state& pRngState) {
       // Precondition: pBasis is normalized
       float epsilon = 1e-6;
-      for (auto vec : pBasis.get_iterable()) {
-        T length = std::sqrt(vec.frst * vec.frst + vec.scnd * vec.scnd + vec.thrd * vec.thrd);
+      for (auto vec : pBasis) {
+        T length = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
         assert(1 - epsilon <= length && length <= 1 + epsilon && "Precondition: pBasis is normal");
       }
 
@@ -29,11 +29,11 @@ namespace rti {
       T cc2 = cos(two_pi * r1) * sqrt(1 - r2);
       T cc3 = sin(two_pi * r1) * sqrt(1 - r2);
 
-      auto tt1 = pBasis.frst;
+      auto tt1 = pBasis[0];
       rti::scale(tt1, cc1);
-      auto tt2 = pBasis.scnd;
+      auto tt2 = pBasis[1];
       rti::scale(tt2, cc2);
-      auto tt3 = pBasis.thrd;
+      auto tt3 = pBasis[2];
       rti::scale(tt3, cc3);
 
       return rti::sum(tt1, tt2, tt3);

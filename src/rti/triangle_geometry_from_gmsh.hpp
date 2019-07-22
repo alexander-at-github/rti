@@ -45,10 +45,16 @@ namespace rti {
     }
 
     rti::triple<rti::triple<float> > prim_to_coords(unsigned int pPrimID) const {
-      return
-        { {mVVBuffer[mTTBuffer[pPrimID].v0].xx, mVVBuffer[mTTBuffer[pPrimID].v0].yy, mVVBuffer[mTTBuffer[pPrimID].v0].zz},
-          {mVVBuffer[mTTBuffer[pPrimID].v1].xx, mVVBuffer[mTTBuffer[pPrimID].v1].yy, mVVBuffer[mTTBuffer[pPrimID].v1].zz},
-          {mVVBuffer[mTTBuffer[pPrimID].v2].xx, mVVBuffer[mTTBuffer[pPrimID].v2].yy, mVVBuffer[mTTBuffer[pPrimID].v2].zz}};
+      return rti::triple<rti::triple<float> >{
+        rti::triple<float> {mVVBuffer[mTTBuffer[pPrimID].v0].xx,
+                            mVVBuffer[mTTBuffer[pPrimID].v0].yy,
+                            mVVBuffer[mTTBuffer[pPrimID].v0].zz},
+        rti::triple<float> {mVVBuffer[mTTBuffer[pPrimID].v1].xx,
+                            mVVBuffer[mTTBuffer[pPrimID].v1].yy,
+                            mVVBuffer[mTTBuffer[pPrimID].v1].zz},
+        rti::triple<float> {mVVBuffer[mTTBuffer[pPrimID].v2].xx,
+                            mVVBuffer[mTTBuffer[pPrimID].v2].yy,
+                            mVVBuffer[mTTBuffer[pPrimID].v2].zz}};
       // rti::triple<rti::triple<float> > result;
       // result[0][0] = mVVBuffer[mTTBuffer[pPrimID].v0].xx; 
       // result[0][1] = mVVBuffer[mTTBuffer[pPrimID].v0].yy;
@@ -66,16 +72,16 @@ namespace rti {
       auto cc = prim_to_coords(pPrimID);
       // Let point uu be equal to p2 - p1
       //rti::triple<float> uu {
-      //  cc.scnd.frst - cc.frst.frst,
-      //  cc.scnd.scnd - cc.frst.scnd,
-      //  cc.scnd.thrd - cc.frst.thrd};
-      auto uu = rti::diff(cc.scnd, cc.frst);
+      //  cc[1][0] - cc[0][0],
+      //  cc[1][1] - cc[0][1],
+      //  cc[1][2] - cc[0][2]};
+      auto uu = rti::diff(cc[1], cc[0]);
       // Let point vv be equal to p3 - p1
       //rti::triple<float> vv {
-      //  cc.thrd.frst - cc.frst.frst,
-      //  cc.thrd.scnd - cc.frst.scnd,
-      //  cc.thrd.thrd - cc.frst.thrd};
-      auto vv = rti::diff(cc.thrd, cc.frst);
+      //  cc[2][0] - cc[0][0],
+      //  cc[2][1] - cc[0][1],
+      //  cc[2][2] - cc[0][2]};
+      auto vv = rti::diff(cc[2], cc[0]);
       // Let result be equal to the cross product of uu and vv
       return rti::cross_product(uu, vv);
 
@@ -156,9 +162,9 @@ namespace rti {
       // Write vertices to Embree
       for (size_t idx = 0; idx < vertices.size(); ++idx) {
         auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = triple.frst;
-        mVVBuffer[idx].yy = triple.scnd;
-        mVVBuffer[idx].zz = triple.thrd;
+        mVVBuffer[idx].xx = triple[0];
+        mVVBuffer[idx].yy = triple[1];
+        mVVBuffer[idx].zz = triple[2];
       }
 
       std::vector<rti::triple<size_t> > triangles = pGmshReader.get_triangles();
@@ -181,9 +187,9 @@ namespace rti {
       // Write triangle to Embree
       for (size_t idx = 0; idx < triangles.size(); ++idx) {
         auto& triple = triangles[idx];
-        mTTBuffer[idx].v0 = triple.frst;
-        mTTBuffer[idx].v1 = triple.scnd;
-        mTTBuffer[idx].v2 = triple.thrd;
+        mTTBuffer[idx].v0 = triple[0];
+        mTTBuffer[idx].v1 = triple[1];
+        mTTBuffer[idx].v2 = triple[2];
         // assert(0 <= mTTBuffer[idx].v0); // not necessary; unsigned
         assert(mTTBuffer[idx].v0 < (long long) mNumVertices && "Invalid Vertex");
         assert(mTTBuffer[idx].v1 < (long long) mNumVertices && "Invalid Vertex");

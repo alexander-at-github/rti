@@ -136,9 +136,9 @@ namespace rti {
       // Write vertices to Embree
       for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
         auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = triple.frst;
-        mVVBuffer[idx].yy = triple.scnd;
-        mVVBuffer[idx].zz = triple.thrd;
+        mVVBuffer[idx].xx = triple[0];
+        mVVBuffer[idx].yy = triple[1];
+        mVVBuffer[idx].zz = triple[2];
         mVVBuffer[idx].radius = 0; // Update to sound value later
       }
 
@@ -164,11 +164,11 @@ namespace rti {
 
         // Set radius
         rti::triple<rti::triple<float> > trnglCoords
-        {{mVVBuffer[triangle.frst].xx, mVVBuffer[triangle.frst].yy, mVVBuffer[triangle.frst].zz},
-         {mVVBuffer[triangle.scnd].xx, mVVBuffer[triangle.scnd].yy, mVVBuffer[triangle.scnd].zz},
-         {mVVBuffer[triangle.thrd].xx, mVVBuffer[triangle.thrd].yy, mVVBuffer[triangle.thrd].zz}};
+        {rti::triple<float> {mVVBuffer[triangle[0]].xx, mVVBuffer[triangle[0]].yy, mVVBuffer[triangle[0]].zz},
+         rti::triple<float> {mVVBuffer[triangle[1]].xx, mVVBuffer[triangle[1]].yy, mVVBuffer[triangle[1]].zz},
+         rti::triple<float> {mVVBuffer[triangle[2]].xx, mVVBuffer[triangle[2]].yy, mVVBuffer[triangle[2]].zz}};
         rti::triple<float> centroid = this->centroid(trnglCoords);
-        for (auto& vertex : triangle.get_iterable()) {
+        for (auto& vertex : triangle) {
           // Do not reuse the coordinates from above, because here we would depend on the ordering introduced
           // above, which could lead to suddle bugs when changing the code.
           vertex_f4_t& vbv = mVVBuffer[vertex];
@@ -189,18 +189,18 @@ namespace rti {
         // Set normals
         rti::triple<float> normal = this->compute_triangle_normal(triangle);
         // Every disc will get the averaged normal over all adjacent triangles.
-        for (auto& vertex : triangle.get_iterable()) {
-          mNNBuffer[vertex].xx += normal.frst;
-          mNNBuffer[vertex].yy += normal.scnd;
-          mNNBuffer[vertex].zz += normal.thrd;
+        for (auto& vertex : triangle) {
+          mNNBuffer[vertex].xx += normal[0];
+          mNNBuffer[vertex].yy += normal[1];
+          mNNBuffer[vertex].zz += normal[2];
         }
       }
     }
 
     rti::triple<float> compute_triangle_normal(rti::triple<size_t> ptriangle) {
-      size_t p1 = ptriangle.frst;
-      size_t p2 = ptriangle.scnd;
-      size_t p3 = ptriangle.thrd;
+      size_t p1 = ptriangle[0];
+      size_t p2 = ptriangle[1];
+      size_t p3 = ptriangle[2];
       rti::triple<float> p2m1 {
         mVVBuffer[p2].xx - mVVBuffer[p1].xx,
         mVVBuffer[p2].yy - mVVBuffer[p1].yy,
@@ -211,9 +211,9 @@ namespace rti {
         mVVBuffer[p3].zz - mVVBuffer[p1].zz};
       // vector cross product of the two edges p2m1, p3m1
       return {
-        (p2m1.scnd * p3m1.thrd) - (p2m1.thrd * p3m1.scnd),
-        (p2m1.thrd * p3m1.frst) - (p2m1.frst * p3m1.thrd),
-        (p2m1.frst * p3m1.scnd) - (p2m1.scnd * p3m1.frst)};
+        (p2m1[1] * p3m1[2]) - (p2m1[2] * p3m1[1]),
+        (p2m1[2] * p3m1[0]) - (p2m1[0] * p3m1[2]),
+        (p2m1[0] * p3m1[1]) - (p2m1[1] * p3m1[0])};
     }
   };
 }

@@ -17,13 +17,13 @@ namespace rti {
 
     void fill_ray(RTCRay& pRay, rti::i_rng& pRng, rti::i_rng::i_state& pRngState) const override final {
       auto origin = mOrigin.get(pRng, pRngState);
-      pRay.org_x = (float) origin.frst;
-      pRay.org_y = (float) origin.scnd;
-      pRay.org_z = (float) origin.thrd;
+      pRay.org_x = (float) origin[0];
+      pRay.org_y = (float) origin[1];
+      pRay.org_z = (float) origin[2];
       auto direction = mDirection.get(pRng, pRngState);
-      pRay.dir_x = (float) direction.frst;
-      pRay.dir_y = (float) direction.scnd;
-      pRay.dir_z = (float) direction.thrd;
+      pRay.dir_x = (float) direction[0];
+      pRay.dir_y = (float) direction[1];
+      pRay.dir_z = (float) direction[2];
     }
 
   private:

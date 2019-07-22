@@ -24,7 +24,7 @@ namespace rti {
     // Declare constructor private
     gmsh_reader() {
       mMshFilePath = rti::command_line_options::get_instance().
-        get_option_value(rti::command_line_options::option_type::MESH_FILE);
+        get_option_value(rti::command_line_options::option_type::INFILE_NAME);
       if (mMshFilePath.empty()) {
         // Try default path
         mMshFilePath = "../resources/gmsh-based/cylinder/c45.msh";

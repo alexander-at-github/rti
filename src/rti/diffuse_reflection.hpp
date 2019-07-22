@@ -49,13 +49,19 @@ namespace rti {
       { // DEBUG
         RLOG_DEBUG << std::endl;
         RLOG_DEBUG << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
-        RLOG_DEBUG << "normal from rayhit.hit: " << normalO << std::endl;
+        RLOG_DEBUG << "normal from rayhit.hit: ";
+        for (size_t idx = 0; idx < normalO.size(); ++idx)
+          RLOG_DEBUG << normalO.at(idx) << " ";
+        RLOG_DEBUG << std::endl;
         auto geoNormal = pGeometry.get_normal(pRayhit.hit.primID);
-        RLOG_DEBUG << "normal from geometry object: " << geoNormal << std::endl;
+        RLOG_DEBUG << "normal from geometry object: ";
+        for (size_t idx = 0; idx < geoNormal.size(); ++idx)
+          RLOG_DEBUG << geoNormal.at(idx) << " ";
+        RLOG_DEBUG << std::endl;
       } // DEBUG
       // Sanity check
       auto diff = rti::diff(normalO, pGeometry.get_normal(pRayhit.hit.primID));
-      assert (diff.frst < 1e-5 && diff.scnd < 1e-5 && diff.thrd < 1e-5 && "Caluclation of surface normal");
+      assert (diff[0] < 1e-5 && diff[1] < 1e-5 && diff[2] < 1e-5 && "Caluclation of surface normal");
       // Is that the normal at the hit location? Yes.
 
       // CAUTION: For now we use inverted geometries from GMSH, that is, we have
@@ -69,14 +75,14 @@ namespace rti {
       // We add a small epsilon to the origin to make sure that we do not intersect the same surface again.
       // Without that the simulation does not work.
       double epsilonOrg = 1e-6;
-      auto obFirst = orthonormalBasis.frst; // normalized surface normal
-      pRayhit.ray.org_x = xxahit + obFirst.frst * epsilonOrg;
-      pRayhit.ray.org_y = yyahit + obFirst.scnd * epsilonOrg;
-      pRayhit.ray.org_z = zzahit + obFirst.thrd * epsilonOrg;
+      auto obFirst = orthonormalBasis[0]; // normalized surface normal
+      pRayhit.ray.org_x = xxahit + obFirst[0] * epsilonOrg;
+      pRayhit.ray.org_y = yyahit + obFirst[1] * epsilonOrg;
+      pRayhit.ray.org_z = zzahit + obFirst[2] * epsilonOrg;
       auto direction = rti::cos_hemi::get(orthonormalBasis, pRng, pRngState);
-      pRayhit.ray.dir_x = direction.frst;
-      pRayhit.ray.dir_y = direction.scnd;
-      pRayhit.ray.dir_z = direction.thrd;
+      pRayhit.ray.dir_x = direction[0];
+      pRayhit.ray.dir_y = direction[1];
+      pRayhit.ray.dir_z = direction[2];
 
       return true;
     }
@@ -92,20 +98,20 @@ namespace rti {
     template<typename T>
     rti::triple<rti::triple<T> > get_orthonormal_basis(const rti::triple<T> pVector) const {
       rti::triple<rti::triple<T> > rr;
-      rr.frst = pVector;
-      // rr.frst.frst = pVector.frst;
-      // rr.frst.scnd = pVector.scnd;
-      // rr.frst.thrd = pVector.thrd;
+      rr[0] = pVector;
+      // rr[0][0] = pVector[0];
+      // rr[0][1] = pVector[1];
+      // rr[0][2] = pVector[2];
 
-      // Calculate a vector (rr.scnd) which is perpendicular to rr.frst
+      // Calculate a vector (rr[1]) which is perpendicular to rr[0]
       // https://math.stackexchange.com/questions/137362/how-to-find-perpendicular-vector-to-another-vector#answer-211195
-      rti::triple<T> candidate0 {rr.frst.thrd, rr.frst.thrd, -(rr.frst.frst + rr.frst.scnd)};
-      rti::triple<T> candidate1 {rr.frst.scnd, -(rr.frst.frst + rr.frst.thrd), rr.frst.scnd};
-      rti::triple<T> candidate2 {-(rr.frst.scnd + rr.frst.thrd), rr.frst.frst, rr.frst.frst};
+      rti::triple<T> candidate0 {rr[0][2], rr[0][2], -(rr[0][0] + rr[0][1])};
+      rti::triple<T> candidate1 {rr[0][1], -(rr[0][0] + rr[0][2]), rr[0][1]};
+      rti::triple<T> candidate2 {-(rr[0][1] + rr[0][2]), rr[0][0], rr[0][0]};
       // We choose the candidate which maximizes the sum of its components, because we want to avoid
       // numeric errors and that the result is (0, 0, 0).
       std::array<rti::triple<T>, 3> cc = {candidate0, candidate1, candidate2};
-      auto sumFun = [](rti::triple<T> oo){return oo.frst + oo.scnd + oo.thrd;};
+      auto sumFun = [](rti::triple<T> oo){return oo[0] + oo[1] + oo[2];};
       int maxIdx = 0;
       for (size_t idx = 1; idx < cc.size(); ++idx) {
         if (sumFun(cc[idx]) > sumFun(cc[maxIdx])) {
@@ -113,23 +119,23 @@ namespace rti {
         }
       }
       assert (maxIdx < 3 && "Error in computation of perpenticular vector");
-      rr.scnd = cc[maxIdx];
+      rr[1] = cc[maxIdx];
 
-      // Calculat cross product of rr.frst and rr.scnd to form orthogonal basis
-      // rr.thrd.frst = rr.frst.scnd * rr.scnd.thrd - rr.frst.thrd * rr.scnd.scnd;
-      // rr.thrd.scnd = rr.frst.thrd * rr.scnd.frst - rr.frst.frst * rr.scnd.thrd;
-      // rr.thrd.thrd = rr.frst.frst * rr.scnd.scnd - rr.frst.scnd * rr.scnd.frst;
-      rr.thrd = rti::cross_product(rr.frst, rr.scnd);
+      // Calculat cross product of rr[0] and rr[1] to form orthogonal basis
+      // rr[2][0] = rr[0][1] * rr[1][2] - rr[0][2] * rr[1][1];
+      // rr[2][1] = rr[0][2] * rr[1][0] - rr[0][0] * rr[1][2];
+      // rr[2][2] = rr[0][0] * rr[1][1] - rr[0][1] * rr[1][0];
+      rr[2] = rti::cross_product(rr[0], rr[1]);
 
       // Normalize the length of these vectors.
-      rti::normalize(rr.frst);
-      rti::normalize(rr.scnd);
-      rti::normalize(rr.thrd);
+      rti::normalize(rr[0]);
+      rti::normalize(rr[1]);
+      rti::normalize(rr[2]);
 
       // Sanity check
-      assert(std::abs(rti::dot_product(rr.frst, rr.scnd)) < 1e-6 && "Error in orthonormal basis computation");
-      assert(std::abs(rti::dot_product(rr.scnd, rr.thrd)) < 1e-6 && "Error in orthonormal basis computation");
-      assert(std::abs(rti::dot_product(rr.scnd, rr.thrd)) < 1e-6 && "Error in orthonormal basis computation");
+      assert(std::abs(rti::dot_product(rr[0], rr[1])) < 1e-6 && "Error in orthonormal basis computation");
+      assert(std::abs(rti::dot_product(rr[1], rr[2])) < 1e-6 && "Error in orthonormal basis computation");
+      assert(std::abs(rti::dot_product(rr[1], rr[2])) < 1e-6 && "Error in orthonormal basis computation");
 
       return rr;
     }

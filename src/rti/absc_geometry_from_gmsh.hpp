@@ -33,15 +33,15 @@ class absc_geometry_from_gmsh : public i_geometry {
   // of a vertex of a triangle.
   static rti::triple<float> centroid(rti::triple<rti::triple<float> > pTriangle) {
     rti::triple<float> result;
-    result.frst = (pTriangle.frst.frst + pTriangle.scnd.frst + pTriangle.thrd.frst) / 3;
-    result.scnd = (pTriangle.frst.scnd + pTriangle.scnd.scnd + pTriangle.thrd.scnd) / 3;
-    result.thrd = (pTriangle.frst.thrd + pTriangle.scnd.thrd + pTriangle.thrd.thrd) / 3;
+    result[0] = (pTriangle[0][0] + pTriangle[1][0] + pTriangle[2][0]) / 3;
+    result[1] = (pTriangle[0][1] + pTriangle[1][1] + pTriangle[2][1]) / 3;
+    result[2] = (pTriangle[0][2] + pTriangle[1][2] + pTriangle[2][2]) / 3;
     return result;
   }
   static float distance(rti::pair<rti::triple<float> > pPnts) {
-    auto p1 = pPnts.frst.frst - pPnts.scnd.frst;
-    auto p2 = pPnts.frst.scnd - pPnts.scnd.scnd;
-    auto p3 = pPnts.frst.thrd - pPnts.scnd.thrd;
+    auto p1 = pPnts[0][0] - pPnts[1][0];
+    auto p2 = pPnts[0][1] - pPnts[1][1];
+    auto p3 = pPnts[0][2] - pPnts[1][2];
     return std::sqrt(p1*p1 + p2*p2 + p3*p3);
   }
 };

@@ -1,70 +1,76 @@
 #pragma once
 
-#include <sstream>
+#include <boost/core/demangle.hpp>
 
-#include <embree3/rtcore.h>
-#include <gmsh.h>
-
-#include "rti/absc_geometry_from_gmsh.hpp"
-#include "rti/gmsh_reader.hpp"
-#include "rti/logger.hpp"
-#include "rti/utils.hpp"
+#include "rti/i_geometry.hpp"
+#include "rti/i_geometry_reader.hpp"
 
 namespace rti {
-  class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
+  // The type Ty is supposed to be a numeric type - float or double.
+  template<typename Ty>
+  class point_cloud_geometry : public i_geometry {
   public:
-    disc_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
-      absc_geometry_from_gmsh(pDevice, pGmshReader) {
-      init_this(pDevice, pGmshReader);
+
+    point_cloud_geometry(RTCDevice& pDevice, rti::i_geometry_reader<Ty>& pGReader) :
+      mDevice(pDevice),
+      mInfilename(pGReader.get_input_file_name()) {
+      init_this(pDevice, pGReader);
     }
 
     void print(std::ostream& pOs) const override final {
-      pOs << "(:class disc_geometry_from_gmsh ";
-      if (mVVBuffer != nullptr) {
-        for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
+      pOs << "(:class " << boost::core::demangle(typeid(this).name());
+      if (mVVBuffer != nullptr)
+        for (size_t idx = 0; idx < this->mNumPoints; ++idx)
           pOs << this->prim_to_string(idx);
-        }
-      }
       pOs << ")";
     }
 
     std::string prim_to_string(unsigned int pPrimID) const override final {
-      //assert(false && "not implemented");
       std::stringstream strstream;
       strstream
-        << "(" << mVVBuffer[pPrimID].xx << "," << mVVBuffer[pPrimID].yy
-        << "," << mVVBuffer[pPrimID].zz << "," << mVVBuffer[pPrimID].radius << ")";
+        << "(" << mVVBuffer[pPrimID].xx << " " << mVVBuffer[pPrimID].yy
+        << " " << mVVBuffer[pPrimID].zz << " " << mVVBuffer[pPrimID].radius << ")";
       return strstream.str();
     }
 
-    rti::triple<float> get_normal(unsigned int primID) const {
-      assert(false && "Not implemented");
-      rti::triple<float> rr;
-      return rr;
+    rti::triple<float> get_normal(unsigned int pPrimID) const override final {
+      return mNormals[pPrimID];
+      // assert(false && "Not implemented");
+      // rti::triple<float> rr;
+      // return rr;
+    }
+
+    RTCDevice& get_rtc_device() override final {
+      return mDevice;
+    }
+
+    RTCGeometry& get_rtc_geometry() override final {
+      return mGeometry;
+    }
+
+    std::string get_input_file_path() override final {
+      return mInfilename;
     }
 
   private:
-    ////////////////////////
-    // Local algebraic types
-    ////////////////////////
-    struct vertex_f4_t {
-      float xx, yy, zz, radius;
+    // Local types
+    struct point_4f_t {
+      Ty xx, yy, zz, radius;
       // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
       // single precision x, y, z floating point coordinates
       // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred
       // from the size of that buffer. "
       // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
     };
-    ///////////////
     // Data members
-    ///////////////
-    vertex_f4_t* mVVBuffer = nullptr;
-    size_t mNumTriangles = 0;
-    size_t mNumVertices = 0;
-    ////////////
+    RTCDevice& mDevice;
+    RTCGeometry mGeometry;
+    point_4f_t* mVVBuffer = nullptr;
+    std::vector<rti::triple<Ty> > mNormals;
+    size_t mNumPoints = 0;
+    std::string mInfilename;
     // Functions
-    ////////////
-    void init_this(RTCDevice& pDevice,gmsh_reader& pGmshReader) {
+    void init_this(RTCDevice& pDevice, i_geometry_reader<Ty>& pGReader) {
       // "Points with per vertex radii are supported with sphere, ray-oriented
       // discs, and normal-oriented discs geometric represetntations. Such point
       // geometries are created by passing RTC_GEOMETRY_TYPE_SPHERE_POINT,
@@ -113,58 +119,27 @@ namespace rti {
       // information, u and v are set to zero."
       // Source: https://www.embree.org/api.html#rtc_geometry_type_point
 
-      mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_DISC_POINT); // using a ray facing disc
+      this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_DISC_POINT); // using a ray facing disc
 
-      // Read input from gmsh
-      std::vector<rti::triple<double> > vertices = pGmshReader.get_vertices();
-
-      this->mNumVertices = vertices.size();
-      // Acquire memory from Embree
-      mVVBuffer = (vertex_f4_t*)
-        rtcSetNewGeometryBuffer(
-                                mGeometry,
+      std::vector<rti::quadruple<Ty> > points = pGReader.get_points();
+      this->mNumPoints = points.size();
+      // Acquire memory via Embree API
+      mVVBuffer = (point_4f_t*)
+        rtcSetNewGeometryBuffer(mGeometry,
                                 RTC_BUFFER_TYPE_VERTEX,
                                 0, // slot
                                 RTC_FORMAT_FLOAT4,
-                                sizeof(vertex_f4_t),
-                                this->mNumVertices);
-
-      // Write vertices to Embree
-      for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
-        auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = triple[0];
-        mVVBuffer[idx].yy = triple[1];
-        mVVBuffer[idx].zz = triple[2];
-        mVVBuffer[idx].radius = 0; // Update to sound value later
+                                sizeof(point_4f_t),
+                                this->mNumPoints);
+      // Write points to Embree data structure
+      for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
+        rti::quadruple<float>& qudtrpl = points[idx];
+        mVVBuffer[idx].xx = qudtrpl[0];
+        mVVBuffer[idx].yy = qudtrpl[1];
+        mVVBuffer[idx].zz = qudtrpl[2];
+        mVVBuffer[idx].radius = qudtrpl[3]; // TODO: Might need adjustment
       }
-
-      std::vector<rti::triple<std::size_t> > triangles = pGmshReader.get_triangles();
-
-      this->mNumTriangles = triangles.size();
-      // Set radii of discs
-      for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
-        auto& triangle = triangles[idx];
-        rti::triple<rti::triple<float> > trnglCoords
-          {rti::triple<float> {mVVBuffer[triangle[0]].xx, mVVBuffer[triangle[0]].yy, mVVBuffer[triangle[0]].zz},
-           rti::triple<float> {mVVBuffer[triangle[1]].xx, mVVBuffer[triangle[1]].yy, mVVBuffer[triangle[1]].zz},
-           rti::triple<float> {mVVBuffer[triangle[2]].xx, mVVBuffer[triangle[2]].yy, mVVBuffer[triangle[2]].zz}};
-        rti::triple<float> centroid = this->centroid(trnglCoords);
-
-        for (auto& vertex : triangle) {
-          // Do not reuse the coordinates from above, because here we would depend on the ordering introduced
-          // above, which could lead to suddle bugs when changing the code.
-          vertex_f4_t& vbv = mVVBuffer[vertex];
-          rti::triple<float> crds = {vbv.xx, vbv.yy, vbv.zz};
-          float tmp = this->distance(rti::pair<rti::triple<float> > {crds, centroid});
-          // RLOG_TRACE
-          //   << "Centroid distance: " << tmp << std::endl;
-          if (tmp > vbv.radius) {
-            vbv.radius = tmp;
-            RLOG_TRACE
-              << "Setting disc radius of " << vertex << " " << this->prim_to_string(vertex) << std::endl;
-          }
-        }
-      }
+      this->mNormals = pGReader.get_normals(); // TODO: Deep or shallow copy?
     }
   };
-}
+} // namespace rti

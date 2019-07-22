@@ -3,71 +3,106 @@
 #include <vector>
 
 namespace rti {
-  template<typename T>
-  class pair {
-  public:
-    T frst, scnd;
-  };
 
-  template<typename T>
-  class triple {
-  public:
-    T frst, scnd, thrd;
+  template<typename Ty>
+  using pair = std::array<Ty, 2>;
+  // class pair : public std::array<Ty, 2> {
+  //   template<size_t idx>
+  //   Ty aa() {
+  //     return std::get<idx>(this);
+  //   }
+  // };
 
-    // A hack to not need to implement the c++ STL iterator.
-    // This iterator cannot modify the content.
-    std::vector<T> get_iterable() const {
-      return {frst, scnd, thrd};
-    }
+  template<typename Ty>
+  using triple = std::array<Ty, 3>;
+  // class triple : public std::array<Ty, 3> {
+  //   template<size_t idx>
+  //   constexpr Ty const& mat() {
+  //     return std::get<idx> (this);
+  //   }
+  // };
 
-    void print(std::ostream& pOs) const {
-      pOs << "(" << frst << " " << scnd << " " << thrd << ")";
-    }
+  template<typename Ty>
+  using quadruple = std::array<Ty, 4>;
+  // class quadruple : public std::array<Ty, 4> {
+  // public:
+  //   template<size_t idx>
+  //   constexpr Ty const& sg() {
+  //     return std::get<idx> (*this);
+  //   }
+  // };
 
-    bool operator==(const triple<T>& pO) const {
-      return frst == pO.frst && scnd == pO.scnd && thrd == pO.thrd;
-    }
+  // template<typename T>
+  // class pair {
+  // public:
+  //   T frst, scnd;
+  // };
 
-    bool operator!=(const triple<T>& pO) const {
-      return !(*this == pO);
-    }
-  };
+  // template<typename Ty>
+  // class quadruple {
+  // public:
+  //   Ty frst, scnd, thrd, frth;
+  // }
+
+  // template<typename T>
+  // class triple {
+  // public:
+  //   T frst, scnd, thrd;
+
+  //   // A hack to not need to implement the c++ STL iterator.
+  //   // This iterator cannot modify the content.
+  //   std::vector<T> get_iterable() const {
+  //     return {frst, scnd, thrd};
+  //   }
+
+  //   void print(std::ostream& pOs) const {
+  //     pOs << "(" << frst << " " << scnd << " " << thrd << ")";
+  //   }
+
+  //   bool operator==(const triple<T>& pO) const {
+  //     return frst == pO.frst && scnd == pO.scnd && thrd == pO.thrd;
+  //   }
+
+  //   bool operator!=(const triple<T>& pO) const {
+  //     return !(*this == pO);
+  //   }
+  // };
 
   // This function modifies the arguments when called
   template<typename T>
   void scale(triple<T>& pT, T pF) {
-    pT.frst *= pF;
-    pT.scnd *= pF;
-    pT.thrd *= pF;
+    pT[0] *= pF;
+    pT[1] *= pF;
+    pT[2] *= pF;
   }
 
   template<typename T>
   T dot_product(const triple<T>& pF, const triple<T>& pS) {
-    return pF.frst * pS.frst + pF.scnd * pS.scnd + pF.thrd * pS.thrd;
+    return pF[0] * pS[0] + pF[1] * pS[1] + pF[2] * pS[2];
   }
 
   template<typename T>
   triple<T> cross_product(const triple<T>& pF, const triple<T>& pS) {
     triple<T> rr;
-    rr.frst = pF.scnd * pS.thrd - pF.thrd * pS.scnd;
-    rr.scnd = pF.thrd * pS.frst - pF.frst * pS.thrd;
-    rr.thrd = pF.frst * pS.scnd - pF.scnd * pS.frst;
+    rr[0] = pF[1] * pS[2] - pF[2] * pS[1];
+    rr[1] = pF[2] * pS[0] - pF[0] * pS[2];
+    rr[2] = pF[0] * pS[1] - pF[1] * pS[0];
     return rr;
   }
 
   template<typename T>
   triple<T> sum(const triple<T>& pF, const triple<T>& pS) {
-    return {pF.frst + pS.frst, pF.scnd + pS.scnd, pF.thrd + pS.thrd};
+    return {pF[0] + pS[0], pF[1] + pS[1], pF[2] + pS[2]};
   }
 
   template<typename T>
   triple<T> sum(const triple<T>& pF, const triple<T>& pS, const triple<T>& pT) {
-    return {pF.frst + pS.frst + pT.frst, pF.scnd + pS.scnd + pT.scnd, pF.thrd + pS.thrd + pT.thrd};
+    return {pF[0] + pS[0] + pT[0], pF[1] + pS[1] + pT[1], pF[2] + pS[2] + pT[2]};
   }
 
   template<typename T>
   triple<T> inv(const triple<T>& pT) {
-    return {-pT.frst, -pT.scnd, -pT.thrd};
+    return {-pT[0], -pT[1], -pT[2]};
   }
 
   template<typename T>
@@ -78,10 +113,9 @@ namespace rti {
   // This function modifies its argument when called
   template<typename T>
   void normalize(triple<T>& pV) {
-    T thrdNorm = std::sqrt(
-      pV.frst * pV.frst + pV.scnd * pV.scnd + pV.thrd * pV.thrd);
-    pV.frst /= thrdNorm;
-    pV.scnd /= thrdNorm;
-    pV.thrd /= thrdNorm;
+    T thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
+    pV[0] /= thrdNorm;
+    pV[1] /= thrdNorm;
+    pV[2] /= thrdNorm;
   }
 } // namespace rti

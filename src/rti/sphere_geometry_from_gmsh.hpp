@@ -128,9 +128,9 @@ namespace rti {
       // Write vertices to Embree
       for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
         auto& triple = vertices[idx];
-        mVVBuffer[idx].xx = triple.frst;
-        mVVBuffer[idx].yy = triple.scnd;
-        mVVBuffer[idx].zz = triple.thrd;
+        mVVBuffer[idx].xx = triple[0];
+        mVVBuffer[idx].yy = triple[1];
+        mVVBuffer[idx].zz = triple[2];
         mVVBuffer[idx].radius = 0; // Update radius later
       }
 
@@ -141,14 +141,14 @@ namespace rti {
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
         auto& triangle = triangles[idx];
         rti::triple<rti::triple<float> > trnglCoords
-        {{mVVBuffer[triangle.frst].xx, mVVBuffer[triangle.frst].yy, mVVBuffer[triangle.frst].zz},
-         {mVVBuffer[triangle.scnd].xx, mVVBuffer[triangle.scnd].yy, mVVBuffer[triangle.scnd].zz},
-         {mVVBuffer[triangle.thrd].xx, mVVBuffer[triangle.thrd].yy, mVVBuffer[triangle.thrd].zz}};
+        {rti::triple<float> {mVVBuffer[triangle[0]].xx, mVVBuffer[triangle[0]].yy, mVVBuffer[triangle[0]].zz},
+         rti::triple<float> {mVVBuffer[triangle[1]].xx, mVVBuffer[triangle[1]].yy, mVVBuffer[triangle[1]].zz},
+         rti::triple<float> {mVVBuffer[triangle[2]].xx, mVVBuffer[triangle[2]].yy, mVVBuffer[triangle[2]].zz}};
         rti::triple<float> centroid = this->centroid(trnglCoords);
         // RLOG_TRACE
         //   << "Triangle centroid: (" << centroid[0] << " " << centroid[1] << " " << centroid [2] << ")" << std::endl;
 
-        for (auto& vertex : triangle.get_iterable()) {
+        for (auto& vertex : triangle) {
           // Do not reuse the coordinates from above, because here we would depend on the ordering introduced
           // above, which could lead to suddle bugs when changing the code.
           vertex_f4_t& vbv = mVVBuffer[vertex];

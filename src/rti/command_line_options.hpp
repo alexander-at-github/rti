@@ -22,7 +22,7 @@ namespace rti {
     command_line_options(command_line_options const&) = delete;
     void operator=(command_line_options const&) = delete;
 
-    enum class option_type {MESH_FILE, MAX_THREADS};
+    enum class option_type {INFILE_NAME, MAX_THREADS};
 
     std::string get_option_value(rti::command_line_options::option_type pType) {
       for (auto & oo : options) {
@@ -39,7 +39,7 @@ namespace rti {
       std::string value;
     };
     std::unordered_map<option_type, option_spec, rti::enum_class_hash_function> options {
-      {option_type::MESH_FILE, option_spec{"mesh file option", "--msh-file", ""}},
+      {option_type::INFILE_NAME, option_spec{"input file option", "--infile", ""}},
       {option_type::MAX_THREADS, option_spec {"maximum number of threads option", "--max-threads", ""}}
     };
     static command_line_options& init_or_get(int argc, char* argv []) {
