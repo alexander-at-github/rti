@@ -12,7 +12,6 @@ namespace rti {
   public:
     diffuse_reflection(double pStickingC) :
       mStickingC(pStickingC) {
-      RLOG_ERROR << "WARNING: This code inverts the surface normals (gmsh input)" << std::endl;
     }
 
     bool use(
@@ -40,33 +39,41 @@ namespace rti {
       /* Reflect */
       //
       /* Get surface normal at intersection */
-      //rti::triple<float> pGeometry.get_normal(pRayhit.hit.geomID);
-      rti::triple<float> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
+      //
+      // // With the new surface representations we cannot use the surface normal
+      // // provided by Embree anymore.
+      // //
+      // //
+      // //rti::triple<float> pGeometry.get_normal(pRayhit.hit.geomID);
+      // rti::triple<float> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
 
       float xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
       float yyahit = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
       float zzahit = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
-      { // DEBUG
-        RLOG_DEBUG << std::endl;
-        RLOG_DEBUG << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
-        RLOG_DEBUG << "normal from rayhit.hit: ";
-        for (size_t idx = 0; idx < normalO.size(); ++idx)
-          RLOG_DEBUG << normalO.at(idx) << " ";
-        RLOG_DEBUG << std::endl;
-        auto geoNormal = pGeometry.get_normal(pRayhit.hit.primID);
-        RLOG_DEBUG << "normal from geometry object: ";
-        for (size_t idx = 0; idx < geoNormal.size(); ++idx)
-          RLOG_DEBUG << geoNormal.at(idx) << " ";
-        RLOG_DEBUG << std::endl;
-      } // DEBUG
-      // Sanity check
-      auto diff = rti::diff(normalO, pGeometry.get_normal(pRayhit.hit.primID));
-      assert (diff[0] < 1e-5 && diff[1] < 1e-5 && diff[2] < 1e-5 && "Caluclation of surface normal");
-      // Is that the normal at the hit location? Yes.
+      // { // DEBUG
+      //   RLOG_DEBUG << std::endl;
+      //   RLOG_DEBUG << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
+      //   RLOG_DEBUG << "normal from rayhit.hit: ";
+      //   for (size_t idx = 0; idx < normalO.size(); ++idx)
+      //     RLOG_DEBUG << normalO.at(idx) << " ";
+      //   RLOG_DEBUG << std::endl;
+      //   auto geoNormal = pGeometry.get_normal(pRayhit.hit.primID);
+      //   RLOG_DEBUG << "normal from geometry object: ";
+      //   for (size_t idx = 0; idx < geoNormal.size(); ++idx)
+      //     RLOG_DEBUG << geoNormal.at(idx) << " ";
+      //   RLOG_DEBUG << std::endl;
+      // } // DEBUG
+      // // Sanity check; DOES NOT WORK ANYMORE WITH NEW SURFACE REPRESENTATION
+      // // auto diff = rti::diff(normalO, pGeometry.get_normal(pRayhit.hit.primID));
+      // // assert (diff[0] < 1e-5 && diff[1] < 1e-5 && diff[2] < 1e-5 && "Caluclation of surface normal");
+      // // // Is that the normal at the hit location? Yes.
 
-      // CAUTION: For now we use inverted geometries from GMSH, that is, we have
-      // to invert the normal.
-      auto normal = rti::inv(normalO);
+      // // CAUTION: For now we use inverted geometries from GMSH, that is, we have
+      // // to invert the normal.
+      // auto normal = rti::inv(normalO);
+
+      auto normal = pGeometry.get_normal(pRayhit.hit.primID);
+
 
       /* Compute lambertian reflection with respect to surface normal */
       auto orthonormalBasis = get_orthonormal_basis<float>(normal);

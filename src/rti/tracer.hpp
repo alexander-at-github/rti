@@ -59,7 +59,7 @@ namespace rti {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 26;
+      size_t nrexp = 18;
       size_t numRays = std::pow(2, nrexp);
       result.numRays = numRays; // Save the number of rays also to the test result
 

@@ -23,6 +23,10 @@ namespace rti {
   private:
     // Declare constructor private
     gmsh_reader() {
+      std::cerr
+        << std::endl << "WARNING: DID FIX THE SURFACE ORIENTATION? (invert normals)"
+        << std::endl << std::endl;
+
       mMshFilePath = rti::command_line_options::get_instance().
         get_option_value(rti::command_line_options::option_type::INFILE_NAME);
       if (mMshFilePath.empty()) {
