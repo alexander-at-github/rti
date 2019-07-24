@@ -8,9 +8,10 @@
 #include "rti/i_rng.hpp"
 
 namespace rti {
-  class diffuse_reflection : public i_reflection_model {
+  template<typename Ty>
+  class diffuse_reflection : public i_reflection_model<Ty> {
   public:
-    diffuse_reflection(double pStickingC) :
+    diffuse_reflection(Ty pStickingC) :
       mStickingC(pStickingC) {
     }
 
@@ -18,10 +19,10 @@ namespace rti {
              RTCRayHit& pRayhit,
              rti::i_rng& pRng,
              rti::i_rng::i_state& pRngState,
-             const i_geometry& pGeometry,
+             const i_geometry<Ty>& pGeometry,
              i_hit_counter& pHitcounter) const override final {
 
-      float epsilon = 1e-6;
+      Ty epsilon = 1e-6;
       // THIS CODE IS HAND-CRAFTED FOR THE CYLINDER WITH SOURCE PLANE AT X == 0.
       if (pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar <= epsilon) {
         // Don't reflect and don't count
@@ -44,12 +45,14 @@ namespace rti {
       // // provided by Embree anymore.
       // //
       // //
-      // //rti::triple<float> pGeometry.get_normal(pRayhit.hit.geomID);
-      // rti::triple<float> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
+      // //rti::triple<Ty> pGeometry.get_normal(pRayhit.hit.geomID);
+      // rti::triple<Ty> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
 
-      float xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
-      float yyahit = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
-      float zzahit = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
+      // TODO: Where to start the new ray?
+
+      Ty xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
+      Ty yyahit = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
+      Ty zzahit = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
       // { // DEBUG
       //   RLOG_DEBUG << std::endl;
       //   RLOG_DEBUG << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
@@ -76,17 +79,17 @@ namespace rti {
 
 
       /* Compute lambertian reflection with respect to surface normal */
-      auto orthonormalBasis = get_orthonormal_basis<float>(normal);
+      auto orthonormalBasis = get_orthonormal_basis(normal);
 
       // Set new origin and direction in pRayhit
       // We add a small epsilon to the origin to make sure that we do not intersect the same surface again.
       // Without that the simulation does not work.
-      double epsilonOrg = 1e-6;
+      Ty epsilonOrg = 1e-6;
       auto obFirst = orthonormalBasis[0]; // normalized surface normal
       pRayhit.ray.org_x = xxahit + obFirst[0] * epsilonOrg;
       pRayhit.ray.org_y = yyahit + obFirst[1] * epsilonOrg;
       pRayhit.ray.org_z = zzahit + obFirst[2] * epsilonOrg;
-      auto direction = rti::cos_hemi::get(orthonormalBasis, pRng, pRngState);
+      auto direction = rti::cos_hemi::get<Ty>(orthonormalBasis, pRng, pRngState);
       pRayhit.ray.dir_x = direction[0];
       pRayhit.ray.dir_y = direction[1];
       pRayhit.ray.dir_z = direction[2];
@@ -96,15 +99,14 @@ namespace rti {
 
   private:
     // The sticking coefficient
-    double mStickingC;
+    Ty mStickingC;
 
     // Returns some orthonormal basis containing a the input vector pVector
     // (possibly scaled) as the first element of the return value.
     // This function is deterministic, i.e., for one input it will return always
     // the same result.
-    template<typename T>
-    rti::triple<rti::triple<T> > get_orthonormal_basis(const rti::triple<T> pVector) const {
-      rti::triple<rti::triple<T> > rr;
+    rti::triple<rti::triple<Ty> > get_orthonormal_basis(const rti::triple<Ty> pVector) const {
+      rti::triple<rti::triple<Ty> > rr;
       rr[0] = pVector;
       // rr[0][0] = pVector[0];
       // rr[0][1] = pVector[1];
@@ -112,13 +114,13 @@ namespace rti {
 
       // Calculate a vector (rr[1]) which is perpendicular to rr[0]
       // https://math.stackexchange.com/questions/137362/how-to-find-perpendicular-vector-to-another-vector#answer-211195
-      rti::triple<T> candidate0 {rr[0][2], rr[0][2], -(rr[0][0] + rr[0][1])};
-      rti::triple<T> candidate1 {rr[0][1], -(rr[0][0] + rr[0][2]), rr[0][1]};
-      rti::triple<T> candidate2 {-(rr[0][1] + rr[0][2]), rr[0][0], rr[0][0]};
+      rti::triple<Ty> candidate0 {rr[0][2], rr[0][2], -(rr[0][0] + rr[0][1])};
+      rti::triple<Ty> candidate1 {rr[0][1], -(rr[0][0] + rr[0][2]), rr[0][1]};
+      rti::triple<Ty> candidate2 {-(rr[0][1] + rr[0][2]), rr[0][0], rr[0][0]};
       // We choose the candidate which maximizes the sum of its components, because we want to avoid
       // numeric errors and that the result is (0, 0, 0).
-      std::array<rti::triple<T>, 3> cc = {candidate0, candidate1, candidate2};
-      auto sumFun = [](rti::triple<T> oo){return oo[0] + oo[1] + oo[2];};
+      std::array<rti::triple<Ty>, 3> cc = {candidate0, candidate1, candidate2};
+      auto sumFun = [](rti::triple<Ty> oo){return oo[0] + oo[1] + oo[2];};
       int maxIdx = 0;
       for (size_t idx = 1; idx < cc.size(); ++idx) {
         if (sumFun(cc[idx]) > sumFun(cc[maxIdx])) {
@@ -140,9 +142,10 @@ namespace rti {
       rti::normalize(rr[2]);
 
       // Sanity check
-      assert(std::abs(rti::dot_product(rr[0], rr[1])) < 1e-6 && "Error in orthonormal basis computation");
-      assert(std::abs(rti::dot_product(rr[1], rr[2])) < 1e-6 && "Error in orthonormal basis computation");
-      assert(std::abs(rti::dot_product(rr[1], rr[2])) < 1e-6 && "Error in orthonormal basis computation");
+      Ty epsilon = 1e-6;
+      assert(std::abs(rti::dot_product(rr[0], rr[1])) < epsilon && "Error in orthonormal basis computation");
+      assert(std::abs(rti::dot_product(rr[1], rr[2])) < epsilon && "Error in orthonormal basis computation");
+      assert(std::abs(rti::dot_product(rr[2], rr[0])) < epsilon && "Error in orthonormal basis computation");
 
       return rr;
     }

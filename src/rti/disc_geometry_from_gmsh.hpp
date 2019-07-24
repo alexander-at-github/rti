@@ -11,7 +11,8 @@
 #include "rti/utils.hpp"
 
 namespace rti {
-  class disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
+  // One might want to templatize this function and remove all float type specifiers
+  class disc_geometry_from_gmsh : public absc_geometry_from_gmsh<float> {
   public:
     disc_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
@@ -165,6 +166,7 @@ namespace rti {
           }
         }
       }
+      rtcCommitGeometry(mGeometry);
     }
   };
 }

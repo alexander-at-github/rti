@@ -2,6 +2,7 @@
 
 namespace rti {
   // Interface
+  template<typename Ty>
   class i_geometry {
   public:
     // virtual destructor
@@ -11,6 +12,8 @@ namespace rti {
     virtual RTCGeometry& get_rtc_geometry() = 0;
     virtual std::string get_input_file_path() = 0;
     virtual std::string prim_to_string(unsigned int) const = 0;
-    virtual rti::triple<float> get_normal(unsigned int primID) const = 0;
+    // TODO: move float to template parameter
+    virtual rti::triple<Ty> get_normal(unsigned int primID) const = 0;
+    virtual rti::pair<rti::triple<Ty> > get_bounding_box() const = 0;
   };
 } // namespace rti

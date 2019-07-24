@@ -2,6 +2,7 @@
 
 #include <gmsh.h>
 
+#include "rti/command_line_options.hpp"
 #include "rti/logger.hpp"
 #include "rti/utils.hpp"
 

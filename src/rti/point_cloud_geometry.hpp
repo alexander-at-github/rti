@@ -8,7 +8,7 @@
 namespace rti {
   // The type Ty is supposed to be a numeric type - float or double.
   template<typename Ty>
-  class point_cloud_geometry : public i_geometry {
+  class point_cloud_geometry : public i_geometry<Ty> {
   public:
 
     point_cloud_geometry(RTCDevice& pDevice, rti::i_geometry_reader<Ty>& pGReader) :
@@ -33,11 +33,8 @@ namespace rti {
       return strstream.str();
     }
 
-    rti::triple<float> get_normal(unsigned int pPrimID) const override final {
+    rti::triple<Ty> get_normal(unsigned int pPrimID) const override final {
       return mNormals[pPrimID];
-      // assert(false && "Not implemented");
-      // rti::triple<float> rr;
-      // return rr;
     }
 
     RTCDevice& get_rtc_device() override final {
@@ -52,10 +49,28 @@ namespace rti {
       return mInfilename;
     }
 
+    rti::pair<rti::triple<Ty> > get_bounding_box() const override final {
+      assert(mVVBuffer != nullptr && "No data");
+      if (mVVBuffer == nullptr) // no data in this instance
+        return {rti::triple<Ty> {0,0,0}, rti::triple<Ty> {0,0,0}};
+      Ty min = std::numeric_limits<Ty>::min();
+      Ty max = std::numeric_limits<Ty>::max();
+      Ty xmin=max, xmax=min, ymin=max, ymax=min, zmin=max, zmax=min;
+      for (size_t idx = 0; idx < mNumPoints; ++idx) {
+        xmin = std::min(xmin, mVVBuffer[idx].xx);
+        xmax = std::max(xmax, mVVBuffer[idx].xx);
+        ymin = std::min(ymin, mVVBuffer[idx].yy);
+        ymax = std::max(ymax, mVVBuffer[idx].yy);
+        zmin = std::min(zmin, mVVBuffer[idx].zz);
+        zmax = std::max(zmax, mVVBuffer[idx].zz);
+      }
+      return {rti::triple<Ty> {xmin, ymin, zmin}, rti::triple<Ty> {xmax, ymax, zmax}};
+    }
+
   private:
     // Local types
     struct point_4f_t {
-      Ty xx, yy, zz, radius;
+      float xx, yy, zz, radius;
       // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
       // single precision x, y, z floating point coordinates
       // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred
@@ -133,13 +148,20 @@ namespace rti {
                                 this->mNumPoints);
       // Write points to Embree data structure
       for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
-        rti::quadruple<float>& qudtrpl = points[idx];
-        mVVBuffer[idx].xx = qudtrpl[0];
-        mVVBuffer[idx].yy = qudtrpl[1];
-        mVVBuffer[idx].zz = qudtrpl[2];
-        mVVBuffer[idx].radius = qudtrpl[3]; // TODO: Might need adjustment
+        rti::quadruple<Ty>& qudtrpl = points[idx];
+        // Here we have to cast to float because:
+        // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
+        // single precision x, y, z floating point coordinates ..."
+        // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
+        mVVBuffer[idx].xx = (float) qudtrpl[0];
+        mVVBuffer[idx].yy = (float) qudtrpl[1];
+        mVVBuffer[idx].zz = (float) qudtrpl[2];
+        mVVBuffer[idx].radius = (float) qudtrpl[3]; // TODO: Might need adjustment
       }
-      this->mNormals = pGReader.get_normals(); // TODO: Deep or shallow copy?
+      this->mNormals = pGReader.get_normals(); // TODO: Deep or shallow copy
+      rtcCommitGeometry(mGeometry);
+      assert (RTC_ERROR_NONE == rtcGetDeviceError(pDevice) &&
+              "Embree device error after rtcSetNewGeometryBuffer()");
     }
   };
 } // namespace rti

@@ -1,5 +1,9 @@
 #pragma once
 
+//
+// THIS FILE IS DEPRECATED AND WILL BE REMOVED EVENTUALLY
+//
+
 #include <unordered_map>
 
 #include "rti/enum_class_hash_function.hpp"

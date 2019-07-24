@@ -36,7 +36,11 @@ namespace rti {
       return (uint64_t) rand_r(&(reinterpret_cast<state*>(&pState)->mSeed));
     }
 
-    uint64_t max() const {
+    constexpr uint64_t min() const override final {
+      return 0;
+    }
+
+    constexpr uint64_t max() const override final {
       return RAND_MAX;
     }
   };

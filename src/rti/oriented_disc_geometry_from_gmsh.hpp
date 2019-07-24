@@ -9,7 +9,8 @@
 #include "rti/utils.hpp"
 
 namespace rti {
-  class oriented_disc_geometry_from_gmsh : public absc_geometry_from_gmsh {
+  // One might want to templatize this function and remove all float type specifiers
+  class oriented_disc_geometry_from_gmsh : public absc_geometry_from_gmsh<float> {
   public:
     oriented_disc_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
@@ -195,6 +196,7 @@ namespace rti {
           mNNBuffer[vertex].zz += normal[2];
         }
       }
+      rtcCommitGeometry(mGeometry);
     }
 
     rti::triple<float> compute_triangle_normal(rti::triple<size_t> ptriangle) {

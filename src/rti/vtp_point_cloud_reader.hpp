@@ -1,14 +1,14 @@
 #pragma once
 
-#include "vtkAbstractArray.h"
-#include "vtkCellIterator.h"
-#include "vtkCellData.h"
-#include "vtkDataSetAttributes.h"
-#include "vtkGenericCell.h"
-#include "vtkPolyData.h"
-#include "vtkSmartPointer.h"
-#include "vtksys/SystemTools.hxx"
-#include "vtkXMLPolyDataReader.h"
+#include <vtkAbstractArray.h>
+#include <vtkCellIterator.h>
+#include <vtkCellData.h>
+#include <vtkDataSetAttributes.h>
+#include <vtkGenericCell.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtksys/SystemTools.hxx>
+#include <vtkXMLPolyDataReader.h>
 
 #include "rti/i_geometry_reader.hpp"
 
@@ -24,9 +24,6 @@ namespace rti {
   public:
     vtp_point_cloud_reader(const std::string& pFilename) :
       mInfilename(pFilename) {
-      //
-      // TODO: clean!
-      //
       std::string extension = vtksys::SystemTools::GetFilenameLastExtension(pFilename);
       if (extension != ".vtp") {
         std::cerr
@@ -49,23 +46,27 @@ namespace rti {
       vtkSmartPointer<vtkCellData> celldata = polydata->GetCellData();
       // TODO: Clean up
       std::string sqrtOfAreaStr = "sqrt-of-area";
-      //vtkSmartPointer<vtkAbstractArray> sqrtOfAreaArray = celldata->GetAbstractArray(sqrtOfAreaStr.c_str());
       celldata->SetActiveAttribute(sqrtOfAreaStr.c_str(), vtkDataSetAttributes::SCALARS);
-      vtkSmartPointer<vtkDataArray> sqrtOfAreaArray2 = celldata->GetScalars();
-      if (sqrtOfAreaArray2 == nullptr) {
+      vtkSmartPointer<vtkDataArray> sqrtOfAreaArray = celldata->GetScalars();
+      if (sqrtOfAreaArray == nullptr) {
         std::cerr
           << "Warning: " << boost::core::demangle(typeid(this).name())
           << " could not find cell data with the name \"sqrt-of-area\" in the file "
           << pFilename << std::endl;
       }
       vtkSmartPointer<vtkDataArray> normals = celldata->GetNormals();
+      if (normals == nullptr) {
+        std::cerr
+          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << " could not find surface normal data in the file " << pFilename << std::endl;
+      }
       for (vtkIdType idx = 0; idx < numPnts; ++idx) {
         double xyz[3]; // 3 dimensions
         polydata->GetPoint(idx, xyz);
         double radius[1]; // 1 dimension
-        sqrtOfAreaArray2->GetTuple(idx, radius);
-        // TODO: Do we have to multiply the radius by sqrt(3) / 2 ?
+        sqrtOfAreaArray->GetTuple(idx, radius);
         double radiusEpsilon = 1.0 / 32; // about 3%
+        // TODO: Is that correct?
         radius[0] *= std::sqrt(3.0)/2 * (1 + radiusEpsilon);
         rti::quadruple<Ty> point {(Ty) xyz[0], (Ty) xyz[1] , (Ty) xyz[2], (Ty) radius[0]};
         mPoints.push_back(point);
@@ -74,8 +75,9 @@ namespace rti {
         rti::triple<Ty> normal {(Ty) nxnynz[0], (Ty) nxnynz[1], (Ty) nxnynz[2]};
         mNormals.push_back(normal);
       }
-
-      // TODO: Free the poly data!
+      // Shrink memory
+      mPoints.shrink_to_fit();
+      mNormals.shrink_to_fit();
     }
 
     ~vtp_point_cloud_reader() {}
@@ -87,6 +89,7 @@ namespace rti {
     std::vector<rti::triple<Ty> > get_normals() override final {
       return mNormals;
     }
+
     std::string get_input_file_name() const override final {
       return mInfilename;
     }

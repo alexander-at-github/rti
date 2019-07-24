@@ -4,94 +4,54 @@
 #include <sstream>
 #include <unordered_map>
 
-#include "vtkActor.h"
-#include "vtkCellArray.h"
-#include "vtkCellData.h"
-#include "vtkDoubleArray.h"
-#include "vtkGlyph3D.h"
-#include "vtkPoints.h"
-#include "vtkPolyDataMapper.h"
-#include "vtkRenderer.h"
-#include "vtkRenderWindow.h"
-#include "vtkRenderWindowInteractor.h"
-#include "vtkSmartPointer.h"
-#include "vtkSphereSource.h"
-#include "vtkTypeInt32Array.h"
-//#include "vtkVertexGlyphFilter.h"
-#include "vtkXMLPolyDataWriter.h"
+#include <vtkActor.h>
+#include <vtkCellArray.h>
+#include <vtkCellData.h>
+#include <vtkDoubleArray.h>
+#include <vtkGlyph3D.h>
+#include <vtkPoints.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkTypeInt32Array.h>
+//#include <vtkVertexGlyphFilter.h>
+#include <vtkXMLPolyDataWriter.h>
 
+#include "rti/clo.hpp"
 #include "rti/enum_class_hash_function.hpp"
 
 // An example how to write (or read) normals in vtk is at the following URL.
 // https://vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataCellNormals
 // ( https://vtk.org/Wiki/VTK/Tutorials/TriangleGeometryVertices )
 
-namespace rti::dsv {
-  enum class cml_opt_type {INFILE_NAME, OUTFILE_NAME, FILTER_COVERED, RENDER};
-  class command_line_options {
-    // A simple command line options implementation
-  public:
-    command_line_options(int argc, char** argv) {
-      // Start from one. argv[0] is equal to the file name of the executable.
-      for (size_t idx = 1; idx < argc-1; ++idx) {
-        for (auto& oo : options) {
-          if (oo.second.optStr == argv[idx]) {
-            oo.second.value = argv[idx+1];
-          }
-        }
-      }
-    }
-    std::string get_value(rti::dsv::cml_opt_type pType) {
-      for (auto& oo : options) {
-        if (oo.first /* key of map */ == pType) {
-          return oo.second.value;
-        }
-      }
-      return "";
-    }
-  private:
-    struct option_spec {
-      std::string name;
-      std::string optStr;
-      std::string value;
-    };
-    std::unordered_map<cml_opt_type, option_spec, rti::enum_class_hash_function> options {
-      {cml_opt_type::INFILE_NAME, option_spec {"input file name", "--infile", ""}},
-      {cml_opt_type::OUTFILE_NAME, option_spec {"output file name", "--write", ""}},
-      {cml_opt_type::FILTER_COVERED, option_spec {"filter covered points", "--filter-covered", "false"}},
-      {cml_opt_type::RENDER, option_spec{"render the input on GUI", "--render", "false"}}
-    };
-  };
-
-} // namespace rti::dsv
-
-void print_usage(std::string pName) {
-  std::cout
-    << "Usage: " << pName
-    << " [--write <outfile-name>] [--filter-covered [true | false]]"
-    << " [--render [true | false]] --infile <infile-name>" << std::endl;
-}
-
-
 // Partially built on the ReadTextFile example in VTK
 int main(int argc, char* argv[]) {
-  rti::dsv::command_line_options options(argc, argv);
-  if (options.get_value(rti::dsv::cml_opt_type::INFILE_NAME) == "") {
-    // No input file given
-    print_usage(argv[0]);
-    return EXIT_FAILURE;
-  }
 
-  std::string infilename = options.get_value(rti::dsv::cml_opt_type::INFILE_NAME);
-  std::string outfilename = options.get_value(rti::dsv::cml_opt_type::OUTFILE_NAME);
-  bool filterCovered =
-    options.get_value(rti::dsv::cml_opt_type::FILTER_COVERED) == "true" ? true : false;
-  bool render =
-    options.get_value(rti::dsv::cml_opt_type::RENDER) == "true" ? true : false;
+  auto optMan = std::make_unique<rti::clo::manager>();
+  optMan->addCmlParam(rti::clo::bool_option
+    {"FILTER_COVERED", {"--filter-covered"}, "turns filtering of covered points on"});
+  optMan->addCmlParam(rti::clo::bool_option
+    {"RENDER", {"--render"}, "render the input on GUI"});
+  optMan->addCmlParam(rti::clo::string_option
+    {"INPUT_FILE", {"--infile"}, "spacifies the name of the input file", true});
+  optMan->addCmlParam(rti::clo::string_option
+    {"OUTPUT_FILE", {"--write", "--output"}, "specifies the name of the output file", false});
+  bool succ = optMan->parse_args(argc, argv);
+  if (!succ) {
+    std::cout << optMan->get_usage_msg();
+    exit(EXIT_FAILURE);
+  }
+  std::string infilename = optMan->get_string_option_value("INPUT_FILE");
+  std::string outfilename = optMan->get_string_option_value("OUTPUT_FILE");
+  bool filterCovered = optMan->get_bool_option_value("FILTER_COVERED");
+  bool render = optMan->get_bool_option_value("RENDER");
+
   if (filterCovered) {
     std::cout << "Filtering points with cover flag set to a value not equal zero." << std::endl;
   }
-
   std::ifstream filestream(infilename.c_str());
 
   // Read

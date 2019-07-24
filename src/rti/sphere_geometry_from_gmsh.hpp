@@ -8,7 +8,8 @@
 #include "rti/absc_geometry_from_gmsh.hpp"
 
 namespace rti {
-  class sphere_geometry_from_gmsh : public absc_geometry_from_gmsh {
+  // One might want to templatize this function and remove all float type specifiers
+  class sphere_geometry_from_gmsh : public absc_geometry_from_gmsh<float> {
   public:
     sphere_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
       absc_geometry_from_gmsh(pDevice, pGmshReader) {
@@ -161,6 +162,7 @@ namespace rti {
           }
         }
       }
+      rtcCommitGeometry(mGeometry);
     }
   };
 }

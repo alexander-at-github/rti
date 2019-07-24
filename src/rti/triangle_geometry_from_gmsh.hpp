@@ -5,12 +5,13 @@
 #include <embree3/rtcore.h>
 #include <gmsh.h>
 
+#include "rti/absc_geometry_from_gmsh.hpp"
 #include "rti/gmsh_reader.hpp"
 #include "rti/logger.hpp"
-#include "rti/absc_geometry_from_gmsh.hpp"
 
 namespace rti {
-  class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh {
+  // One might want to templatize this function and remove all float type specifiers
+  class triangle_geometry_from_gmsh : public absc_geometry_from_gmsh<float> {
   public:
 
     triangle_geometry_from_gmsh(RTCDevice& pDevice, gmsh_reader& pGmshReader) :
@@ -204,6 +205,7 @@ namespace rti {
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].yy
         //                                  << "," << mVVBuffer[mTTBuffer[idx].v2].zz << ")" << std::endl;
       }
+      rtcCommitGeometry(mGeometry);
     }
   };
 }

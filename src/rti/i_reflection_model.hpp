@@ -1,6 +1,7 @@
 #pragma once
 
 namespace rti {
+  template<typename Ty>
   class i_reflection_model {
   public:
     // Pure Virtual Class
@@ -9,6 +10,6 @@ namespace rti {
     // the origin and direction in the RTCRayHit object and returns true. If no
     // reflection should happen, then it does not change pRayhit and returns
     // false.
-    virtual bool use(RTCRayHit&, rti::i_rng&, rti::i_rng::i_state&, const i_geometry&, i_hit_counter&) const = 0;
+    virtual bool use(RTCRayHit&, rti::i_rng&, rti::i_rng::i_state&, const i_geometry<Ty>&, i_hit_counter&) const = 0;
   };
 } // namespace rti
