@@ -26,7 +26,7 @@ namespace rti {
       // Precondition:
       // The parameter pState needs to be of type rti::cstdlib_rng::state.
       // This sentence is verified in the following assertion.
-      state stateObjectForAssertion {};
+      auto stateObjectForAssertion = state {};
       //std::cout << "*pState: " << typeid(*pState).name() << std::endl << std::endl;
       //std::cout
       // << "stateObjectForAssertion: "

@@ -15,8 +15,7 @@ namespace rti {
       mStickingC(pStickingC) {
     }
 
-    bool use(
-             RTCRayHit& pRayhit,
+    bool use(RTCRayHit& pRayhit,
              rti::i_rng& pRng,
              rti::i_rng::i_state& pRngState,
              const i_geometry<Ty>& pGeometry,
@@ -24,13 +23,9 @@ namespace rti {
 
       Ty epsilon = 1e-6;
       // THIS CODE IS HAND-CRAFTED FOR THE CYLINDER WITH SOURCE PLANE AT X == 0.
-      if (pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar <= epsilon) {
-        // Don't reflect and don't count
-        return false;
-      }
 
       /* Get random number and decide whether or not to reflect. */
-      uint64_t rndm = pRng.get(pRngState);
+      auto rndm = pRng.get(pRngState);
       if (rndm <= (pRng.max() * mStickingC)) {
         // Do not reflect
         pHitcounter.use(pRayhit);
@@ -48,11 +43,15 @@ namespace rti {
       // //rti::triple<Ty> pGeometry.get_normal(pRayhit.hit.geomID);
       // rti::triple<Ty> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
 
-      // TODO: Where to start the new ray?
+      auto primID = pRayhit.hit.primID;
+      // Get an origin for the refelcted ray from the i_geometry implementation
+      auto newOrigin = pGeometry.get_new_origin(primID);
 
-      Ty xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
-      Ty yyahit = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
-      Ty zzahit = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
+
+      // Ty xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
+      // Ty yyahit = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
+      // Ty zzahit = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
+
       // { // DEBUG
       //   RLOG_DEBUG << std::endl;
       //   RLOG_DEBUG << "hit location: " << xxahit << " " << yyahit << " " << zzahit << ")" << std::endl;
@@ -75,21 +74,15 @@ namespace rti {
       // // to invert the normal.
       // auto normal = rti::inv(normalO);
 
-      auto normal = pGeometry.get_normal(pRayhit.hit.primID);
-
-
+      auto normal = pGeometry.get_normal(primID);
       /* Compute lambertian reflection with respect to surface normal */
       auto orthonormalBasis = get_orthonormal_basis(normal);
-
-      // Set new origin and direction in pRayhit
-      // We add a small epsilon to the origin to make sure that we do not intersect the same surface again.
-      // Without that the simulation does not work.
-      Ty epsilonOrg = 1e-6;
-      auto obFirst = orthonormalBasis[0]; // normalized surface normal
-      pRayhit.ray.org_x = xxahit + obFirst[0] * epsilonOrg;
-      pRayhit.ray.org_y = yyahit + obFirst[1] * epsilonOrg;
-      pRayhit.ray.org_z = zzahit + obFirst[2] * epsilonOrg;
       auto direction = rti::cos_hemi::get<Ty>(orthonormalBasis, pRng, pRngState);
+
+      pRayhit.ray.org_x = newOrigin[0];
+      pRayhit.ray.org_y = newOrigin[1];
+      pRayhit.ray.org_z = newOrigin[2];
+
       pRayhit.ray.dir_x = direction[0];
       pRayhit.ray.dir_y = direction[1];
       pRayhit.ray.dir_z = direction[2];

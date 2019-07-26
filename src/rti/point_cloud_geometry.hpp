@@ -4,6 +4,7 @@
 
 #include "rti/i_geometry.hpp"
 #include "rti/i_geometry_reader.hpp"
+#include "rti/utils.hpp"
 
 namespace rti {
   // The type Ty is supposed to be a numeric type - float or double.
@@ -33,8 +34,27 @@ namespace rti {
       return strstream.str();
     }
 
+    //rti::triple<Ty> get_coords(unsigned int pPrimID) const override final {
+    //  auto pnt = mVVBuffer[pPrimID];
+    //  return {pnt.xx, pnt.yy, pnt.zz};
+    //}
+
     rti::triple<Ty> get_normal(unsigned int pPrimID) const override final {
       return mNormals[pPrimID];
+    }
+
+    rti::triple<Ty> get_new_origin(unsigned int pPrimID) const override final {
+      // take the origin of the sphere
+      auto sphere = mVVBuffer[pPrimID];
+      // ... and move in the direction of the surface normal
+      auto normal = mNormals[pPrimID];
+      assert(rti::is_normalized(normal) && "Condition: Surface normal is normalized");
+      // ... such that the new origin is just above the sphere
+      auto scale = sphere.radius * 1.01f; // plus 1 percent
+      auto xx = sphere.xx + normal[0] * scale;
+      auto yy = sphere.yy + normal[1] * scale;
+      auto zz = sphere.zz + normal[2] * scale;
+      return {xx, yy, zz};
     }
 
     RTCDevice& get_rtc_device() override final {
@@ -159,9 +179,17 @@ namespace rti {
         mVVBuffer[idx].radius = (float) qudtrpl[3]; // TODO: Might need adjustment
       }
       this->mNormals = pGReader.get_normals(); // TODO: Deep or shallow copy
+      assert(each_normalized(mNormals) && "Condition: surface normals are normalized");
       rtcCommitGeometry(mGeometry);
       assert (RTC_ERROR_NONE == rtcGetDeviceError(pDevice) &&
               "Embree device error after rtcSetNewGeometryBuffer()");
+    }
+
+    bool each_normalized(std::vector<rti::triple<Ty> > pP) {
+      for (auto const& nn : pP)
+        if ( ! rti::is_normalized(nn))
+          return false;
+      return true;
     }
   };
 } // namespace rti

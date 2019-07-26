@@ -7,10 +7,12 @@
 #include <omp.h>
 
 #include "rti/bucket_counter.hpp"
+#include "rti/dummy_counter.hpp"
 #include "rti/i_boundary.hpp"
 #include "rti/i_geometry.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/diffuse_reflection.hpp"
+#include "rti/specular_reflection.hpp"
 #include "rti/timer.hpp"
 #include "rti/trace_result.hpp"
 #include "rti/triangle_geometry_from_gmsh.hpp" // only debug
@@ -25,31 +27,31 @@ namespace rti {
       mBoundary(pBoundary),
       mSource(pSource) {
       assert (pGeo.get_rtc_device() == pBoundary.get_rtc_device() &&
-              "the geometry and the boundary need to refer to the same Embree (rtc) device");
+        "the geometry and the boundary need to refer to the same Embree (rtc) device");
     }
 
     rti::trace_result run() {
       // Prepare a data structure for the result.
-      trace_result result {};
+      auto result = trace_result {};
       result.inputFilePath = mGeo.get_input_file_path();
       result.geometryClassName = boost::core::demangle(typeid(mGeo).name());
 
       // Prepare Embree
-      RTCDevice device = mGeo.get_rtc_device();
-      RTCScene scene = rtcNewScene(device);
+      auto device = mGeo.get_rtc_device();
+      auto scene = rtcNewScene(device);
       // No scene flags.
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
       // Selecting higher build quality results in better rendering performance but slower3
       // scene commit times. The default build quality for a scene is RTC_BUILD_QUALITY_MEDIUM.
-      RTCBuildQuality bbquality = RTC_BUILD_QUALITY_HIGH;
+      auto bbquality = RTC_BUILD_QUALITY_HIGH;
       rtcSetSceneBuildQuality(scene, bbquality);
-      RTCGeometry geometry = mGeo.get_rtc_geometry();
+      auto geometry = mGeo.get_rtc_geometry();
       // rtcCommitGeometry(geometry); // Removed; should be done in the implementations of i_geometry
-      RTCGeometry boundary = mBoundary.get_rtc_geometry();
+      auto boundary = mBoundary.get_rtc_geometry();
 
       // rtcAttachGeometry() is thread safe
-      unsigned int geometryID = rtcAttachGeometry(scene, geometry);
-      unsigned int boundaryID = rtcAttachGeometry(scene, boundary);
+      auto geometryID = rtcAttachGeometry(scene, geometry);
+      auto boundaryID = rtcAttachGeometry(scene, boundary);
 
       // Use openMP for parallelization
       #pragma omp parallel
@@ -63,22 +65,23 @@ namespace rti {
       // object.
       rtcReleaseGeometry(geometry);
       //
-      RTCIntersectContext context;
+      auto context = RTCIntersectContext {};
       rtcInitIntersectContext(&context);
 
       // *Ray queries*
       //size_t nrexp = 27;
-      size_t nrexp = 20;
-      size_t numRays = std::pow(2, nrexp);
+      auto nrexp = 20; // int
+      auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
       //rti::specular_reflection reflectionModel;
       //rti::diffuse_reflection reflectionModel(0.015625);
-      rti::diffuse_reflection<Ty> reflectionModel(0.01);
+      auto reflectionModel = rti::diffuse_reflection<Ty> {0.01};
+      auto boundaryReflection = rti::specular_reflection<Ty> {};
 
-      size_t hitc = 0;
-      size_t nonhitc = 0;
-      rti::bucket_counter bucketCounter(45, 101);
+      auto geohitc = 0ull; // unsigned long long int
+      auto nongeohitc = 0ull;
+      auto bucketCounter = rti::bucket_counter {45, 101};
       #pragma omp declare \
         reduction(bucket_counter_combine : \
                   rti::bucket_counter : \
@@ -94,19 +97,19 @@ namespace rti {
       auto rng = std::make_unique<rti::cstdlib_rng>();
 
       // Start timing
-      rti::timer timer;
+      auto timer = rti::timer {};
 
       #pragma omp parallel \
-        reduction(+ : hitc, nonhitc) \
+        reduction(+ : geohitc, nongeohitc) \
         reduction(bucket_counter_combine : bucketCounter)
       {
         // Thread local data goes here, if it is not needed anymore after the
         // execution of the parallel region.
-        RTCRayHit rayhit = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
         // REMARK: All data which is modified in the parallel loop should be
         // handled here explicitely.
-        unsigned int seed = (omp_get_thread_num() + 1) * 29; // multiply by magic number (prime)
+        auto seed = (unsigned int) ((omp_get_thread_num() + 1) * 29); // multiply by magic number (prime)
         // It seems really important to use two separate seeds / states for
         // sampling the source and sampling reflections. When we use only one
         // state for both, then the variance is very high.
@@ -115,7 +118,7 @@ namespace rti {
         // TODO: move this initialization to, e.g., the constructor
 
         #pragma omp for
-        for (size_t idx = 0; idx < numRays; ++idx) {
+        for (size_t idx = 0; idx < (unsigned long long int) numRays; ++idx) {
 
           rayhit.ray.tnear = 0;
           rayhit.ray.time = 0;
@@ -149,14 +152,16 @@ namespace rti {
 
             if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
               // No  hit
-              nonhitc += 1;
+              nongeohitc += 1;
               break; // break do-while loop
             }
             // else
             // A hit
-            hitc += 1;
-
-            // TODO: Take care for boundary hits!
+            if (rayhit.hit.geomID == boundaryID) {
+              // Ray hit the boundary
+              // TODO
+            }
+            geohitc += 1;
 
             RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
             RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
@@ -167,8 +172,8 @@ namespace rti {
       }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
-      result.hitc = hitc;
-      result.nonhitc = nonhitc;
+      result.hitc = geohitc;
+      result.nonhitc = nongeohitc;
 
       // // Turn dynamic adjustment of number of threads on again
       // omp_set_dynamic(true);

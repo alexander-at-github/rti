@@ -118,4 +118,11 @@ namespace rti {
     pV[1] /= thrdNorm;
     pV[2] /= thrdNorm;
   }
+
+  template<typename Ty>
+  bool is_normalized(triple<Ty> const& pV) {
+    auto epsilon = 1e-6f;
+    Ty length = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
+    return 1-epsilon <= length && length <= 1+epsilon;
+  }
 } // namespace rti

@@ -11,6 +11,7 @@
 #include <vtkXMLPolyDataReader.h>
 
 #include "rti/i_geometry_reader.hpp"
+#include "rti/utils.hpp"
 
 // There is an example at https://vtk.org/doc/nightly/html/classvtkCellIterator.html
 //
@@ -73,6 +74,9 @@ namespace rti {
         double nxnynz[3];
         normals->GetTuple(idx, nxnynz);
         rti::triple<Ty> normal {(Ty) nxnynz[0], (Ty) nxnynz[1], (Ty) nxnynz[2]};
+        // Normalize
+        if ( ! rti::is_normalized(normal))
+          rti::normalize(normal);
         mNormals.push_back(normal);
       }
       // Shrink memory

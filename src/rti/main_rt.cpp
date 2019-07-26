@@ -89,6 +89,8 @@ namespace rti {
 
 int main(int argc, char* argv[]) {
 
+  // We are using floats. There would actually not be any benefit of using
+  // double because Embree can work only with floats internally.
   using numeric_type = float;
 
   auto optMan = rti::main_rt::init(argc, argv);
@@ -96,8 +98,8 @@ int main(int argc, char* argv[]) {
   auto infilename = optMan->get_string_option_value("INPUT_FILE");
 
   // Enable huge page support.
-  const std::string device_config = "hugepages=1";
-  RTCDevice device = rtcNewDevice(device_config.c_str());
+  auto device_config = "hugepages=1";
+  auto device = rtcNewDevice(device_config);
   rti::main_rt::print_rtc_device_info(device);
 
   // rti::ray_source<numeric_type> source(
@@ -114,8 +116,8 @@ int main(int argc, char* argv[]) {
   //rti::sphere_geometry_from_gmsh geometry(device, gmshReader);
   //rti::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
 
-  rti::vtp_point_cloud_reader<numeric_type> pntCldReader (infilename);
-  rti::point_cloud_geometry<numeric_type> geometry (device, pntCldReader);
+  auto pntCldReader = rti::vtp_point_cloud_reader<numeric_type> {infilename};
+  auto geometry = rti::point_cloud_geometry<numeric_type> {device, pntCldReader};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
@@ -135,20 +137,15 @@ int main(int argc, char* argv[]) {
   // ASSUMPTION: the source is on a plain above (positive values) the structure
   // such that z == c for some constant c. (That is in accordance with the silvaco
   // verification instances.)
-  rti::rectangle_origin_z<numeric_type> origin (zmax, originC1, originC2);
+  auto origin = rti::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
   // Cosine direction in the opposite direction of the z-axis
-  rti::cosine_direction<numeric_type> direction (
+  auto direction = rti::cosine_direction<numeric_type> {
     {rti::triple<numeric_type> {0.f, 0.f, -1.f},
      rti::triple<numeric_type> {0.f, 1.f,  0.f},
-     rti::triple<numeric_type> {1.f, 0.f,  0.f}});
-
-  rti::ray_source<numeric_type> source (origin, direction);
-
-  rti::tracer<numeric_type> tracer (geometry, boundary, source);
-
-  rti::trace_result result = tracer.run();
-
+     rti::triple<numeric_type> {1.f, 0.f,  0.f}}};
+  auto source = rti::ray_source<numeric_type> {origin, direction};
+  auto tracer = rti::tracer<numeric_type> {geometry, boundary, source};
+  auto result = tracer.run();
   //std::cout << result << std::endl;
-
   return EXIT_SUCCESS;
 }
