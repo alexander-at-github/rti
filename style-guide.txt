@@ -19,9 +19,11 @@ namespace lowercase_identifers {
   public:
 
     void because_underscores_are() const {
-      volatile int mostLikeSpaces = 0; // but local names are condensed
-
-      while (!mostLikeSpaces)
+      auto mostLikeSpaces = 0u; // but local names are condensed
+      auto foo = false;
+      auto bar = cmplx_type {};
+      
+      while (!foo)
         single::statements_do_not(need, braces);
 
       for (size_t i = 0; i < 100; ++i) {
@@ -40,8 +42,8 @@ namespace lowercase_identifers {
 
     void run() {
       using super_namespace;
-      // names from another namespace should have one explicite namespace name and
-      // scope resolution operator for qualified name lookup
+      // names from another namespace should have at least one explicite namespace
+      // name and scope resolution operator for qualified name lookup
       names::from_another_namespace();
     }
 
