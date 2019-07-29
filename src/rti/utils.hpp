@@ -70,10 +70,11 @@ namespace rti {
 
   // This function modifies the arguments when called
   template<typename T>
-  void scale(triple<T>& pT, T pF) {
+  triple<T> scale(T pF, triple<T>& pT) {
     pT[0] *= pF;
     pT[1] *= pF;
     pT[2] *= pF;
+    return pT;
   }
 
   template<typename T>
@@ -124,5 +125,13 @@ namespace rti {
     auto epsilon = 1e-6f;
     Ty length = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
     return 1-epsilon <= length && length <= 1+epsilon;
+  }
+
+  // Compute normal of a triangle
+  template<typename Ty>
+  rti::triple<Ty> compute_normal(rti::triple<rti::triple<Ty> >& pTri) {
+    auto uu = rti::diff(pTri[1], pTri[0]);
+    auto vv = rti::diff(pTri[2], pTri[0]);
+    return rti::cross_product(uu, vv);
   }
 } // namespace rti

@@ -1,5 +1,7 @@
 #pragma once
 
+//#include <ostream>
+
 #include <embree3/rtcore.h>
 
 #include "rti/i_boundary.hpp"
@@ -29,11 +31,24 @@ namespace rti {
       return mGeometry;
     }
 
+    void print(std::ostream&pOs) const override final {
+      assert(false && "Not implemented");
+    }
+
+    rti::triple<Ty> get_normal(unsigned int pPrimID) const override final {
+      return mNormals[pPrimID];
+    }
+
+    rti::triple<Ty> get_new_origin(unsigned int primID) const override final {
+      assert(false && "Not implemented");
+    }
+
   private:
 
     // Member variables
     RTCDevice& mDevice;
     RTCGeometry mGeometry;
+    std::vector<rti::triple<Ty> > mNormals;
     rti::pair<rti::triple<Ty> > mBdBox;
 
     // Member functions
@@ -86,12 +101,25 @@ namespace rti {
       //
       triBuff[2].v0 = 4; triBuff[2].v1 = 5; triBuff[2].v2 = 0;
       triBuff[3].v0 = 1; triBuff[3].v1 = 0; triBuff[3].v2 = 5;
-
+      //
       triBuff[4].v0 = 6; triBuff[4].v1 = 7; triBuff[4].v2 = 4;
       triBuff[5].v0 = 5; triBuff[5].v1 = 4; triBuff[5].v2 = 7;
-
+      //
       triBuff[6].v0 = 2; triBuff[6].v1 = 3; triBuff[6].v2 = 6;
       triBuff[7].v0 = 7; triBuff[7].v1 = 6; triBuff[7].v2 = 3;
+
+      // TODO: fill normals
+      for (size_t idx = 0; idx < numTriangles; ++idx) {
+        auto tt = triBuff[idx];
+        auto triangle = rti::triple<rti::triple<Ty> >
+          { vertBuff[tt.v0].xx, vertBuff[tt.v0].yy, vertBuff[tt.v0].zz,
+            vertBuff[tt.v1].xx, vertBuff[tt.v1].yy, vertBuff[tt.v1].zz,
+            vertBuff[tt.v2].xx, vertBuff[tt.v2].yy, vertBuff[tt.v2].zz};
+        auto normal = rti::compute_normal(triangle);
+        rti::normalize(normal);
+        mNormals.push_back(normal);
+      }
+      mNormals.shrink_to_fit();
 
       rtcCommitGeometry(mGeometry);
       assert (RTC_ERROR_NONE == rtcGetDeviceError(mDevice) &&

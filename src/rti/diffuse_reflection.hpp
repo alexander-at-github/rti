@@ -18,7 +18,7 @@ namespace rti {
     bool use(RTCRayHit& pRayhit,
              rti::i_rng& pRng,
              rti::i_rng::i_state& pRngState,
-             const i_geometry<Ty>& pGeometry,
+             const i_abs_geometry<Ty>& pGeometry, // covariant parameter; does that work?
              i_hit_counter& pHitcounter) const override final {
 
       Ty epsilon = 1e-6;

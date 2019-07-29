@@ -1,7 +1,8 @@
 #pragma once
 
-#include <chrono>
+//#include <chrono>
 
+#include "rti/i_hit_counter.hpp"
 // include ostream overload template to provide out stream functionality
 // by means of the print function.
 #include "rti/ostream_overload_template.hpp"
@@ -9,6 +10,7 @@
 namespace rti {
   class trace_result {
   public:
+    std::unique_ptr<rti::i_hit_counter> hitCounter;
     uint64_t timeNanoseconds = 0;
     std::string geometryClassName;
     std::string inputFilePath;

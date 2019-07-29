@@ -31,14 +31,15 @@ namespace rti {
       Ty cc3 = sin(two_pi * r1) * sqrt(1 - r2);
 
       auto tt1 = pBasis[0];
-      rti::scale(tt1, cc1);
+      rti::scale(cc1, tt1);
       auto tt2 = pBasis[1];
-      rti::scale(tt2, cc2);
+      rti::scale(cc2, tt2);
       auto tt3 = pBasis[2];
-      rti::scale(tt3, cc3);
+      rti::scale(cc3, tt3);
 
-      return rti::sum(tt1, tt2, tt3);
-      //assert(false && "Not implemented");
+      auto result = rti::sum(tt1, tt2, tt3);
+      assert(rti::is_normalized(result) && "Postcondition");
+      return result;
     }
   };
 }

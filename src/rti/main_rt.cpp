@@ -11,7 +11,7 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
-#include "rti/boundary.hpp"
+#include "rti/boundary_x_y.hpp"
 #include "rti/clo.hpp"
 #include "rti/disc_geometry_from_gmsh.hpp"
 #include "rti/constant_origin.hpp"
@@ -146,6 +146,6 @@ int main(int argc, char* argv[]) {
   auto source = rti::ray_source<numeric_type> {origin, direction};
   auto tracer = rti::tracer<numeric_type> {geometry, boundary, source};
   auto result = tracer.run();
-  //std::cout << result << std::endl;
+  std::cout << result << std::endl;
   return EXIT_SUCCESS;
 }

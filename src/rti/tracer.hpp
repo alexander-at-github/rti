@@ -6,10 +6,11 @@
 #include <chrono>
 #include <omp.h>
 
-#include "rti/bucket_counter.hpp"
+//#include "rti/bucket_counter.hpp"
 #include "rti/dummy_counter.hpp"
 #include "rti/i_boundary.hpp"
 #include "rti/i_geometry.hpp"
+#include "rti/i_hit_counter.hpp"
 #include "rti/i_ray_source.hpp"
 #include "rti/diffuse_reflection.hpp"
 #include "rti/specular_reflection.hpp"
@@ -81,14 +82,14 @@ namespace rti {
 
       auto geohitc = 0ull; // unsigned long long int
       auto nongeohitc = 0ull;
-      auto bucketCounter = rti::bucket_counter {45, 101};
+      auto hitCounter = rti::dummy_counter {};
+      //rti::dummy_counter hitCounter; // TODO: switch
       #pragma omp declare \
-        reduction(bucket_counter_combine : \
-                  rti::bucket_counter : \
-                  omp_out = rti::bucket_counter::combine(omp_out, omp_in)) \
-        initializer(omp_priv = rti::bucket_counter(omp_orig))
-        //initializer(omp_priv = bucketCounter(45, 101))
-      // TODO: IS THAT CORRECT? (see also the copy constructor of bucket_counter)
+        reduction(hit_counter_combine : \
+                  rti::dummy_counter : \
+                  omp_out = rti::dummy_counter(omp_out, omp_in)) \
+        initializer(omp_priv = rti::dummy_counter(omp_orig))
+        //initializer(omp_priv = rti::dummy_counter(omp_orig))
 
       // omp_set_dynamic(false);
 
@@ -101,7 +102,7 @@ namespace rti {
 
       #pragma omp parallel \
         reduction(+ : geohitc, nongeohitc) \
-        reduction(bucket_counter_combine : bucketCounter)
+        reduction(hit_counter_combine : hitCounter)
       {
         // Thread local data goes here, if it is not needed anymore after the
         // execution of the parallel region.
@@ -159,26 +160,26 @@ namespace rti {
             // A hit
             if (rayhit.hit.geomID == boundaryID) {
               // Ray hit the boundary
-              // TODO
+              boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary, hitCounter);
+              continue;
             }
             geohitc += 1;
 
             RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
             RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
 
-            reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo, bucketCounter);
+            reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo, hitCounter);
           } while (reflect);
         }
       }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
+      result.hitCounter = std::make_unique<rti::dummy_counter>(hitCounter);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
 
       // // Turn dynamic adjustment of number of threads on again
       // omp_set_dynamic(true);
-
-      //std::cout << bucketCounter << std::endl;
 
       return result;
     }
