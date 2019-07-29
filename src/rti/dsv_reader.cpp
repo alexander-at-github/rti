@@ -20,8 +20,8 @@
 //#include <vtkVertexGlyphFilter.h>
 #include <vtkXMLPolyDataWriter.h>
 
-#include "rti/clo.hpp"
-#include "rti/enum_class_hash_function.hpp"
+#include "rti/util/clo.hpp"
+#include "rti/util/enum_class_hash_function.hpp"
 
 // An example how to write (or read) normals in vtk is at the following URL.
 // https://vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataCellNormals
@@ -30,14 +30,14 @@
 // Partially built on the ReadTextFile example in VTK
 int main(int argc, char* argv[]) {
 
-  auto optMan = std::make_unique<rti::clo::manager>();
-  optMan->addCmlParam(rti::clo::bool_option
+  auto optMan = std::make_unique<rti::util::clo::manager>();
+  optMan->addCmlParam(rti::util::clo::bool_option
     {"FILTER_COVERED", {"--filter-covered"}, "turns filtering of covered points on"});
-  optMan->addCmlParam(rti::clo::bool_option
+  optMan->addCmlParam(rti::util::clo::bool_option
     {"RENDER", {"--render"}, "render the input on GUI"});
-  optMan->addCmlParam(rti::clo::string_option
+  optMan->addCmlParam(rti::util::clo::string_option
     {"INPUT_FILE", {"--infile"}, "spacifies the name of the input file", true});
-  optMan->addCmlParam(rti::clo::string_option
+  optMan->addCmlParam(rti::util::clo::string_option
     {"OUTPUT_FILE", {"--write", "--output"}, "specifies the name of the output file", false});
   bool succ = optMan->parse_args(argc, argv);
   if (!succ) {

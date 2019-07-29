@@ -11,35 +11,34 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
-#include "rti/boundary_x_y.hpp"
-#include "rti/clo.hpp"
-#include "rti/disc_geometry_from_gmsh.hpp"
-#include "rti/constant_origin.hpp"
-#include "rti/cosine_direction.hpp"
-#include "rti/cosine_direction.hpp"
-#include "rti/disc_origin_x.hpp"
-#include "rti/dummy_direction.hpp"
-#include "rti/logger.hpp"
-#include "rti/oriented_disc_geometry_from_gmsh.hpp"
-#include "rti/point_cloud_geometry.hpp"
-#include "rti/ray_source.hpp"
-#include "rti/rectangle_origin_z.hpp"
-#include "rti/sphere_geometry_from_gmsh.hpp"
-#include "rti/test_result.hpp"
-#include "rti/tracer.hpp"
-#include "rti/trace_result.hpp"
-#include "rti/triangle_geometry_from_gmsh.hpp"
-#include "rti/vtp_point_cloud_reader.hpp"
+#include "rti/geo/boundary_x_y.hpp"
+#include "rti/util/clo.hpp"
+#include "rti/geo/disc_geometry_from_gmsh.hpp"
+#include "rti/ray/constant_origin.hpp"
+#include "rti/ray/cosine_direction.hpp"
+#include "rti/ray/disc_origin_x.hpp"
+#include "rti/ray/dummy_direction.hpp"
+#include "rti/util/logger.hpp"
+#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/geo/point_cloud_geometry.hpp"
+#include "rti/ray/source.hpp"
+#include "rti/ray/rectangle_origin_z.hpp"
+#include "rti/geo/sphere_geometry_from_gmsh.hpp"
+#include "rti/test_and_benchmark/test_result.hpp"
+#include "rti/trace/tracer.hpp"
+#include "rti/trace/result.hpp"
+#include "rti/geo/triangle_geometry_from_gmsh.hpp"
+#include "rti/io/vtp_point_cloud_reader.hpp"
 
 namespace rti {
   namespace main_rt {
 
-    std::unique_ptr<rti::clo::manager> init(int argc, char* argv[]) {
+    std::unique_ptr<rti::util::clo::manager> init(int argc, char* argv[]) {
       // Setup command line arguments parser
-      auto optMan = std::make_unique<rti::clo::manager>();
-      optMan->addCmlParam(rti::clo::string_option
+      auto optMan = std::make_unique<rti::util::clo::manager>();
+      optMan->addCmlParam(rti::util::clo::string_option
         {"MAX_THREADS", {"--max-threads", "-m"}, "specifies the maximum number of threads used", false});
-      optMan->addCmlParam(rti::clo::string_option
+      optMan->addCmlParam(rti::util::clo::string_option
         {"INPUT_FILE", {"--infile", "-i"}, "specifies the path of the input file", true});
       bool succ = optMan->parse_args(argc, argv);
       if (!succ) {
@@ -94,7 +93,7 @@ int main(int argc, char* argv[]) {
   using numeric_type = float;
 
   auto optMan = rti::main_rt::init(argc, argv);
-  //rti::gmsh_reader& gmshReader = rti::gmsh_reader::getInstance();
+  //rti::io::gmsh_reader& gmshReader = rti::io::gmsh_reader::getInstance();
   auto infilename = optMan->get_string_option_value("INPUT_FILE");
 
   // Enable huge page support.
@@ -102,22 +101,22 @@ int main(int argc, char* argv[]) {
   auto device = rtcNewDevice(device_config);
   rti::main_rt::print_rtc_device_info(device);
 
-  // rti::ray_source<numeric_type> source(
-  //   std::make_unique<rti::disc_origin_x<numeric_type> >(0, 0, 0, 0.5),
-  //   std::make_unique<rti::cosine_direction<numeric_type> >(
-  //     rti::triple<rti::triple<numeric_type> > {
+  // rti::ray::source<numeric_type> source(
+  //   std::make_unique<rti::ray::disc_origin_x<numeric_type> >(0, 0, 0, 0.5),
+  //   std::make_unique<rti::ray::cosine_direction<numeric_type> >(
+  //     rti::util::triple<rti::util::triple<numeric_type> > {
   //       {1.f, 0.f, 0.f},
   //       {0.f, 1.f, 0.f},
   //       {0.f, 0.f, 1.f}}));
 
-  //rti::triangle_geometry_from_gmsh geometry(device, gmshReader);
-  //rti::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
-  //rti::disc_geometry_from_gmsh discGeo(device, gmshReader);
-  //rti::sphere_geometry_from_gmsh geometry(device, gmshReader);
-  //rti::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
+  //rti::geo::triangle_geometry_from_gmsh geometry(device, gmshReader);
+  //rti::geo::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
+  //rti::geo::disc_geometry_from_gmsh discGeo(device, gmshReader);
+  //rti::geo::sphere_geometry_from_gmsh geometry(device, gmshReader);
+  //rti::ray::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
 
-  auto pntCldReader = rti::vtp_point_cloud_reader<numeric_type> {infilename};
-  auto geometry = rti::point_cloud_geometry<numeric_type> {device, pntCldReader};
+  auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
+  auto geometry = rti::geo::point_cloud_geometry<numeric_type> {device, pntCldReader};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
@@ -127,24 +126,24 @@ int main(int argc, char* argv[]) {
   // std::cout << std::endl;
 
   // Prepare boundary
-  auto boundary = rti::boundary_x_y<numeric_type> {device, bdBox};
+  auto boundary = rti::geo::boundary_x_y<numeric_type> {device, bdBox};
 
   // Prepare source
   auto zmax = std::max(bdBox[0][2], bdBox[1][2]);
-  auto originC1 = rti::pair<numeric_type> {bdBox[0][0], bdBox[0][1]};
-  auto originC2 = rti::pair<numeric_type> {bdBox[1][0], bdBox[1][1]};
+  auto originC1 = rti::util::pair<numeric_type> {bdBox[0][0], bdBox[0][1]};
+  auto originC2 = rti::util::pair<numeric_type> {bdBox[1][0], bdBox[1][1]};
 
   // ASSUMPTION: the source is on a plain above (positive values) the structure
   // such that z == c for some constant c. (That is in accordance with the silvaco
   // verification instances.)
-  auto origin = rti::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
+  auto origin = rti::ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
   // Cosine direction in the opposite direction of the z-axis
-  auto direction = rti::cosine_direction<numeric_type> {
-    {rti::triple<numeric_type> {0.f, 0.f, -1.f},
-     rti::triple<numeric_type> {0.f, 1.f,  0.f},
-     rti::triple<numeric_type> {1.f, 0.f,  0.f}}};
-  auto source = rti::ray_source<numeric_type> {origin, direction};
-  auto tracer = rti::tracer<numeric_type> {geometry, boundary, source};
+  auto direction = rti::ray::cosine_direction<numeric_type> {
+    {rti::util::triple<numeric_type> {0.f, 0.f, -1.f},
+     rti::util::triple<numeric_type> {0.f, 1.f,  0.f},
+     rti::util::triple<numeric_type> {1.f, 0.f,  0.f}}};
+  auto source = rti::ray::source<numeric_type> {origin, direction};
+  auto tracer = rti::trace::tracer<numeric_type> {geometry, boundary, source};
   auto result = tracer.run();
   std::cout << result << std::endl;
   return EXIT_SUCCESS;
