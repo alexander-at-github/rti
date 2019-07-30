@@ -87,6 +87,10 @@ namespace rti { namespace geo {
       return {rti::util::triple<Ty> {xmin, ymin, zmin}, rti::util::triple<Ty> {xmax, ymax, zmax}};
     }
 
+    size_t get_num_primitives() const override final {
+      return this->mNumPoints;
+    }
+
   private:
     // Local types
     struct point_4f_t {

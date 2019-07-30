@@ -11,6 +11,7 @@
 #include "rti/ray/i_source.hpp"
 #include "rti/reflection/diffuse.hpp"
 #include "rti/reflection/specular.hpp"
+#include "rti/trace/counter.hpp"
 #include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/result.hpp"
 #include "rti/util/timer.hpp"
@@ -79,14 +80,14 @@ namespace rti { namespace trace {
 
       auto geohitc = 0ull; // unsigned long long int
       auto nongeohitc = 0ull;
-      auto hitCounter = rti::trace::dummy_counter {};
-      //rti::trace::dummy_counter hitCounter; // TODO: switch
+      auto hitCounter = rti::trace::counter {mGeo.get_num_primitives()};
+      //rti::trace::counter hitCounter; // TODO: switch
       #pragma omp declare \
         reduction(hit_counter_combine : \
-                  rti::trace::dummy_counter : \
-                  omp_out = rti::trace::dummy_counter(omp_out, omp_in)) \
-        initializer(omp_priv = rti::trace::dummy_counter(omp_orig))
-        //initializer(omp_priv = rti::trace::dummy_counter(omp_orig))
+                  rti::trace::counter : \
+                  omp_out = rti::trace::counter(omp_out, omp_in)) \
+        initializer(omp_priv = rti::trace::counter(omp_orig))
+        //initializer(omp_priv = rti::trace::counter(omp_orig))
 
       // omp_set_dynamic(false);
 
@@ -114,6 +115,9 @@ namespace rti { namespace trace {
         auto rngSeed1 = std::make_unique<rti::rng::cstdlib_rng::state>(seed);
         auto rngSeed2 = std::make_unique<rti::rng::cstdlib_rng::state>(seed+2);
         // TODO: move this initialization to, e.g., the constructor
+
+        // A dummy counter for the boundary
+        auto boundaryCntr = rti::trace::dummy_counter {};
 
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) numRays; ++idx) {
@@ -157,7 +161,7 @@ namespace rti { namespace trace {
             // A hit
             if (rayhit.hit.geomID == boundaryID) {
               // Ray hit the boundary
-              boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary, hitCounter);
+              boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary, boundaryCntr);
               continue;
             }
             geohitc += 1;
@@ -171,7 +175,7 @@ namespace rti { namespace trace {
       }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
-      result.hitCounter = std::make_unique<rti::trace::dummy_counter>(hitCounter);
+      result.hitCounter = std::make_unique<rti::trace::counter>(hitCounter);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
 

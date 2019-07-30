@@ -11,17 +11,15 @@ namespace rti { namespace trace {
     dummy_counter(dummy_counter const& pDc) {}
 
     dummy_counter& operator=(dummy_counter const& pOther) {
-      if (this != &pOther) {
-        // copy stuff from pOther to this
-      }
+      // if (this != &pOther) {
+      //   // copy stuff from pOther to this
+      // }
       return *this;
     }
 
     dummy_counter(dummy_counter const& pDc1, dummy_counter const& pDc2) {}
 
-    void use(const RTCRayHit& pRayhit) override final {
-      return;
-    }
+    void use(const RTCRayHit& pRayhit) override final {}
 
   };
 }} // namespace
