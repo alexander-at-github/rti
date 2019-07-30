@@ -66,7 +66,7 @@ namespace rti { namespace util { namespace clo {
       mArgc = argc;
       mArgv = argv;
       // starting from 1 because argv[0] is equal to the name of the executable
-      for (size_t idx = 1; idx < argc; /*empty*/) {
+      for (int idx = 1; idx < argc; /*empty*/) {
         //std::cerr << "debug idx == " << idx << std::endl;
 
         bool argUsed = false;

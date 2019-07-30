@@ -21,7 +21,9 @@ namespace rti { namespace rng {
     // argument.
     virtual uint64_t get(i_state& pState) const = 0;
 
-    constexpr virtual uint64_t min() const = 0;
-    constexpr virtual uint64_t max() const = 0;
+    //constexpr
+    virtual uint64_t min() const = 0;
+    //constexpr
+    virtual uint64_t max() const = 0;
   };
 }} // namespace

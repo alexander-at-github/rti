@@ -5,13 +5,13 @@
 #include "rti/ray/i_source.hpp"
 
 namespace rti { namespace ray {
-  template<typename T>
+  template<typename Ty>
   class source : public rti::ray::i_source {
     // Combines an origin with a direction
     // Not thread safe. See direction classes for reasons.
   public:
 
-    source(rti::ray::i_origin<T>& pOrigin, rti::ray::i_direction<T>& pDirection) :
+    source(rti::ray::i_origin<Ty>& pOrigin, rti::ray::i_direction<Ty>& pDirection) :
       mOrigin(pOrigin),
       mDirection(pDirection) {}
 
@@ -27,7 +27,7 @@ namespace rti { namespace ray {
     }
 
   private:
-    rti::ray::i_origin<T>& mOrigin;
-    rti::ray::i_direction<T>& mDirection;
+    rti::ray::i_origin<Ty>& mOrigin;
+    rti::ray::i_direction<Ty>& mDirection;
   };
 }} // namespace

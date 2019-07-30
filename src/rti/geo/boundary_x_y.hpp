@@ -64,8 +64,8 @@ namespace rti { namespace geo {
         // of three 32-bit indices per triangle.
         uint32_t v0, v1, v2;
       };
-      auto numVertices = 8;
-      auto numTriangles = 8;
+      auto numVertices = 8u;
+      auto numTriangles = 8u;
       auto vertBuff = (vertex_f3_t*)
         rtcSetNewGeometryBuffer(mGeometry,
                                 RTC_BUFFER_TYPE_VERTEX,

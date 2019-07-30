@@ -3,23 +3,23 @@
 #include "rti/ray/i_origin.hpp"
 
 namespace rti { namespace ray {
-  // T is intended to be a numeric type
-  template<typename T>
-  class disc_origin_x : public rti::ray::i_origin<T> {
+  // Ty is intended to be a numeric type
+  template<typename Ty>
+  class disc_origin_x : public rti::ray::i_origin<Ty> {
   public:
 
-    disc_origin_x(T pX, T pY, T pZ, T pRadius) :
+    disc_origin_x(Ty pX, Ty pY, Ty pZ, Ty pRadius) :
       mX(pX),
       mY(pY),
       mZ(pZ),
       mRadius(pRadius) {}
 
-    rti::util::triple<T>get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
-      T r1 = 1;
-      T r2 = 1;
+    rti::util::triple<Ty>get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+      Ty r1 = 1;
+      Ty r2 = 1;
       do {
-        r1 = (T) pRng.get(pRngState);
-        r2 = (T) pRng.get(pRngState);
+        r1 = (Ty) pRng.get(pRngState);
+        r2 = (Ty) pRng.get(pRngState);
         r1 -= pRng.max()/2;
         r2 -= pRng.max()/2;
         r1 = r1 / (pRng.max()/2) * mRadius;
@@ -33,9 +33,9 @@ namespace rti { namespace ray {
     }
 
   private:
-    T mX;
-    T mY;
-    T mZ;
-    T mRadius;
+    Ty mX;
+    Ty mY;
+    Ty mZ;
+    Ty mRadius;
   };
 }} // namespace

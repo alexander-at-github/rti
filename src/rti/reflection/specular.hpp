@@ -27,7 +27,7 @@ namespace rti { namespace reflection {
       auto ox = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar + normal[0] * epsilon;
       auto oy = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar + normal[1] * epsilon;
       auto oz = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar + normal[2] * epsilon;
-      auto newOrigin = rti::util::triple<Ty> {ox, oy, oz};
+      auto newOrigin = rti::util::triple<Ty> {(Ty) ox, (Ty) oy, (Ty) oz};
 
       pRayhit.ray.org_x = newOrigin[0];
       pRayhit.ray.org_y = newOrigin[1];

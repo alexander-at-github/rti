@@ -9,8 +9,8 @@
 namespace rti { namespace util {
 class enum_class_hash_function {
 public:
-  template<typename T>
-    std::size_t operator()(T t) const {
+  template<typename Ty>
+    std::size_t operator()(Ty t) const {
       return static_cast<std::size_t>(t);
     }
 };

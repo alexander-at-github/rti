@@ -32,10 +32,10 @@ namespace rti { namespace util {
   //   }
   // };
 
-  // template<typename T>
+  // template<typename Ty>
   // class pair {
   // public:
-  //   T frst, scnd;
+  //   Ty frst, scnd;
   // };
 
   // template<typename Ty>
@@ -44,14 +44,14 @@ namespace rti { namespace util {
   //   Ty frst, scnd, thrd, frth;
   // }
 
-  // template<typename T>
+  // template<typename Ty>
   // class triple {
   // public:
-  //   T frst, scnd, thrd;
+  //   Ty frst, scnd, thrd;
 
   //   // A hack to not need to implement the c++ STL iterator.
   //   // This iterator cannot modify the content.
-  //   std::vector<T> get_iterable() const {
+  //   std::vector<Ty> get_iterable() const {
   //     return {frst, scnd, thrd};
   //   }
 
@@ -59,62 +59,62 @@ namespace rti { namespace util {
   //     pOs << "(" << frst << " " << scnd << " " << thrd << ")";
   //   }
 
-  //   bool operator==(const triple<T>& pO) const {
+  //   bool operator==(const triple<Ty>& pO) const {
   //     return frst == pO.frst && scnd == pO.scnd && thrd == pO.thrd;
   //   }
 
-  //   bool operator!=(const triple<T>& pO) const {
+  //   bool operator!=(const triple<Ty>& pO) const {
   //     return !(*this == pO);
   //   }
   // };
 
   // This function modifies the arguments when called
-  template<typename T>
-  triple<T> scale(T pF, triple<T>& pT) {
+  template<typename Ty>
+  triple<Ty> scale(Ty pF, triple<Ty>& pT) {
     pT[0] *= pF;
     pT[1] *= pF;
     pT[2] *= pF;
     return pT;
   }
 
-  template<typename T>
-  T dot_product(const triple<T>& pF, const triple<T>& pS) {
+  template<typename Ty>
+  Ty dot_product(const triple<Ty>& pF, const triple<Ty>& pS) {
     return pF[0] * pS[0] + pF[1] * pS[1] + pF[2] * pS[2];
   }
 
-  template<typename T>
-  triple<T> cross_product(const triple<T>& pF, const triple<T>& pS) {
-    triple<T> rr;
+  template<typename Ty>
+  triple<Ty> cross_product(const triple<Ty>& pF, const triple<Ty>& pS) {
+    triple<Ty> rr;
     rr[0] = pF[1] * pS[2] - pF[2] * pS[1];
     rr[1] = pF[2] * pS[0] - pF[0] * pS[2];
     rr[2] = pF[0] * pS[1] - pF[1] * pS[0];
     return rr;
   }
 
-  template<typename T>
-  triple<T> sum(const triple<T>& pF, const triple<T>& pS) {
+  template<typename Ty>
+  triple<Ty> sum(const triple<Ty>& pF, const triple<Ty>& pS) {
     return {pF[0] + pS[0], pF[1] + pS[1], pF[2] + pS[2]};
   }
 
-  template<typename T>
-  triple<T> sum(const triple<T>& pF, const triple<T>& pS, const triple<T>& pT) {
+  template<typename Ty>
+  triple<Ty> sum(const triple<Ty>& pF, const triple<Ty>& pS, const triple<Ty>& pT) {
     return {pF[0] + pS[0] + pT[0], pF[1] + pS[1] + pT[1], pF[2] + pS[2] + pT[2]};
   }
 
-  template<typename T>
-  triple<T> inv(const triple<T>& pT) {
+  template<typename Ty>
+  triple<Ty> inv(const triple<Ty>& pT) {
     return {-pT[0], -pT[1], -pT[2]};
   }
 
-  template<typename T>
-  triple<T> diff(const triple<T>& pF, const triple<T>& pS) {
+  template<typename Ty>
+  triple<Ty> diff(const triple<Ty>& pF, const triple<Ty>& pS) {
     return sum(pF, inv(pS));
   }
 
   // This function modifies its argument when called
-  template<typename T>
-  void normalize(triple<T>& pV) {
-    T thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
+  template<typename Ty>
+  void normalize(triple<Ty>& pV) {
+    Ty thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
     pV[0] /= thrdNorm;
     pV[1] /= thrdNorm;
     pV[2] /= thrdNorm;
