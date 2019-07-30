@@ -18,6 +18,7 @@
 #include "rti/geo/sphere_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_geometry_from_gmsh.hpp"
 #include "rti/io/vtp_point_cloud_reader.hpp"
+#include "rti/io/vtp_writer.hpp"
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/disc_origin_x.hpp"
@@ -40,6 +41,9 @@ namespace rti {
         {"MAX_THREADS", {"--max-threads", "-m"}, "specifies the maximum number of threads used", false});
       optMan->addCmlParam(rti::util::clo::string_option
         {"INPUT_FILE", {"--infile", "-i"}, "specifies the path of the input file", true});
+      // We might want the output file to be mandatory in the future
+      optMan->addCmlParam(rti::util::clo::string_option
+        {"OUTPUT_FILE", {"--outfile", "-o"}, "specifies the path of the output file", false});
       bool succ = optMan->parse_args(argc, argv);
       if (!succ) {
         std::cout << optMan->get_usage_msg();
@@ -95,6 +99,7 @@ int main(int argc, char* argv[]) {
   auto optMan = rti::main_rt::init(argc, argv);
   //rti::io::gmsh_reader& gmshReader = rti::io::gmsh_reader::getInstance();
   auto infilename = optMan->get_string_option_value("INPUT_FILE");
+  auto outfilename = optMan->get_string_option_value("OUTPUT_FILE");
 
   // Enable huge page support.
   auto device_config = "hugepages=1";
@@ -145,6 +150,21 @@ int main(int argc, char* argv[]) {
   auto source = rti::ray::source<numeric_type> {origin, direction};
   auto tracer = rti::trace::tracer<numeric_type> {geometry, boundary, source};
   auto result = tracer.run();
-  std::cout << result << std::endl;
+  std::cout << result; // << std::endl;
+  std::cout << *result.hitCounter << std::endl;
+
+  if ( ! outfilename.empty()) {
+    // Write output to file
+    if (vtksys::SystemTools::GetFilenameLastExtension(outfilename) != ".vtp") {
+      std::cout << "Appending .vtp to the given file name" << std::endl;
+      outfilename.append(".vtp");
+    }
+
+    std::cout << "Writing output to " << outfilename << std::endl;
+    rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitCounter, outfilename);
+
+    // TODO: write bounding box to separate file
+  }
+
   return EXIT_SUCCESS;
 }

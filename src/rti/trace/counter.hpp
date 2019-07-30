@@ -51,6 +51,21 @@ namespace rti { namespace trace {
       mCnts[pRayhit.hit.primID] += 1;
     }
 
+    std::vector<size_t> get_counts() override final {
+      return mCnts;
+    }
+
+    void print(std::ostream& pOs) const override final {
+      pOs << "(";
+      for (size_t idx = 0; idx < mCnts.size(); ++idx) {
+        pOs << mCnts[idx];
+        if (idx < mCnts.size() - 1) {
+          pOs << " ";
+        }
+      }
+      pOs << ")" << std::endl;
+    }
+
   private:
     std::vector<size_t> mCnts;
   };

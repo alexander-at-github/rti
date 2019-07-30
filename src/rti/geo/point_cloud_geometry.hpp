@@ -34,10 +34,10 @@ namespace rti { namespace geo {
       return strstream.str();
     }
 
-    //rti::util::triple<Ty> get_coords(unsigned int pPrimID) const override final {
-    //  auto pnt = mVVBuffer[pPrimID];
-    //  return {pnt.xx, pnt.yy, pnt.zz};
-    //}
+    rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const {
+     auto pnt = mVVBuffer[pPrimID];
+     return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
+    }
 
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
       return mNormals[pPrimID];

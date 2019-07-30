@@ -21,5 +21,11 @@ namespace rti { namespace trace {
 
     void use(const RTCRayHit& pRayhit) override final {}
 
+    std::vector<size_t> get_counts() override final {
+      return {};
+    }
+
+    void print(std::ostream& pOs) const override final {}
+
   };
 }} // namespace
