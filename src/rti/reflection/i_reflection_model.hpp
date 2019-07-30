@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rti/trace/i_hit_counter.hpp"
+
 namespace rti { namespace reflection {
   template<typename Ty>
   class i_reflection_model {

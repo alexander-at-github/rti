@@ -3,8 +3,8 @@
 #include <cmath>
 
 #include "rti/ray/cos_hemi.hpp"
-#include "rti/rng/cstdlib_rng.hpp"
 #include "rti/reflection/i_reflection_model.hpp"
+#include "rti/rng/cstdlib_rng.hpp"
 #include "rti/rng/i_rng.hpp"
 
 namespace rti { namespace reflection {

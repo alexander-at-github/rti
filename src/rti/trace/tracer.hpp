@@ -6,17 +6,14 @@
 #include <chrono>
 #include <omp.h>
 
-//#include "rti/trace/bucket_counter.hpp"
-#include "rti/trace/dummy_counter.hpp"
 #include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_geometry.hpp"
-#include "rti/trace/i_hit_counter.hpp"
 #include "rti/ray/i_source.hpp"
 #include "rti/reflection/diffuse.hpp"
 #include "rti/reflection/specular.hpp"
-#include "rti/util/timer.hpp"
+#include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/result.hpp"
-#include "rti/geo/triangle_geometry_from_gmsh.hpp" // only debug
+#include "rti/util/timer.hpp"
 
 namespace rti { namespace trace {
   template<typename Ty>

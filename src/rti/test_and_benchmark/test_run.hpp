@@ -5,14 +5,11 @@
 #include <cmath>
 #include <chrono>
 
-#include "tbb/enumerable_thread_specific.h"
-#include "tbb/tbb.h"
-
 #include "rti/geo/i_geometry.hpp"
+//#include "rti/geo/triangle_geometry_from_gmsh.hpp" // only debug
 #include "rti/ray/i_source.hpp"
 #include "rti/test_and_benchmark/test_result.hpp"
 #include "rti/util/timer.hpp"
-#include "rti/geo/triangle_geometry_from_gmsh.hpp" // only debug
 
 namespace rti { namespace test_and_benchmark {
   class test_run {

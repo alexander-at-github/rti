@@ -3,9 +3,9 @@
 #include <embree3/rtcore.h>
 #include <gmsh.h>
 
+#include "rti/geo/absc_geometry_from_gmsh.hpp"
 #include "rti/io/gmsh_reader.hpp"
 #include "rti/util/logger.hpp"
-#include "rti/geo/absc_geometry_from_gmsh.hpp"
 
 namespace rti { namespace geo {
   // One might want to templatize this function and remove all float type specifiers

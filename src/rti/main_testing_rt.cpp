@@ -11,19 +11,19 @@
 #include <tbb/tbb.h>
 #include <xmmintrin.h>
 
-#include "rti/util/command_line_options.hpp"
 #include "rti/geo/disc_geometry_from_gmsh.hpp"
+#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/geo/sphere_geometry_from_gmsh.hpp"
+#include "rti/geo/triangle_geometry_from_gmsh.hpp"
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/dummy_direction.hpp"
-#include "rti/util/logger.hpp"
-#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/ray/source.hpp"
-#include "rti/geo/sphere_geometry_from_gmsh.hpp"
 #include "rti/test_and_benchmark/test_pool.hpp"
 #include "rti/test_and_benchmark/test_result.hpp"
 #include "rti/test_and_benchmark/test_run.hpp"
-#include "rti/geo/triangle_geometry_from_gmsh.hpp"
+#include "rti/util/command_line_options.hpp"
+#include "rti/util/logger.hpp"
 
 namespace rti {
   namespace main_testing_rt {

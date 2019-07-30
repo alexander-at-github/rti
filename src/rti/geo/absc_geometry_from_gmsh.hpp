@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "rti/io/gmsh_reader.hpp"
 #include "rti/geo/i_geometry.hpp"
+#include "rti/io/gmsh_reader.hpp"
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {

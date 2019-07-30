@@ -12,23 +12,23 @@
 #include <xmmintrin.h>
 
 #include "rti/geo/boundary_x_y.hpp"
-#include "rti/util/clo.hpp"
 #include "rti/geo/disc_geometry_from_gmsh.hpp"
+#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/geo/point_cloud_geometry.hpp"
+#include "rti/geo/sphere_geometry_from_gmsh.hpp"
+#include "rti/geo/triangle_geometry_from_gmsh.hpp"
+#include "rti/io/vtp_point_cloud_reader.hpp"
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/disc_origin_x.hpp"
 #include "rti/ray/dummy_direction.hpp"
-#include "rti/util/logger.hpp"
-#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
-#include "rti/geo/point_cloud_geometry.hpp"
 #include "rti/ray/source.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
-#include "rti/geo/sphere_geometry_from_gmsh.hpp"
 #include "rti/test_and_benchmark/test_result.hpp"
 #include "rti/trace/tracer.hpp"
 #include "rti/trace/result.hpp"
-#include "rti/geo/triangle_geometry_from_gmsh.hpp"
-#include "rti/io/vtp_point_cloud_reader.hpp"
+#include "rti/util/clo.hpp"
+#include "rti/util/logger.hpp"
 
 namespace rti {
   namespace main_rt {
