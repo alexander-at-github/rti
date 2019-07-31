@@ -2,6 +2,7 @@
 
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
+#include <vtkLine.h>
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
@@ -34,6 +35,13 @@ namespace rti { namespace io {
     void write(rti::geo::i_boundary<Ty>& pBoundary,
                std::string pOutfilename) {
       auto polydata = get_polydata(pBoundary);
+      write(polydata, pOutfilename);
+    }
+
+    static
+    void write(std::vector<rti::util::pair<rti::util::triple<Ty> > >* pVec,
+               std::string pOutfilename) {
+      auto polydata = get_polydata(*pVec);
       write(polydata, pOutfilename);
     }
 
@@ -128,6 +136,30 @@ namespace rti { namespace io {
       polydata->SetPoints(pointsOut);
       polydata->SetPolys(trianglesOut);
       polydata->GetCellData()->SetNormals(normalsOut);
+      return polydata;
+    }
+
+    static
+    vtkSmartPointer<vtkPolyData> get_polydata(
+        std::vector<rti::util::pair<rti::util::triple<float> > >& pVec) {
+      auto pointsOut = vtkSmartPointer<vtkPoints>::New();
+      auto linesOut = vtkSmartPointer<vtkCellArray>::New();
+
+      auto pidx = 0ull;
+      for (auto const& lineIn : pVec) {
+        pointsOut->InsertNextPoint(lineIn[0].data());
+        pointsOut->InsertNextPoint(lineIn[1].data());
+        auto lineOut = vtkSmartPointer<vtkLine>::New();
+        lineOut->GetPointIds()->SetId(0,pidx+0);
+        lineOut->GetPointIds()->SetId(1,pidx+1);
+        linesOut->InsertNextCell(lineOut);
+        pidx += 2; // 2 points have been inserted
+      }
+      assert (pidx == 2 * pVec.size() && "Missmatch between point-index and size of vector");
+
+      auto polydata = vtkSmartPointer<vtkPolyData>::New();
+      polydata->SetPoints(pointsOut);
+      polydata->SetLines(linesOut);
       return polydata;
     }
 

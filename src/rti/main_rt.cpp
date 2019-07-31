@@ -30,6 +30,7 @@
 #include "rti/trace/result.hpp"
 #include "rti/util/clo.hpp"
 #include "rti/util/logger.hpp"
+#include "rti/util/ray_logger.hpp"
 
 namespace rti {
   namespace main_rt {
@@ -166,12 +167,21 @@ int main(int argc, char* argv[]) {
       std::cout << "Appending .vtp to the given file name" << std::endl;
       outfilename.append(".vtp");
     }
-    auto bbfilename = vtksys::SystemTools::GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
+    auto bbfilename = vtksys::SystemTools::
+      GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitCounter, outfilename);
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
+
+    auto raylog = RAYLOG_GET_PTR();
+    if (raylog != nullptr) {
+      auto raylogfilename = vtksys::SystemTools::
+        GetFilenameWithoutExtension(outfilename).append(".ray-log.vtp");
+      std::cout << "Writing ray log to " << raylogfilename << std::endl;
+      rti::io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
+    }
   }
 
   return EXIT_SUCCESS;

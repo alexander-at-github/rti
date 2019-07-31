@@ -1,0 +1,44 @@
+#pragma once
+
+// a logger for the rays we are using
+//
+// NOT THREAD SAVE: use with a single thread only!
+// CAUSES SEGMENTATION FAULT WHEN USED IN MULTIPLE THREADS.
+//
+
+#include "rti/util/utils.hpp"
+
+namespace rti { namespace util {
+#define RAYLOG_ON
+
+  // vector of 3D line segments
+  static auto sRayLogVec = std::vector<rti::util::pair<rti::util::triple<float> > > {};
+  static constexpr auto sLineMaxLength = 64.f;
+
+#ifdef RAYLOG_ON
+    // This macro expects a semicolon at the end
+#define RAYLOG(rh) \
+  { \
+    auto tfar = std::min((rh).ray.tfar, rti::util::sLineMaxLength);     \
+    auto p1 = rti::util::triple<float> {(rh).ray.org_x, (rh).ray.org_y, (rh).ray.org_z}; \
+    auto p2 = rti::util::triple<float> {p1[0] + tfar * (rh).ray.dir_x,  \
+                                        p1[1] + tfar * (rh).ray.dir_y,  \
+                                        p1[2] + tfar * (rh).ray.dir_z}; \
+    rti::util::sRayLogVec.push_back({p1, p2}); \
+  } \
+  do {} while(false) // allows us to put a semicolon after the macro (without warnings)
+#else
+#define RAYLOG(rh) \
+  do {} while(false) // allows us to put a semicolon after the macro (without warnings)
+#endif
+
+#ifdef RAYLOG_ON
+    // This macro expects a semicolon at the end
+#define RAYLOG_GET_PTR() \
+    [](){return &rti::util::sRayLogVec;}()
+#else
+#define RAYLOG_GET_PTR() \
+    [](){return (std::vector<rti::util::pair<rti::util::triple<float> > >*) nullptr;}()
+#endif
+
+}} // namespace

@@ -14,6 +14,8 @@
 #include "rti/trace/counter.hpp"
 #include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/result.hpp"
+#include "rti/util/logger.hpp"
+#include "rti/util/ray_logger.hpp"
 #include "rti/util/timer.hpp"
 
 namespace rti { namespace trace {
@@ -69,13 +71,13 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 25; // int
+      auto nrexp = 1; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
       //rti::reflection::specular reflectionModel;
       //rti::reflection::diffuse reflectionModel(0.015625);
-      auto reflectionModel = rti::reflection::diffuse<Ty> {0.01};
+      auto reflectionModel = rti::reflection::diffuse<Ty> {1};
       auto boundaryReflection = rti::reflection::specular<Ty> {};
 
       auto geohitc = 0ull; // unsigned long long int
@@ -152,6 +154,8 @@ namespace rti { namespace trace {
             // performing ray queries in a scene is thread-safe
             rtcIntersect1(scene, &context, &rayhit);
 
+            RAYLOG(rayhit);
+
             if (rayhit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
               // No  hit
               nongeohitc += 1;
@@ -161,15 +165,13 @@ namespace rti { namespace trace {
             // A hit
             if (rayhit.hit.geomID == boundaryID) {
               // Ray hit the boundary
-              boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary, boundaryCntr);
-              continue;
+              reflect = boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary, boundaryCntr);
+            } else {
+              geohitc += 1;
+              RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
+              RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
+              reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo, hitCounter);
             }
-            geohitc += 1;
-
-            RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
-            RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
-
-            reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo, hitCounter);
           } while (reflect);
         }
       }
