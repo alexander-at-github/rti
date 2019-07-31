@@ -1,10 +1,14 @@
 #pragma once
 
+#include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
+#include <vtkPoints.h>
 #include <vtkSmartPointer.h>
+#include <vtkTriangle.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkXMLPolyDataWriter.h>
 
+#include "rti/geo/i_boundary.hpp"
 #include "rti/geo/point_cloud_geometry.hpp"
 #include "rti/geo/point_cloud_geometry.hpp"
 #include "rti/trace/i_hit_counter.hpp"
@@ -15,7 +19,7 @@ namespace rti { namespace io {
   public:
 
     static
-    bool write(rti::geo::point_cloud_geometry<Ty>& pGeometry,
+    void write(rti::geo::point_cloud_geometry<Ty>& pGeometry,
                rti::trace::i_hit_counter& pHC,
                std::string pOutfilename) {
       // Precondition:
@@ -23,16 +27,26 @@ namespace rti { namespace io {
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
       add_hit_counts(polydata, pHC);
+      write(polydata, pOutfilename);
+    }
 
-      auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-      writer->SetFileName(pOutfilename.c_str());
-      writer->SetInputData(polydata);
-      writer->SetDataModeToAscii(); // human readable XML output
-      writer->Write();
-      return true;
+    static
+    void write(rti::geo::i_boundary<Ty>& pBoundary,
+               std::string pOutfilename) {
+      auto polydata = get_polydata(pBoundary);
+      write(polydata, pOutfilename);
     }
 
   private:
+
+    static
+    void write(vtkSmartPointer<vtkPolyData> pPolydata, std::string pOutfilename) {
+      auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+      writer->SetFileName(pOutfilename.c_str());
+      writer->SetInputData(pPolydata);
+      writer->SetDataModeToAscii(); // human readable XML output
+      writer->Write();
+    }
 
     static
     void add_hit_counts(vtkSmartPointer<vtkPolyData> pPolydata,
@@ -84,12 +98,38 @@ namespace rti { namespace io {
 
       return polydata;
     }
-    
-    // static
-    // vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::i_geometry<Ty>& pGeometry) {
-    //   assert (false && "not implemented");
-    //   return nullptr;
-    // }
+
+    static
+    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::i_boundary<Ty>& pBoundary) {
+      auto pointsOut = vtkSmartPointer<vtkPoints>::New();
+      auto trianglesOut = vtkSmartPointer<vtkCellArray>::New();
+      auto normalsOut = vtkSmartPointer<vtkDoubleArray>::New();
+      for (auto const& pin : pBoundary.get_vertices()) {
+        pointsOut->InsertNextPoint(pin[0], pin[1], pin[2]);
+      }
+      for (auto const& tin : pBoundary.get_triangles()) {
+        auto triangleOut = vtkSmartPointer<vtkTriangle>::New();
+        triangleOut->GetPointIds()->SetId(0, tin[0]);
+        triangleOut->GetPointIds()->SetId(1, tin[1]);
+        triangleOut->GetPointIds()->SetId(2, tin[2]);
+        trianglesOut->InsertNextCell(triangleOut);
+      }
+      normalsOut->SetNumberOfComponents(3); // 3 dimensions
+      normalsOut->SetNumberOfTuples(trianglesOut->GetNumberOfCells());
+      // for (auto const& nin : pBoundary.get_triangle_normals()) {
+      //   normalsOut->InsertNextTuple(nin.data()); // 0 is the start index of the second argument
+      // }
+      auto nin = pBoundary.get_triangle_normals();
+      for (size_t idx = 0; idx < nin.size(); ++idx) {
+        normalsOut->SetTuple(idx, nin[idx].data());
+      }
+
+      auto polydata = vtkSmartPointer<vtkPolyData>::New();
+      polydata->SetPoints(pointsOut);
+      polydata->SetPolys(trianglesOut);
+      polydata->GetCellData()->SetNormals(normalsOut);
+      return polydata;
+    }
 
     static constexpr char const* radiusStr = "radius";
     static constexpr char const* valueStr = "value";

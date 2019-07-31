@@ -125,6 +125,13 @@ int main(int argc, char* argv[]) {
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
+  // Increase the size of the bounding box by an epsilon on the z achsis.
+  auto epsilon = 0.1;
+  if (bdBox[0][2] > bdBox[1][2]) {
+    bdBox[0][2] += epsilon;
+  } else {
+    bdBox[1][2] += epsilon;
+  }
   // for (auto const& bb : bdBox)
   //   for (auto const& cc : bb)
   //     std::cout << cc << " ";
@@ -151,7 +158,7 @@ int main(int argc, char* argv[]) {
   auto tracer = rti::trace::tracer<numeric_type> {geometry, boundary, source};
   auto result = tracer.run();
   std::cout << result; // << std::endl;
-  std::cout << *result.hitCounter << std::endl;
+  //std::cout << *result.hitCounter << std::endl;
 
   if ( ! outfilename.empty()) {
     // Write output to file
@@ -159,11 +166,12 @@ int main(int argc, char* argv[]) {
       std::cout << "Appending .vtp to the given file name" << std::endl;
       outfilename.append(".vtp");
     }
+    auto bbfilename = vtksys::SystemTools::GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitCounter, outfilename);
-
-    // TODO: write bounding box to separate file
+    std::cout << "Writing bounding box to " << bbfilename << std::endl;
+    rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
   }
 
   return EXIT_SUCCESS;
