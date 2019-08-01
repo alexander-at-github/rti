@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
   optMan->addCmlParam(rti::util::clo::string_option
     {"INPUT_FILE", {"--infile"}, "spacifies the name of the input file", true});
   optMan->addCmlParam(rti::util::clo::string_option
-    {"OUTPUT_FILE", {"--write", "--output"}, "specifies the name of the output file", false});
+    {"OUTPUT_FILE", {"--write", "--outfile"}, "specifies the name of the output file", false});
   bool succ = optMan->parse_args(argc, argv);
   if (!succ) {
     std::cout << optMan->get_usage_msg();
