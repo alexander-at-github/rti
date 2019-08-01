@@ -45,6 +45,13 @@ namespace rti { namespace io {
       write(polydata, pOutfilename);
     }
 
+    static
+    void write(std::vector<rti::util::triple<Ty> >* pVec,
+               std::string pOutfilename) {
+      auto polydata = get_polydata(*pVec);
+      write(polydata, pOutfilename);
+    }
+
   private:
 
     static
@@ -160,6 +167,18 @@ namespace rti { namespace io {
       auto polydata = vtkSmartPointer<vtkPolyData>::New();
       polydata->SetPoints(pointsOut);
       polydata->SetLines(linesOut);
+      return polydata;
+    }
+
+    static
+    vtkSmartPointer<vtkPolyData> get_polydata(
+        std::vector<rti::util::triple<float> >& pVec) {
+      auto pointsOut =vtkSmartPointer<vtkPoints>::New();
+      for (auto const& pointIn : pVec) {
+        pointsOut->InsertNextPoint(pointIn.data());
+      }
+      auto polydata = vtkSmartPointer<vtkPolyData>::New();
+      polydata->SetPoints(pointsOut);
       return polydata;
     }
 

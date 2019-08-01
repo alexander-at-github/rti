@@ -71,7 +71,7 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 9; // int
+      auto nrexp = 21; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -130,6 +130,8 @@ namespace rti { namespace trace {
 
           RLOG_DEBUG << "Preparing new ray from source" << std::endl;
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1);
+
+          RAYSRCLOG(rayhit);
 
           bool reflect;
           do {

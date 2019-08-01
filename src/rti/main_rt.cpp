@@ -182,6 +182,13 @@ int main(int argc, char* argv[]) {
       std::cout << "Writing ray log to " << raylogfilename << std::endl;
       rti::io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
     }
+    auto raysrclog = RAYSRCLOG_GET_PTR();
+    if (raysrclog != nullptr) {
+      auto raysrclogfilename = vtksys::SystemTools::
+        GetFilenameWithoutExtension(outfilename).append(".ray-src-log.vtp");
+      std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
+      rti::io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
+    }
   }
 
   return EXIT_SUCCESS;
