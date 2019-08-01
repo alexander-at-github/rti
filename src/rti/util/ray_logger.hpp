@@ -9,6 +9,7 @@
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace util {
+//
 #define RAYLOG_ON
 
   // vector of 3D line segments

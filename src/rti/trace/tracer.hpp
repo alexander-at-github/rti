@@ -71,13 +71,13 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 1; // int
+      auto nrexp = 9; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
       //rti::reflection::specular reflectionModel;
       //rti::reflection::diffuse reflectionModel(0.015625);
-      auto reflectionModel = rti::reflection::diffuse<Ty> {1};
+      auto reflectionModel = rti::reflection::diffuse<Ty> {0.1};
       auto boundaryReflection = rti::reflection::specular<Ty> {};
 
       auto geohitc = 0ull; // unsigned long long int
