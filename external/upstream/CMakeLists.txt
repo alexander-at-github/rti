@@ -9,3 +9,6 @@ add_subdirectory(embree)
 add_subdirectory(vtk)
 
 add_subdirectory(gperftools)
+
+add_subdirectory(googletest)
+add_subdirectory(abseil)

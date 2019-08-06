@@ -46,6 +46,9 @@ externalproject_add(rti
 		#embree-external
     #vtk-external
     #
+    #googletest-external
+    #abseil-external
+    #
     # The project depends on gmsh-external and embree-external. We do not add it here,
     # because otherwise the build system is very slow when rebuilding the project.
     # (The build configuration of these dependecies redo a lot of steps). You are adviced
