@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/core/demangle.hpp>
+
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
 #include <vtkCellData.h>

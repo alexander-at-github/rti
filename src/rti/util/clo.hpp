@@ -1,7 +1,11 @@
 #pragma once
 
-#include <unordered_map>
+#include <assert.h>
+
+#include <iostream>
 #include <sstream>
+#include <vector>
+#include <unordered_map>
 
 namespace rti { namespace util { namespace clo {
 
