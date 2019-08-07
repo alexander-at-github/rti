@@ -26,7 +26,7 @@ set(M_DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/dependencies)
 set(STAGED_INSTALL_PREFIX ${M_DEPENDENCIES_DIR}/stage) # will be used in external/upstream
 message(STATUS "${PROJECT_NAME} external project's staged install path: ${STAGED_INSTALL_PREFIX}")
 
-list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system" "timer")
+list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system" "timer" "iostreams" "filesystem")
 
 include(ExternalProject)
 add_subdirectory(external/upstream)
@@ -46,7 +46,7 @@ externalproject_add(rti
 		#embree-external
     #vtk-external
     #
-    #googletest-external
+    #gtest-external
     #abseil-external
     #
     # The project depends on gmsh-external and embree-external. We do not add it here,
@@ -92,3 +92,49 @@ externalproject_add(rti
   #INSTALL_COMMAND
   #  ""
 )
+
+externalproject_get_property(rti SOURCE_DIR)
+set(RTI_SRC_DIR ${SOURCE_DIR})
+unset(SOURCE_DIR)
+
+externalproject_add(rti-test
+  DEPENDS
+  #gtest-external
+  #boost-external
+  #gnuplot-iostream-external
+  SOURCE_DIR
+  ${CMAKE_CURRENT_LIST_DIR}/test
+  INSTALL_DIR
+  ${CMAKE_BINARY_DIR}
+  CMAKE_ARGS
+    -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+    -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+    -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
+    -DCMAKE_CXX_EXTENSIONS=${CMAKE_CXX_EXTENSIONS}
+    -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
+    -DCMAKE_VERBOSE_MAKEFILE=${CMAKE_VERBOSE_MAKEFILE}
+    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
+    -DCMAKE_CXX_FLAGS_DEBUG=${CMAKE_CXX_FLAGS_DEBUG}
+    -DCMAKE_CXX_FLAGS_RELEASE=${CMAKE_CXX_FLAGS_RELEASE}
+    #
+    -DBOOST_ROOT:PATH=${BOOST_ROOT}
+    #-DGMSH_DIR=${GMSH_DIR}
+    #-DEMBREE_DIR=${EMBREE_DIR}
+    #-DVTK_DIR=${VTK_DIR}
+    #
+    -DRTI_SRC_DIR=${RTI_SRC_DIR}
+    #
+    -DGTEST_SRC_DIR=${GTEST_SRC_DIR}
+    -DGTEST_BIN_DIR=${GTEST_BIN_DIR}
+    -DGPLOT_IO_DIR=${GPLOT_IO_DIR}
+  CMAKE_CACHE_ARGS
+    -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
+    -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+    -DCMAKE_INCLUDE_PATH:PATH=${CMAKE_INCLUDE_PATH}
+    -DCMAKE_LIBRARY_PATH:PATH=${CMAKE_LIBRARY_PATH}
+    #-D BOOST_COMPONENTS_REQUIRED="${BOOST_COMPONENTS_REQUIRED}"
+  BUILD_ALWAYS
+    1
+  )

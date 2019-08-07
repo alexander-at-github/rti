@@ -1,9 +1,9 @@
-externalproject_add(googletest-external
+externalproject_add(gnuplot-iostream-external
   GIT_REPOSITORY
-  https://github.com/google/googletest.git
+  https://github.com/dstahlke/gnuplot-iostream.git
   GIT_TAG
-  # Google Test follows the Live at Head philosophy
-  master
+  # Latest commit at the time of writing
+  7a5fed24bbce977caafeeed773b20dbf31f43d52
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -24,4 +24,11 @@ externalproject_add(googletest-external
     1
   GIT_PROGRESS
     1
+  )
+
+externalproject_get_property(gnuplot-iostream-external SOURCE_DIR)
+set(
+  GPLOT_IO_DIR "${SOURCE_DIR}"
+  CACHE PATH "Path to gnuplot-iostream source"
+  FORCE
   )

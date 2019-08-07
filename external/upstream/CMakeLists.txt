@@ -10,5 +10,8 @@ add_subdirectory(vtk)
 
 add_subdirectory(gperftools)
 
-add_subdirectory(googletest)
+add_subdirectory(gtest)
+
+add_subdirectory(gnuplot-iostream)
+
 add_subdirectory(abseil)
