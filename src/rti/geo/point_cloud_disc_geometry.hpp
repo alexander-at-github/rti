@@ -1,63 +1,61 @@
 #pragma once
 
+#include <cassert>
+#include <sstream>
+
 #include "rti/geo/absc_point_cloud_geometry.hpp"
 #include "rti/io/i_geometry_reader.hpp"
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {
-  // The type Ty is supposed to be a numeric type - float or double.
   template<typename Ty>
-  class point_cloud_sphere_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
+  class point_cloud_disc_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
   public:
 
-    point_cloud_sphere_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
+    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
       rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader) {
       init_this(pDevice, pGReader);
     }
 
-    // point_cloud_sphere_geometry(point_cloud_sphere_geometry& pOther) = default;
-    // point_cloud_sphere_geometry(point_cloud_sphere_geometry&& pOther) = default;
-    // point_cloud_sphere_geometry& operator= (point_cloud_sphere_geometry& pOther) = default;
-    // point_cloud_sphere_geometry& operator= (point_cloud_sphere_geometry&& pOther) = default;
-
-    // needs explicit destructor? No
-    //~point_cloud_sphere_geometry() override final {}
-
     std::string prim_to_string(unsigned int pPrimID) const override final {
-      std::stringstream strstream;
-      strstream
-        << "(" << this->mVVBuffer[pPrimID].xx << " " << this->mVVBuffer[pPrimID].yy
-        << " " << this->mVVBuffer[pPrimID].zz << " " << this->mVVBuffer[pPrimID].radius << ")";
-      return strstream.str();
+      auto strs = std::stringstream {};
+      assert(false && "Not implemented");
     }
 
     rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const override final {
-     auto pnt = this->mVVBuffer[pPrimID];
-     return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
+      auto pnt = this->mVVBuffer[pPrimID];
+      return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
     }
 
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
-      return mNormals[pPrimID];
+      auto nml = this->mNNBuffer[pPrimID];
+      return {(Ty) nml.xx, (Ty) nml.yy, (Ty) nml.zz};
     }
 
     rti::util::triple<Ty> get_new_origin(RTCRayHit& pRayhit, unsigned int pPrimID) const override final {
-      // take the origin of the sphere
-      auto sphere = this->mVVBuffer[pPrimID];
-      // ... and move in the direction of the surface normal
-      auto normal = mNormals[pPrimID];
-      assert(rti::util::is_normalized(normal) && "Condition: Surface normal is normalized");
-      // ... such that the new origin is just above the sphere
-      auto scale = sphere.radius * 1.01f; // plus 1 percent
-      auto xx = sphere.xx + normal[0] * scale;
-      auto yy = sphere.yy + normal[1] * scale;
-      auto zz = sphere.zz + normal[2] * scale;
-      return {xx, yy, zz};
+      auto epsilon = 1e-6;
+      auto xx = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
+      auto yy = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
+      auto zz = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
+      // add a small epsilon from the surface to be sure to be above the surface
+      auto normal = get_normal(pPrimID);
+      xx += normal[0] * epsilon;
+      yy += normal[1] * epsilon;
+      zz += normal[2] * epsilon;
+      return {(Ty) xx, (Ty) yy, (Ty) zz};
     }
 
   private:
-    std::vector<rti::util::triple<Ty> > mNormals;
+    // "RTC_GEOMETRY_TYPE_POINT:
+    // [...] the normal buffer stores a single precision normal per control
+    // vertex (x, y, z order and RTC_FORMAT_FLOAT3 format)."
+    // Source: https://embree.github.io/api.html#rtc_geometry_type_point
+    struct normal_vec_f3_t {
+      float xx, yy, zz;
+    };
+    // Normals are saved in an Embree-buffer
+    normal_vec_f3_t* mNNBuffer = nullptr;
 
-    // Functions
     void init_this(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) {
       // "Points with per vertex radii are supported with sphere, ray-oriented
       // discs, and normal-oriented discs geometric represetntations. Such point
@@ -107,12 +105,12 @@ namespace rti { namespace geo {
       // information, u and v are set to zero."
       // Source: https://www.embree.org/api.html#rtc_geometry_type_point
 
-      this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_DISC_POINT); // using a ray facing disc
+      this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT); // using a ray facing disc
 
       std::vector<rti::util::quadruple<Ty> > points = pGReader.get_points();
       this->mNumPoints = points.size();
       // Acquire memory via Embree API
-      this->mVVBuffer = (rti::geo::point_4f_t*)
+      this->mVVBuffer = (rti::geo::point_4f_t*) // type specified in the file absc_point_cloud_geometry.hpp
         rtcSetNewGeometryBuffer(this->mGeometry,
                                 RTC_BUFFER_TYPE_VERTEX,
                                 0, // slot
@@ -123,16 +121,31 @@ namespace rti { namespace geo {
       for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
         rti::util::quadruple<Ty>& qudtrpl = points[idx];
         // Here we have to cast to float because:
-        // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
-        // single precision x, y, z floating point coordinates ..."
-        // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
+        // "RTC_GEOMETRY_TYPE_POINT:
+        // [...] the normal buffer stores a single precision normal per control
+        // vertex (x, y, z order and RTC_FORMAT_FLOAT3 format)."
+        // Source: https://embree.github.io/api.html#rtc_geometry_type_point
         this->mVVBuffer[idx].xx = (float) qudtrpl[0];
         this->mVVBuffer[idx].yy = (float) qudtrpl[1];
         this->mVVBuffer[idx].zz = (float) qudtrpl[2];
         this->mVVBuffer[idx].radius = (float) qudtrpl[3]; // TODO: Might need adjustment
       }
-      this->mNormals = pGReader.get_normals(); // TODO: Deep or shallow copy
-      assert(rti::util::each_normalized<Ty>(mNormals) && "Condition: surface normals are normalized");
+      auto normals = pGReader.get_normals();
+      assert(rti::util::each_normalized<Ty>(normals) && "Condition: surface normals are normalized violated");
+      assert(normals.size() == points.size() && "Number of surface normals not consistent with number of points");
+      this->mNNBuffer = (normal_vec_f3_t*) // local specification of type
+        rtcSetNewGeometryBuffer(this->mGeometry,
+                                RTC_BUFFER_TYPE_NORMAL,
+                                0, // slot
+                                RTC_FORMAT_FLOAT3,
+                                sizeof(normal_vec_f3_t),
+                                this->mNumPoints);
+      for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
+        this->mNNBuffer[idx].xx = normals[idx][0];
+        this->mNNBuffer[idx].yy = normals[idx][1];
+        this->mNNBuffer[idx].zz = normals[idx][2];
+      }
+
       rtcCommitGeometry(this->mGeometry);
       assert (RTC_ERROR_NONE == rtcGetDeviceError(pDevice) &&
               "Embree device error after rtcSetNewGeometryBuffer()");

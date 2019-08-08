@@ -71,7 +71,7 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 35; // int
+      auto nrexp = 7; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 

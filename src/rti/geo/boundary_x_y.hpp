@@ -39,7 +39,7 @@ namespace rti { namespace geo {
       return mNormals[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(unsigned int primID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRayHit& pRayhit, unsigned int primID) const override final {
       assert(false && "Not implemented");
     }
 
@@ -65,7 +65,6 @@ namespace rti { namespace geo {
     std::vector<rti::util::triple<Ty> > get_triangle_normals() const override final {
       return mNormals;
     }
-
 
   private:
     // Local structs

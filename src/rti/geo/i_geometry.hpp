@@ -17,6 +17,6 @@ namespace rti { namespace geo {
     virtual std::string prim_to_string(unsigned int primID) const = 0;
     //virtual rti::util::triple<Ty> get_normal(unsigned int primID) const = 0;
     virtual rti::util::pair<rti::util::triple<Ty> > get_bounding_box() const = 0;
-    //virtual rti::util::triple<Ty> get_new_origin(unsigned int primID) const = 0;
+    //virtual rti::util::triple<Ty> get_new_origin(RTCRayhit& pRayhit, unsigned int primID) const = 0;
   };
 }} // namespace

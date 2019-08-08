@@ -25,6 +25,7 @@ namespace rti { namespace geo {
   public:
     // abstract class
     virtual ~absc_point_cloud_geometry() {}
+    virtual rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const = 0;
     // inherits also some virtual function declarations from i_geometry
 
     // constructor

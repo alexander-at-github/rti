@@ -45,7 +45,7 @@ namespace rti { namespace reflection {
 
       auto primID = pRayhit.hit.primID;
       // Get an origin for the refelcted ray from the i_geometry implementation
-      auto newOrigin = pGeometry.get_new_origin(primID);
+      auto newOrigin = pGeometry.get_new_origin(pRayhit, primID);
 
 
       // Ty xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;

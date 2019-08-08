@@ -14,6 +14,7 @@
 #include "rti/geo/boundary_x_y.hpp"
 #include "rti/geo/disc_geometry_from_gmsh.hpp"
 #include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/geo/point_cloud_disc_geometry.hpp"
 #include "rti/geo/point_cloud_sphere_geometry.hpp"
 #include "rti/geo/sphere_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_geometry_from_gmsh.hpp"
@@ -122,7 +123,8 @@ int main(int argc, char* argv[]) {
   //rti::ray::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
 
   auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
-  auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader};
+  // auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader};
+  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
