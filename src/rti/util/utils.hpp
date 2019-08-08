@@ -135,4 +135,13 @@ namespace rti { namespace util {
     auto vv = rti::util::diff(pTri[2], pTri[0]);
     return rti::util::cross_product(uu, vv);
   }
+
+  template<typename Ty>
+  bool each_normalized(std::vector<rti::util::triple<Ty> > pP) {
+    for (auto const& nn : pP)
+      if ( ! rti::util::is_normalized(nn))
+        return false;
+    return true;
+  }
+
 }} // namespace
