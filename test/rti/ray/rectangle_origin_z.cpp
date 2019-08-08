@@ -1,5 +1,6 @@
 #include <array>
 #include <cassert>
+#include <sstream>
 
 #include <gtest/gtest.h>
 #include <gnuplot-iostream.h>
@@ -24,7 +25,7 @@ TEST(rectangle_origin_z_double, histogram_w_cstdlib_rng) {
   constexpr auto numybins = 100u;
   auto hist = std::array<std::array<size_t, numybins>, numxbins> {};
 
-  auto numiter = 1e6;
+  auto numiter = (size_t) 1e6;
   for (size_t idx = 0; idx < numiter; ++idx) {
     auto sample = org.get(rng, rngstate);
     // TODO: write a test that checks that state is changed
