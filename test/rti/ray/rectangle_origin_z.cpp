@@ -51,11 +51,13 @@ TEST(rectangle_origin_z_double, histogram_w_cstdlib_rng) {
     //<< "set term postscript enhanced color \n"
     << "set title 'Histogram of uniform samples on a rectangle' \n"
     << "set pm3d\n"
+    << "set key off\n"
     << "splot '-' with pm3d \n";
 
   mapstr
     << "set title 'Histogram of uniform samples on a rectangle' \n"
     << "set pm3d map\n"
+    << "set key off\n"
     << "splot '-' with pm3d \n";
 
   for (size_t ix1 = 0; ix1 < hist.size(); ++ix1) {
