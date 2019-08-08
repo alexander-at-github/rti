@@ -9,10 +9,10 @@
 namespace rti { namespace geo {
   // The type Ty is supposed to be a numeric type - float or double.
   template<typename Ty>
-  class point_cloud_geometry : public rti::geo::i_geometry<Ty> {
+  class point_cloud_sphere_geometry : public rti::geo::i_geometry<Ty> {
   public:
 
-    point_cloud_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
+    point_cloud_sphere_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
       mDevice(pDevice),
       mInfilename(pGReader.get_input_file_name()) {
       init_this(pDevice, pGReader);

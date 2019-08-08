@@ -10,8 +10,7 @@
 #include <vtkXMLPolyDataWriter.h>
 
 #include "rti/geo/i_boundary.hpp"
-#include "rti/geo/point_cloud_geometry.hpp"
-#include "rti/geo/point_cloud_geometry.hpp"
+#include "rti/geo/point_cloud_sphere_geometry.hpp"
 #include "rti/trace/i_hit_counter.hpp"
 
 namespace rti { namespace io {
@@ -20,7 +19,7 @@ namespace rti { namespace io {
   public:
 
     static
-    void write(rti::geo::point_cloud_geometry<Ty>& pGeometry,
+    void write(rti::geo::point_cloud_sphere_geometry<Ty>& pGeometry,
                rti::trace::i_hit_counter& pHC,
                std::string pOutfilename) {
       // Precondition:
@@ -80,7 +79,7 @@ namespace rti { namespace io {
     }
 
     static
-    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::point_cloud_geometry<Ty>& pGeometry) {
+    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::point_cloud_sphere_geometry<Ty>& pGeometry) {
       auto points = vtkSmartPointer<vtkPoints>::New();
       auto cells = vtkSmartPointer<vtkCellArray>::New();
 
