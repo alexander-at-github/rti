@@ -1,0 +1,68 @@
+Source: https://stackoverflow.com/questions/4755913/how-to-use-doxygen-to-create-uml-class-diagrams-from-c-source
+
+
+
+Quote from this post (it's written by the author of doxygen himself) :
+
+run doxygen -g and change the following options of the generated Doxyfile:
+
+    EXTRACT_ALL            = YES
+    HAVE_DOT               = YES
+    UML_LOOK               = YES
+
+run doxygen again
+shareimprove this answer
+edited May 23 '17 at 12:26
+
+Community♦
+111 silver badge
+answered Mar 6 '13 at 13:18
+
+average
+1,0571212 silver badges3333 bronze badges
+
+This won't generate a full class diagram (e.g., the many-to-one relationship between class A and class B); only an inheritance diagram, i.e., showing superclass/subclass relationships. – stepthom Feb 27 '15 at 17:05
+add a comment
+
+31
+
+Hmm, this seems to be a bit of an old question, but since I've been messing about with Doxygen configuration last few days, while my head's still full of current info let's have a stab at it -
+
+I think the previous answers almost have it:
+
+The missing option is to add COLLABORATION_GRAPH = YES in the Doxyfile. I assume you can do the equivalent thing somewhere in the doxywizard GUI (I don't use doxywizard).
+
+So, as a more complete example, typical "Doxyfile" options related to UML output that I tend to use are:
+
+EXTRACT_ALL          = YES
+CLASS_DIAGRAMS      = YES
+HIDE_UNDOC_RELATIONS = NO
+HAVE_DOT             = YES
+CLASS_GRAPH          = YES
+COLLABORATION_GRAPH  = YES
+UML_LOOK             = YES
+UML_LIMIT_NUM_FIELDS = 50
+TEMPLATE_RELATIONS   = YES
+DOT_GRAPH_MAX_NODES  = 100
+MAX_DOT_GRAPH_DEPTH  = 0
+DOT_TRANSPARENT      = YES
+These settings will generate both "inheritance" (CLASS_GRAPH=YES) and "collaboration" (COLLABORATION_GRAPH=YES) diagrams.
+
+Depending on your target for "deployment" of the doxygen output, setting DOT_IMAGE_FORMAT = svg may also be of use. With svg output the diagrams are "scalable" instead of the fixed resolution of bitmap formats such as .png. Apparently, if viewing the output in browsers other than IE, there is also INTERACTIVE_SVG = YES which will allow "interactive zooming and panning" of the generated svg diagrams. I did try this some time ago, and the svg output was very visually attractive, but at the time, browser support for svg was still a bit inconsistent, so hopefully that situation may have improved lately.
+
+As other comments have mentioned, some of these settings (DOT_GRAPH_MAX_NODES in particular) do have potential performance impacts, so YMMV.
+
+I tend to hate "RTFM" style answers, so apologies for this sentence, but in this case the Doxygen documentation really is your friend, so check out the Doxygen docs on the above mentioned settings- last time I looked you can find the details at http://www.doxygen.nl/manual/config.html.
+
+shareimprove this answer
+edited Mar 25 at 16:27
+
+albert
+3,40633 gold badges1111 silver badges2525 bronze badges
+answered Jul 12 '16 at 7:46
+
+user6092647
+37144 silver badges55 bronze badges
+Good answer. In your answer you wrote "CLASS _DIAGRAMS" instead if "CLASS_GRAPH". – DavidS Jul 13 '16 at 12:38
+Hmm, actually, now you bring it up, I see I have both CLASS_DIAGRAMS = YES and CLASS_GRAPH= YES. After checking the docs for Doxygen 1.8.9.1 I found that actually CLASS_GRAPH = YES will override CLASS_DIAGRAMS = YES so the two options interact, with CLASS_GRAPH = YES taking precedence. So, actually, for the purposes of the original question what I have will work, nevertheless good catch ! – user6092647 Jul 14 '16 at 2:07
+you can also change the OUTPUT_DIRECTORY and allow RECURSIVE search
