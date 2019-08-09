@@ -1,0 +1,50 @@
+externalproject_add(gbench-external
+  GIT_REPOSITORY
+  https://github.com/google/benchmark.git
+  GIT_TAG
+  # Hash of Release v1.5.0
+  090faecb454fbd6e6e17a75ef8146acb037118d4
+  CMAKE_ARGS
+  -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
+  -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+  -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
+  -DCMAKE_CXX_EXTENSIONS=${CMAKE_CXX_EXTENSIONS}
+  -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
+  #-DCMAKE_SHARED_LINKER_FLAGS=-lstdc++
+  #-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+  -DCMAKE_BUILD_TYPE=Release
+  #
+  -DBENCHMARK_ENABLE_LTO=true
+  -DBENCHMARK_ENABLE_GTEST_TESTS=OFF
+  -DBENCHMARK_ENABLE_TESTING=OFF
+  CMAKE_CACHE_ARGS
+  #-DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
+  USES_TERMINAL_DOWNLOAD
+  1
+  USES_TERMINAL_UPDATE
+  1
+  GIT_PROGRESS
+  1
+  )
+
+# Get install and build directories from GTest
+externalproject_get_property(gbench-external SOURCE_DIR BINARY_DIR INSTALL_DIR)
+
+set(
+  GBENCH_SRC_DIR "${SOURCE_DIR}"
+  CACHE PATH "Path to GoogleBenchmark source"
+  FORCE
+  )
+
+set(
+  GBENCH_BIN_DIR "${BINARY_DIR}"
+  CACHE PATH "Path to GoogleBenchmark build directory"
+  FORCE
+  )
+
+set(
+  GBENCH_INST_DIR "${INSTALL_DIR}"
+  CACHE PATH "Path to GoogleBenchmark installation directory"
+  FORCE
+  )

@@ -11,6 +11,7 @@ add_subdirectory(vtk)
 add_subdirectory(gperftools)
 
 add_subdirectory(gtest)
+add_subdirectory(gbench)
 
 add_subdirectory(gnuplot-iostream)
 
