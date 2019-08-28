@@ -50,11 +50,11 @@ namespace rti { namespace geo {
     // [...] the normal buffer stores a single precision normal per control
     // vertex (x, y, z order and RTC_FORMAT_FLOAT3 format)."
     // Source: https://embree.github.io/api.html#rtc_geometry_type_point
-    struct normal_vec_f3_t {
+    struct normal_vec_3f_t {
       float xx, yy, zz;
     };
     // Normals are saved in an Embree-buffer
-    normal_vec_f3_t* mNNBuffer = nullptr;
+    normal_vec_3f_t* mNNBuffer = nullptr;
 
     void init_this(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) {
       // "Points with per vertex radii are supported with sphere, ray-oriented
@@ -133,12 +133,12 @@ namespace rti { namespace geo {
       auto normals = pGReader.get_normals();
       assert(rti::util::each_normalized<Ty>(normals) && "Condition: surface normals are normalized violated");
       assert(normals.size() == points.size() && "Number of surface normals not consistent with number of points");
-      this->mNNBuffer = (normal_vec_f3_t*) // local specification of type
+      this->mNNBuffer = (normal_vec_3f_t*) // local specification of type
         rtcSetNewGeometryBuffer(this->mGeometry,
                                 RTC_BUFFER_TYPE_NORMAL,
                                 0, // slot
                                 RTC_FORMAT_FLOAT3,
-                                sizeof(normal_vec_f3_t),
+                                sizeof(normal_vec_3f_t),
                                 this->mNumPoints);
       for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
         this->mNNBuffer[idx].xx = normals[idx][0];

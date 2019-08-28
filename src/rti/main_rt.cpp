@@ -7,7 +7,7 @@
 
 #include <embree3/rtcore.h>
 #include <gmsh.h>
-#include <immintrin.h> // Need? Added later
+#include <immintrin.h> // AVX
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
@@ -88,6 +88,9 @@ namespace rti {
       //   << "0 indicates internal tasking system" << std::endl
       //   << "1 indicates Intel Threading Building Blocks (TBB)" << std::endl
       //   << "2 indicates Parallel Patterns Library (PPL)" << std::endl;
+      RLOG_INFO
+        << "RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED == "
+        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) << std::endl;
     }
   }
 }
@@ -192,6 +195,8 @@ int main(int argc, char* argv[]) {
       rti::io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
     }
   }
+
+  rtcReleaseDevice(device);
 
   return EXIT_SUCCESS;
 }

@@ -42,7 +42,7 @@ namespace rti { namespace trace {
       auto scene = rtcNewScene(device);
       // No scene flags.
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
-      // Selecting higher build quality results in better rendering performance but slower3
+      // Selecting higher build quality results in better rendering performance but slower
       // scene commit times. The default build quality for a scene is RTC_BUILD_QUALITY_MEDIUM.
       auto bbquality = RTC_BUILD_QUALITY_HIGH;
       rtcSetSceneBuildQuality(scene, bbquality);
@@ -65,7 +65,9 @@ namespace rti { namespace trace {
       // destructed, because the geometry object is attached to the scene
       // object.
       rtcReleaseGeometry(geometry);
-      //
+      // intersection context:
+      // RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT flag uses an optimized traversal
+      // algorithm for incoherent rays (default)
       auto context = RTCIntersectContext {};
       rtcInitIntersectContext(&context);
 
@@ -116,7 +118,6 @@ namespace rti { namespace trace {
         // state for both, then the variance is very high.
         auto rngSeed1 = std::make_unique<rti::rng::cstdlib_rng::state>(seed);
         auto rngSeed2 = std::make_unique<rti::rng::cstdlib_rng::state>(seed+2);
-        // TODO: move this initialization to, e.g., the constructor
 
         // A dummy counter for the boundary
         auto boundaryCntr = rti::trace::dummy_counter {};
