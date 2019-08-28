@@ -6,10 +6,10 @@ project(
   LANGUAGES C CXX
   )
 
-message(STATUS "[test/CMakeLists.txt] GBENCH_SRC_DIR == ${GBENCH_SRC_DIR}")
-message(STATUS "[test/CMakeLists.txt] GBENCH_BIN_DIR == ${GBENCH_BIN_DIR}")
-message(STATUS "[test/CMakeLists.txt] GBENCH_INST_DIR == ${GBENCH_INST_DIR}")
-message(STATUS "[test/CMakeLists.txt] BOOST_ROOT == ${BOOST_ROOT}")
+#message(STATUS "[test/CMakeLists.txt] GBENCH_SRC_DIR == ${GBENCH_SRC_DIR}")
+#message(STATUS "[test/CMakeLists.txt] GBENCH_BIN_DIR == ${GBENCH_BIN_DIR}")
+#message(STATUS "[test/CMakeLists.txt] GBENCH_INST_DIR == ${GBENCH_INST_DIR}")
+#message(STATUS "[test/CMakeLists.txt] BOOST_ROOT == ${BOOST_ROOT}")
 
 # One needs to set the RPATH, otherwise the installed executable does not have dynamic
 # link libraries set correctly.
@@ -20,12 +20,18 @@ find_package(benchmark REQUIRED
   PATHS ${GBENCH_INST_DIR}
   NO_DEFAULT_PATH
   )
+find_package(embree 3 REQUIRED
+  PATHS ${EMBREE_DIR}
+  NO_DEFAULT_PATH
+  )
+
 
 add_executable(benchmark "")
 target_sources(benchmark
   PRIVATE
   rti/dummy_benchmark.cpp
   # TODO: add files here
+  rti/intersect_vs_occluded_all.cpp
   )
 # target_include_directories(benchmark
 #   PRIVATE
@@ -35,6 +41,8 @@ target_link_libraries(benchmark
   benchmark::benchmark
   # also takes care of include directories
   benchmark::benchmark_main
+  #
+  ${EMBREE_LIBRARIES}
   )
 install(
   TARGETS benchmark
