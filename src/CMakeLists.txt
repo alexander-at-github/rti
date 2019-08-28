@@ -123,22 +123,8 @@ target_link_libraries(read_dsv
   )
 
 
-#
-add_executable(render_discs rti/disc_renderer.cpp)
-target_include_directories(render_discs
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${VTK_INCLUDE_DIRS}
-  )
-target_link_libraries(render_discs
-  PRIVATE
-  Boost::system
-  ${VTK_LIBRARIES}
-  )
-
-
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
-install(TARGETS rti_m read_dsv render_discs
+install(TARGETS rti_m read_dsv
   DESTINATION "."
   # If one wants to install the executable somewhere else, then one should consider
   # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
