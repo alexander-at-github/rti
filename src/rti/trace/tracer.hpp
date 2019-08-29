@@ -85,7 +85,6 @@ namespace rti { namespace trace {
       auto geohitc = 0ull; // unsigned long long int
       auto nongeohitc = 0ull;
       auto hitCounter = rti::trace::counter {mGeo.get_num_primitives()};
-      //rti::trace::counter hitCounter; // TODO: switch
       #pragma omp declare \
         reduction(hit_counter_combine : \
                   rti::trace::counter : \
@@ -127,7 +126,6 @@ namespace rti { namespace trace {
 
           rayhit.ray.tnear = 0;
           rayhit.ray.time = 0;
-          rayhit.ray.tfar = std::numeric_limits<float>::max();
 
           RLOG_DEBUG << "Preparing new ray from source" << std::endl;
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1);
