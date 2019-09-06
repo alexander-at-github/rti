@@ -11,26 +11,11 @@ namespace rti { namespace reflection {
   template<typename Ty>
   class diffuse : public rti::reflection::i_reflection_model<Ty> {
   public:
-    diffuse(Ty pStickingC) :
-      mStickingC(pStickingC) {
-    }
+    rti::util::pair<rti::util::triple<Ty> >
+    use(RTCRay& pRayIn, RTCHit& pHitIn, const rti::geo::i_abs_geometry<Ty>& pGeometry,
+        rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
 
-    bool use(RTCRayHit& pRayhit,
-             rti::rng::i_rng& pRng,
-             rti::rng::i_rng::i_state& pRngState,
-             const rti::geo::i_abs_geometry<Ty>& pGeometry, // covariant parameter; does that work?
-             rti::trace::i_hit_counter& pHitcounter) const override final {
-
-      Ty epsilon = 1e-6;
-      // THIS CODE IS HAND-CRAFTED FOR THE CYLINDER WITH SOURCE PLANE AT X == 0.
-
-      /* Get random number and decide whether or not to reflect. */
-      auto rndm = pRng.get(pRngState);
-      if (rndm <= (pRng.max() * mStickingC)) {
-        // Do not reflect
-        pHitcounter.use(pRayhit);
-        return false;
-      }
+      //Ty epsilon = 1e-6;
 
       /* Reflect */
       //
@@ -43,9 +28,9 @@ namespace rti { namespace reflection {
       // //rti::util::triple<Ty> pGeometry.get_normal(pRayhit.hit.geomID);
       // rti::util::triple<Ty> normalO {pRayhit.hit.Ng_x, pRayhit.hit.Ng_y, pRayhit.hit.Ng_z};
 
-      auto primID = pRayhit.hit.primID;
+      auto primID = pHitIn.primID;
       // Get an origin for the refelcted ray from the i_geometry implementation
-      auto newOrigin = pGeometry.get_new_origin(pRayhit, primID);
+      auto newOrigin = pGeometry.get_new_origin(pRayIn, primID);
 
 
       // Ty xxahit = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
@@ -79,21 +64,10 @@ namespace rti { namespace reflection {
       auto orthonormalBasis = get_orthonormal_basis(normal);
       auto direction = rti::ray::cos_hemi::get<Ty>(orthonormalBasis, pRng, pRngState);
 
-      pRayhit.ray.org_x = newOrigin[0];
-      pRayhit.ray.org_y = newOrigin[1];
-      pRayhit.ray.org_z = newOrigin[2];
-
-      pRayhit.ray.dir_x = direction[0];
-      pRayhit.ray.dir_y = direction[1];
-      pRayhit.ray.dir_z = direction[2];
-
-      return true;
+      return {newOrigin, direction};
     }
 
   private:
-    // The sticking coefficient
-    Ty mStickingC;
-
     // Returns some orthonormal basis containing a the input vector pVector
     // (possibly scaled) as the first element of the return value.
     // This function is deterministic, i.e., for one input it will return always

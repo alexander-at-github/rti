@@ -6,13 +6,12 @@
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
-#include <vtkUnsignedIntArray.h>
 #include <vtkXMLPolyDataWriter.h>
 
 #include "rti/geo/i_boundary.hpp"
 #include "rti/geo/point_cloud_sphere_geometry.hpp"
 #include "rti/geo/point_cloud_disc_geometry.hpp"
-#include "rti/trace/i_hit_counter.hpp"
+#include "rti/trace/i_hit_accumulator.hpp"
 
 namespace rti { namespace io {
   template<typename Ty>
@@ -21,7 +20,7 @@ namespace rti { namespace io {
 
     static
     void write(rti::geo::absc_point_cloud_geometry<Ty>& pGeometry,
-               rti::trace::i_hit_counter& pHC,
+               rti::trace::i_hit_accumulator<Ty>& pHC,
                std::string pOutfilename) {
       // Precondition:
       assert (pGeometry.get_num_primitives() == pHC.get_counts().size() &&
@@ -65,14 +64,15 @@ namespace rti { namespace io {
 
     static
     void add_hit_counts(vtkSmartPointer<vtkPolyData> pPolydata,
-                        rti::trace::i_hit_counter& pHC) {
-      auto hitcnts = pHC.get_counts();
+                        rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto hitcnts = pAc.get_counts();
       assert (pPolydata->GetNumberOfPoints() == hitcnts.size() &&
               "polydata does not fit the hit count accumulator");
-      auto hitValues = vtkSmartPointer<vtkUnsignedIntArray>::New();
+      auto hitValues = vtkSmartPointer<vtkDoubleArray>::New();
       hitValues->SetNumberOfComponents(1); // 1 dimension
       hitValues->SetNumberOfTuples(hitcnts.size());
       for (size_t idx = 0; idx < hitcnts.size(); ++idx) {
+        //if (hitcnts[idx] != 0) RLOG_DEBUG << "writing " << hitcnts[idx] << " to vtkPolyData" << std::endl;
         hitValues->InsertValue(idx, hitcnts[idx]);
       }
       hitValues->SetName(valueStr);

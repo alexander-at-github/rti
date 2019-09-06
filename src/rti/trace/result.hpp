@@ -2,7 +2,8 @@
 
 //#include <chrono>
 
-#include "rti/trace/i_hit_counter.hpp"
+//#include "rti/trace/i_hit_counter.hpp"
+#include "rti/trace/i_hit_accumulator.hpp"
 // include ostream overload template to provide out stream functionality
 // by means of the print function.
 #include "rti/util/ostream_overload_template.hpp"
@@ -10,9 +11,10 @@
 namespace rti { namespace trace {
   // import name from ostream_overload_template.hpp into local namespace
   using rti::util::operator<<;
+  template<typename Ty>
   class result {
   public:
-    std::unique_ptr<rti::trace::i_hit_counter> hitCounter;
+    std::unique_ptr<rti::trace::i_hit_accumulator<Ty> > hitAccumulator;
     uint64_t timeNanoseconds = 0;
     std::string geometryClassName;
     std::string inputFilePath;

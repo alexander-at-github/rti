@@ -12,9 +12,14 @@ namespace rti { namespace geo {
   class point_cloud_disc_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
   public:
 
-    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
-      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader) {
+    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader, Ty pStickingC) :
+      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader),
+      mStickingC(pStickingC) {
       init_this(pDevice, pGReader);
+    }
+
+    Ty get_sticking_coefficient() const override final {
+      return mStickingC;
     }
 
     std::string prim_to_string(unsigned int pPrimID) const override final {
@@ -32,11 +37,11 @@ namespace rti { namespace geo {
       return {(Ty) nml.xx, (Ty) nml.yy, (Ty) nml.zz};
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRayHit& pRayhit, unsigned int pPrimID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int pPrimID) const override final {
       auto epsilon = 1e-6;
-      auto xx = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar;
-      auto yy = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar;
-      auto zz = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar;
+      auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
+      auto yy = pRay.org_y + pRay.dir_y * pRay.tfar;
+      auto zz = pRay.org_z + pRay.dir_z * pRay.tfar;
       // add a small epsilon from the surface to be sure to be above the surface
       auto normal = get_normal(pPrimID);
       xx += normal[0] * epsilon;
@@ -55,6 +60,7 @@ namespace rti { namespace geo {
     };
     // Normals are saved in an Embree-buffer
     normal_vec_3f_t* mNNBuffer = nullptr;
+    Ty mStickingC = 1; // initialize to some value
 
     void init_this(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) {
       // "Points with per vertex radii are supported with sphere, ray-oriented

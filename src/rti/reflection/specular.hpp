@@ -6,38 +6,32 @@ namespace rti { namespace reflection {
   template<typename Ty>
   class specular : public rti::reflection::i_reflection_model<Ty> {
   public:
-    bool use(RTCRayHit& pRayhit,
-             rti::rng::i_rng& pRng,
-             rti::rng::i_rng::i_state& pRngState,
-             rti::geo::i_abs_geometry<Ty> const& pGeometry,
-             rti::trace::i_hit_counter& pHitcounter) const override final {
+    rti::util::pair<rti::util::triple<Ty> >
+    use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::i_abs_geometry<Ty> const& pGeometry,
+        rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
 
-      auto primID = pRayhit.hit.primID;
+      auto primID = pHitIn.primID;
       auto normal = pGeometry.get_normal(primID);
       // Instead of querying the geometry object for the surface normal one could used
       // the (unnormalized) surface normal provided by the rayhit.hit struct.
-      auto dirOldInv = rti::util::inv ( rti::util::triple<Ty> {pRayhit.ray.dir_x, pRayhit.ray.dir_y, pRayhit.ray.dir_z} );
+      auto dirOldInv = rti::util::inv ( rti::util::triple<Ty> {pRayIn.dir_x, pRayIn.dir_y, pRayIn.dir_z} );
       // For computing the the specular refelction direction we need the vectors to be normalized.
       assert(rti::util::is_normalized(normal) && "surface normal vector is supposed to be normalized");
       assert(rti::util::is_normalized(dirOldInv) && "direction vector is supposed to be normalized");
       // Compute new direction
-      auto direction = rti::util::diff(rti::util::scale(2 * rti::util::dot_product(normal, dirOldInv), normal), dirOldInv);
+      auto direction =
+        rti::util::diff(rti::util::scale(2 * rti::util::dot_product(normal, dirOldInv), normal), dirOldInv);
 
+      // instead of using this epsilon one could set tnear to a value other than zero
       auto epsilon = 1e-6;
-      auto ox = pRayhit.ray.org_x + pRayhit.ray.dir_x * pRayhit.ray.tfar + normal[0] * epsilon;
-      auto oy = pRayhit.ray.org_y + pRayhit.ray.dir_y * pRayhit.ray.tfar + normal[1] * epsilon;
-      auto oz = pRayhit.ray.org_z + pRayhit.ray.dir_z * pRayhit.ray.tfar + normal[2] * epsilon;
+      auto ox = pRayIn.org_x + pRayIn.dir_x * pRayIn.tfar + normal[0] * epsilon;
+      auto oy = pRayIn.org_y + pRayIn.dir_y * pRayIn.tfar + normal[1] * epsilon;
+      auto oz = pRayIn.org_z + pRayIn.dir_z * pRayIn.tfar + normal[2] * epsilon;
       auto newOrigin = rti::util::triple<Ty> {(Ty) ox, (Ty) oy, (Ty) oz};
 
-      pRayhit.ray.org_x = newOrigin[0];
-      pRayhit.ray.org_y = newOrigin[1];
-      pRayhit.ray.org_z = newOrigin[2];
-
-      pRayhit.ray.dir_x = direction[0];
-      pRayhit.ray.dir_y = direction[1];
-      pRayhit.ray.dir_z = direction[2];
-
-      return true;
+      return {newOrigin, direction};
     }
+
+  private:
   };
 }} // namespace

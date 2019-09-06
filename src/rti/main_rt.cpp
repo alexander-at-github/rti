@@ -110,6 +110,8 @@ int main(int argc, char* argv[]) {
   auto device_config = "hugepages=1";
   auto device = rtcNewDevice(device_config);
   rti::main_rt::print_rtc_device_info(device);
+  assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) != 0 &&
+         "Error: backface culling is not enabled");
 
   // rti::ray::source<numeric_type> source(
   //   std::make_unique<rti::ray::disc_origin_x<numeric_type> >(0, 0, 0, 0.5),
@@ -127,7 +129,7 @@ int main(int argc, char* argv[]) {
 
   auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
   // auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader};
-  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader};
+  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 0.6};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
@@ -164,7 +166,7 @@ int main(int argc, char* argv[]) {
   auto tracer = rti::trace::tracer<numeric_type> {geometry, boundary, source};
   auto result = tracer.run();
   std::cout << result; // << std::endl;
-  //std::cout << *result.hitCounter << std::endl;
+  //std::cout << *result.hitAccumulator << std::endl;
 
   if ( ! outfilename.empty()) {
     // Write output to file
@@ -176,7 +178,7 @@ int main(int argc, char* argv[]) {
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl;
-    rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitCounter, outfilename);
+    rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitAccumulator, outfilename);
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 

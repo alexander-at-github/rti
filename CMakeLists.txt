@@ -32,8 +32,8 @@ include(ExternalProject)
 add_subdirectory(external/upstream)
 
 if(NOT CMAKE_BUILD_TYPE)
-  #set(CMAKE_BUILD_TYPE Debug)
-  set(CMAKE_BUILD_TYPE Release)
+  set(CMAKE_BUILD_TYPE Debug)
+  #set(CMAKE_BUILD_TYPE Release)
 endif()
 # -Wno-unused-parameter
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")

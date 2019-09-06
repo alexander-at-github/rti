@@ -13,6 +13,6 @@ namespace rti { namespace geo {
     virtual RTCDevice& get_rtc_device() = 0;
     virtual RTCGeometry& get_rtc_geometry() = 0;
     virtual rti::util::triple<Ty> get_normal(unsigned int primID) const = 0;
-    virtual rti::util::triple<Ty> get_new_origin(RTCRayHit& pRayhit, unsigned int primID) const = 0;
+    virtual rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const = 0;
   };
 }} // namespace

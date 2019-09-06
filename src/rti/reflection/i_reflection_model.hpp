@@ -1,7 +1,5 @@
 #pragma once
 
-#include "rti/trace/i_hit_counter.hpp"
-
 namespace rti { namespace reflection {
   template<typename Ty>
   class i_reflection_model {
@@ -12,6 +10,9 @@ namespace rti { namespace reflection {
     // the origin and direction in the RTCRayHit object and returns true. If no
     // reflection should happen, then it does not change pRayhit and returns
     // false.
-    virtual bool use(RTCRayHit&, rti::rng::i_rng&, rti::rng::i_rng::i_state&, rti::geo::i_abs_geometry<Ty> const&, rti::trace::i_hit_counter&) const = 0;
+    virtual rti::util::pair<rti::util::triple<Ty> >
+    use(RTCRay& rayin, RTCHit& hitin, rti::geo::i_abs_geometry<Ty> const&,
+        rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const = 0;
   };
 }} // namespace
+

@@ -10,7 +10,7 @@
 
 namespace rti { namespace util {
 //
-//#define RAYLOG_ON
+#define RAYLOG_ON
 
   // vector of 3D line segments
   static auto sRayLogVec = std::vector<rti::util::pair<rti::util::triple<float> > > {};
@@ -20,10 +20,11 @@ namespace rti { namespace util {
 
 
 #ifdef RAYLOG_ON
+    //auto tfar = std::min((rh).ray.tfar, rti::util::sLineMaxLength);
+    //
     // This macro expects a semicolon at the end
-#define RAYLOG(rh) \
+#define RAYLOG(rh, tfar)                             \
   { \
-    auto tfar = std::min((rh).ray.tfar, rti::util::sLineMaxLength);     \
     auto p1 = rti::util::triple<float> {(rh).ray.org_x, (rh).ray.org_y, (rh).ray.org_z}; \
     auto p2 = rti::util::triple<float> {p1[0] + tfar * (rh).ray.dir_x,  \
                                         p1[1] + tfar * (rh).ray.dir_y,  \
@@ -32,7 +33,7 @@ namespace rti { namespace util {
   } \
   do {} while(false) // allows us to put a semicolon after the macro (without warnings)
 #else
-#define RAYLOG(rh) \
+#define RAYLOG(rh, tfar)                                                     \
   do {} while(false) // allows us to put a semicolon after the macro (without warnings)
 #endif
 

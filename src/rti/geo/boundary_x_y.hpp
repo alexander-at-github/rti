@@ -39,7 +39,7 @@ namespace rti { namespace geo {
       return mNormals[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRayHit& pRayhit, unsigned int primID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final {
       assert(false && "Not implemented");
     }
 

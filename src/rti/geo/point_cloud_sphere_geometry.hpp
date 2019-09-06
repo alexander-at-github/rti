@@ -40,7 +40,7 @@ namespace rti { namespace geo {
       return mNormals[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRayHit& pRayhit, unsigned int pPrimID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int pPrimID) const override final {
       // take the origin of the sphere
       auto sphere = this->mVVBuffer[pPrimID];
       // ... and move in the direction of the surface normal
