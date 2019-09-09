@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
 
   auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
   // auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader};
-  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 0.6};
+  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 0.1};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();

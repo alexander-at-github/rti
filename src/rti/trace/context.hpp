@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <set>
 
 #include <embree3/rtcore.h>
 
@@ -15,8 +16,8 @@
 // (0) Call the static function rti::trace::context<Ty>::register_intersect_filter_funs().
 //     It will register the intersection filter functions for you in Embree.
 //     This needs to be done only once (in one thread).
-//     The call of this function needs to be done before the geometries are attached to the
-//     scene though. (Is that correct?)
+//     The call of this function needs to be done before the rtcCommitScene() call.
+//     (See https://www.embree.org/api.html#scene-object)
 // (1) Construct one rti::trace::context<Ty> instance in each thread.
 //     Rationale: The functions in rti::trace::context<Ty> are not thread-safe.
 // (2) Call init() on each rti::trace::context<Ty> intstance at least once to initialize
@@ -37,7 +38,7 @@ namespace rti { namespace trace {
     // See https://www.embree.org/api.html#rtcinitintersectcontext
     //
     // Data layout:
-    // The first member is the RTC context, that is, context from the Embree library.
+    // The first member HAS TO BE the RTC context, that is, context from the Embree library.
     RTCIntersectContext mRtcContext; // not a reference or pointer but full data stored here
     //
     static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
@@ -45,7 +46,7 @@ namespace rti { namespace trace {
     // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
     // =================================================================
     static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.1f;
-    static constexpr float RAY_RENEW_WEIGHT = 0.3f;
+    static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD;
     //
     // additional data
     // Here we violate the naming convention (to name a member variable with a string
@@ -114,10 +115,11 @@ namespace rti { namespace trace {
       mBoundaryReflectionModel(pBoundaryReflectionModel),
       mRng(pRng),
       mRngState(pRngState) {
+      //
       std::cerr << "rti::trace::context::context()" << std::endl;
       std::cerr << "Warning: This class uses a dummy epsilon value" << std::endl;
       //
-      mGeoHitPrimIDs.reserve(16); // Reserve some reasonable number of hit elements for one ray
+      mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
     }
 
@@ -145,7 +147,8 @@ namespace rti { namespace trace {
       // The following cast also characterizes a precondition to this function
       auto  rticonstcontextptr = reinterpret_cast<rti::trace::context<Ty> const*> (cc);
       auto  rticontextptr = const_cast<rti::trace::context<Ty>*> (rticonstcontextptr);
-      //auto& rtccontext = rticontextptr->mRtcContext;
+      // The rticontextptr now serves an equal function as the this pointer in a conventional
+      // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");
       auto  rayptr = reinterpret_cast<RTCRay*> (args->ray); // ATTENTION: this cast works only if N == 1 holds
       auto  hitptr = reinterpret_cast<RTCHit*> (args->hit); // ATTENTION: this cast works only if N == 1 holds
@@ -169,7 +172,7 @@ namespace rti { namespace trace {
         RLOG_DEBUG << "filter_fun_geometry(): FIRST-HIT IS *NOT* SET ";
       }
       RLOG_DEBUG << "hitptr->geomID == " << hitptr->geomID << " primID == " << hitptr->primID << std::endl;
-
+      // Non-Debug
       if(rticontextptr->geoNotIntersected) {
         rticontextptr->mGeoHitPrimIDs.clear();
       }
@@ -202,7 +205,8 @@ namespace rti { namespace trace {
       // The following cast also characterizes a precondition to this function
       auto  rticonstcontextptr = reinterpret_cast<rti::trace::context<Ty> const*> (cc);
       auto  rticontextptr = const_cast<rti::trace::context<Ty>*> (rticonstcontextptr);
-      // auto& rtccontext = rticontextptr->mRtcContext;
+      // The rticontextptr now serves an equal function as the this pointer in a conventional
+      // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");
       auto  rayptr = reinterpret_cast<RTCRay*> (args->ray); // ATTENTION: this cast works only if N == 1 holds
       auto  hitptr = reinterpret_cast<RTCHit*> (args->hit); // ATTENTION: this cast works only if N == 1 holds
@@ -231,102 +235,6 @@ namespace rti { namespace trace {
       // We always accept boundary hits. That is, we do not change args->valid[0]
     }
 
-    // static // static cause C++ allows to pass a function (take the adress of a function)
-    //        // only on static functions. The context object will be passed through the
-    //        // argument.
-    // void filter_fun(RTCFilterFunctionNArguments const* args) {
-    //   assert(args->N == 1 && "Precondition");
-    //   // This function gets a pointer to a context object in args.context
-    //   auto cc = args->context;
-
-    //   // The following cast also characterizes a precondition to this function
-    //   auto  rticonstcontextptr = reinterpret_cast<rti::trace::context<Ty> const*> (cc);
-    //   auto  rticontextptr = const_cast<rti::trace::context<Ty>*> (rticonstcontextptr);
-    //   // auto& rtccontext = rticontextptr->mRtcContext;
-    //   assert(args->N == 1 && "Precondition: for the cast");
-    //   auto  rayptr = reinterpret_cast<RTCRay*> (args->ray); // ATTENTION: this cast works only if N == 1 holds
-    //   auto  hitptr = reinterpret_cast<RTCHit*> (args->hit); // ATTENTION: this cast works only if N == 1 holds
-    //   auto  validptr = args->valid;
-
-    //   // Reference all the data in the context with local variables
-    //   //auto& reflect =    rticontextptr->reflect;
-    //   auto& rayout =     rticontextptr->rayout;
-    //   auto& geometryID = rticontextptr->mGeometryID;
-    //   auto& boundaryID = rticontextptr->mBoundaryID;
-    //   auto& rng =        rticontextptr->mRng;
-    //   auto& rngState =   rticontextptr->mRngState;
-    //   auto& geometry =   rticontextptr->mGeometry;
-    //   auto& boundary =   rticontextptr->mBoundary;
-
-    //   auto epsilon = 0.02f;                                         // TODO: FIX
-
-    //   if(rticontextptr->geoNotIntersected) {
-    //     RLOG_DEBUG << "filter_fun(): FIRST-HIT IS SET ";
-    //     //reflect = false;
-    //     rticontextptr->mGeoHitPrimIDs.clear();
-    //   } else {
-    //     // Debug
-    //     RLOG_DEBUG << "filter_fun(): FIRST-HIT IS *NOT* SET ";
-    //   }
-    //   RLOG_DEBUG << "geomID == " << hitptr->geomID << " primID == " << hitptr->primID << std::endl;
-
-    //   //auto& geomID = RTCHitN_geomID(hitptr, args->N, 0);
-    //   auto& geomID = hitptr->geomID;
-    //   assert((geomID == RTC_INVALID_GEOMETRY_ID || geomID == boundaryID || geomID == geometryID) &&
-    //          "Precondition");
-    //   if (geomID == RTC_INVALID_GEOMETRY_ID) {
-    //     // No hit
-    //     // the intersection function will return automatically when the member "validptr" is not changed
-    //     return;
-    //   }
-    //   // ray hit
-
-    //   // Four cases: (1.1) first boundary hit, (1.2) non-first boundary hit
-    //   //             (2.1) first geometry hit, (2.2) non-first geometry hit
-    //   if (geomID == boundaryID) {
-    //     RLOG_DEBUG << "filter_fun(): geomID == boundaryID holds" << std::endl;
-    //     // stop this ray
-    //     //validptr[0] = -1;
-    //     if (rticontextptr->geoNotIntersected) {
-    //       // Whether or not to reflect is decided on the first hit
-    //       rticontextptr->geoNotIntersected = false;
-    //       rayout = rticontextptr->mBoundaryReflectionModel.use(*rayptr, *hitptr, boundary, rng, rngState);
-    //       //reflect = true;
-    //       //
-    //       // Also set geoTFarMax for correct ray-logging with rti::util::RAYLOG
-    //       rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
-
-    //     }
-    //     return;
-    //   }
-    //   // else
-    //   assert(geomID == geometryID && "Assumption");
-    //   if ( (! rticontextptr->geoNotIntersected) && rayptr->tfar > rticontextptr->geoTFarMax) {
-    //     // hit is outside of the range which we are interested in
-    //     // stop this ray
-    //     //validptr[0] = -1;
-    //     return;
-    //   }
-    //   if (rticontextptr->geoNotIntersected) {
-    //     rayout = rticontextptr->mReflectionModel.use(*rayptr, *hitptr, geometry, rng, rngState);
-    //     //reflect = true;
-    //     // We will recheck the reflection decission in the post_process_intersect() function
-
-    //     // set tfar
-    //     rticontextptr->geoFirstHitTFar = rayptr->tfar;
-    //     rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
-    //     RLOG_DEBUG << "filter_fun(): geoTFarMax set to " << rticontextptr->geoTFarMax << std::endl;
-
-    //     rticontextptr->geoNotIntersected = false;
-    //   }
-    //   //mHitcounter.use(pRayhit);
-    //   // Add the hit to the hit-vector
-    //   rticontextptr->mGeoHitPrimIDs.push_back({hitptr->geomID, hitptr->primID});
-
-    //   validptr[0] = 0; // continue this ray
-    //   return;
-    // }
-
     private:
     void post_process_intersect(RTCRayHit& pRayHit) {
       RLOG_DEBUG
@@ -340,10 +248,10 @@ namespace rti { namespace trace {
       assert((pRayHit.hit.geomID != RTC_INVALID_GEOMETRY_ID) || this->boundNotIntersected &&
              "Violation of Assumption: \
               If the Embree intersectin test returns RTC_INVALID_GEOMETRY, then no element of the \
-              bounding box (boundary) has been hit and this->boundFistHit still equals true.");
+              bounding box (boundary) has been hit and this->boundNotIntersected still equals true.");
       // Note that (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID && ! this->mGeoHitPrimIDs.empty())
-      // can hold since we do not always clear the vector mGeoHitPrimIDs. (We clear it only when we
-      // have a first new hit.) The right way to check the ray did not hit anything is to check
+      // may hold since we do not always clear the vector mGeoHitPrimIDs. (We clear it only when we
+      // have a first new hit.) The right way to check that the ray did not hit anything is to check
       // the geomID and this->geoNotIntersected.
       if (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID && this->geoNotIntersected) {
         // The ray did not hit anything
@@ -364,18 +272,29 @@ namespace rti { namespace trace {
       assert( ! this->geoNotIntersected && ! this->mGeoHitPrimIDs.empty() && "Assertion");
       // Normal hit on the surface
       this->rayout = this->geoRayout;
-      //this->tfar = this->geoFirstHitTFar;
       this->tfar = this->geoTFarMax; // we show tfarMax
       // deliver energy onto the surface
-      auto weightfraction = this->rayWeight / this->mGeoHitPrimIDs.size();
+      // Note if Embree uses RTC_BUILD_QUALITY_HIGH, then there might exist duplicate
+      // hits in this->mGeoHitPrimIDs .
+      auto set = std::set<unsigned int> {};
+      //auto weightfraction = this->rayWeight / this->mGeoHitPrimIDs.size();
+      auto sumvaluedroped = 0.0; // double
       for (size_t idx = 0; idx < this->mGeoHitPrimIDs.size(); ++idx) {
         auto hitprimid = this->mGeoHitPrimIDs[idx];
-        auto sticking = mGeometry.get_sticking_coefficient(); // TODO
+        if (set.count(hitprimid) != 0) {
+          // Duplicate
+          continue;
+        }
+        set.insert(hitprimid);
+        auto sticking = mGeometry.get_sticking_coefficient();
         assert(0 <= sticking && sticking <= 1 && "Assumption");
-        auto valuetodrop = weightfraction * sticking;
+        auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(hitprimid, valuetodrop);
-        this->rayWeight -= valuetodrop;
+        sumvaluedroped += valuetodrop;
       }
+      auto hitprimcount = set.size();
+      assert(this->rayWeight >= sumvaluedroped / hitprimcount && "Assertion");
+      this->rayWeight -= sumvaluedroped / hitprimcount;
       // We do what is called Roulette in MC literatur.
       // If the weight of the ray is above a certain threshold, we always reflect.
       // If the weight of the ray is below the threshold, we randomly decide to either kill the

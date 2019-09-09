@@ -66,11 +66,8 @@ namespace rti { namespace trace {
       auto boundaryID = rtcAttachGeometry(scene, boundary);
       auto geometryID = rtcAttachGeometry(scene, geometry);
 
-
       rti::trace::context<Ty>::register_intersect_filter_funs(mGeo, mBoundary);
-      std::cerr << "RTC_ERROR_NONE == " << RTC_ERROR_NONE << std::endl;
-      std::cerr << rtcGetDeviceError(device) << std::endl;
-
+      assert(rtcGetDeviceError(device) == RTC_ERROR_NONE);
 
       // Use openMP for parallelization
       #pragma omp parallel
