@@ -6,6 +6,7 @@
 #include <vtkPoints.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
+#include <vtkUnsignedIntArray.h>
 #include <vtkXMLPolyDataWriter.h>
 
 #include "rti/geo/i_boundary.hpp"
@@ -20,13 +21,14 @@ namespace rti { namespace io {
 
     static
     void write(rti::geo::absc_point_cloud_geometry<Ty>& pGeometry,
-               rti::trace::i_hit_accumulator<Ty>& pHC,
+               rti::trace::i_hit_accumulator<Ty>& pHA,
                std::string pOutfilename) {
       // Precondition:
-      assert (pGeometry.get_num_primitives() == pHC.get_counts().size() &&
+      assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
-      add_hit_counts(polydata, pHC);
+      add_hit_values(polydata, pHA);
+      try_add_hit_counts(polydata, pHA);
       write(polydata, pOutfilename);
     }
 
@@ -63,20 +65,36 @@ namespace rti { namespace io {
     }
 
     static
-    void add_hit_counts(vtkSmartPointer<vtkPolyData> pPolydata,
+    void add_hit_values(vtkSmartPointer<vtkPolyData> pPolydata,
                         rti::trace::i_hit_accumulator<Ty>& pAc) {
-      auto hitcnts = pAc.get_counts();
-      assert (pPolydata->GetNumberOfPoints() == hitcnts.size() &&
+      auto invalues = pAc.get_values();
+      assert (pPolydata->GetNumberOfPoints() == invalues.size() &&
               "polydata does not fit the hit count accumulator");
       auto hitValues = vtkSmartPointer<vtkDoubleArray>::New();
       hitValues->SetNumberOfComponents(1); // 1 dimension
-      hitValues->SetNumberOfTuples(hitcnts.size());
-      for (size_t idx = 0; idx < hitcnts.size(); ++idx) {
-        //if (hitcnts[idx] != 0) RLOG_DEBUG << "writing " << hitcnts[idx] << " to vtkPolyData" << std::endl;
-        hitValues->InsertValue(idx, hitcnts[idx]);
+      hitValues->SetNumberOfTuples(invalues.size());
+      for (size_t idx = 0; idx < invalues.size(); ++idx) {
+        //if (invalues[idx] != 0) RLOG_DEBUG << "writing " << invalues[idx] << " to vtkPolyData" << std::endl;
+        hitValues->InsertValue(idx, invalues[idx]);
       }
       hitValues->SetName(valueStr);
       pPolydata->GetCellData()->AddArray(hitValues);
+    }
+
+    static
+    void try_add_hit_counts(vtkSmartPointer<vtkPolyData> pPolydata,
+                            rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto incnts = pAc.get_cnts();
+      if (incnts.size() <= 0)
+        return; // no hit counts; simply return
+      auto hitCnts = vtkSmartPointer<vtkUnsignedIntArray>::New();
+      hitCnts->SetNumberOfComponents(1); // 1 dimension
+      hitCnts->SetNumberOfTuples(incnts.size());
+      for (size_t idx = 0; idx < incnts.size(); ++idx) {
+        hitCnts->InsertValue(idx, incnts[idx]);
+      }
+      hitCnts->SetName(hitcntStr);
+      pPolydata->GetCellData()->AddArray(hitCnts);
     }
 
     static
@@ -184,5 +202,6 @@ namespace rti { namespace io {
 
     static constexpr char const* radiusStr = "radius";
     static constexpr char const* valueStr = "value";
+    static constexpr char const* hitcntStr = "hitcnt";
   };
 }} // namespace

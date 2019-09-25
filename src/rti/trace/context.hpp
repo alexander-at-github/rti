@@ -163,8 +163,6 @@ namespace rti { namespace trace {
 
       assert(hitptr->geomID == geometryID && "Assumption");
 
-      auto epsilon = 0.02f;                                         // TODO: FIX
-
       // Debug
       if(rticontextptr->geoNotIntersected) {
         RLOG_DEBUG << "filter_fun_geometry(): FIRST-HIT IS SET ";
@@ -182,10 +180,30 @@ namespace rti { namespace trace {
         //validptr[0] = -1;
         return;
       }
+
+      // Check whether we hit from the front or from the back of the disc.
+      // (It seems Embrees backface culling does not work.)
+      //
+      // If the dot product of the ray direction and the surface normal is greater than zero, then
+      // we hit the back face of the disc.
+      if (rti::util::dot_product(rti::util::triple<Ty> {rayptr->dir_x, rayptr->dir_y, rayptr->dir_z},
+                                 geometry.get_normal(hitptr->primID)) > 0) {
+        if (rticontextptr->geoNotIntersected) {
+          validptr[0] = 0; // continue this ray
+        } else {
+          validptr[0] = -1; // do not continue this ray
+        }
+        return;
+      }
+
       if (rticontextptr->geoNotIntersected) {
         geoRayout = rticontextptr->mReflectionModel.use(*rayptr, *hitptr, geometry, rng, rngState);
         // set tfar
         rticontextptr->geoFirstHitTFar = rayptr->tfar;
+        // determine epsilon:
+        // Set epsilon equal to three times the radius of the first disc which is hit by the ray.
+        // the fourth element of the primitive is the radius
+        auto epsilon = 2 * geometry.get_prim(hitptr->primID)[3];
         rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
         RLOG_DEBUG << "filter_fun_geometry(): geoTFarMax set to " << rticontextptr->geoTFarMax << std::endl;
         rticontextptr->geoNotIntersected = false;
@@ -232,7 +250,23 @@ namespace rti { namespace trace {
         rticontextptr->boundFirstHitTFar = rayptr->tfar;
         rticontextptr->boundNotIntersected = false;
       }
-      // We always accept boundary hits. That is, we do not change args->valid[0]
+
+      // //
+      // // It may happen that a disc protrudes the boundary. If one would stop searching for intersections
+      // // at any boundary hit (that is, at this location in the code), then one could miss discs (the ones
+      // // which pertrude) and one could produce an incorrect result on these discs.
+      // // Additionally, boundary hits can happen before geometry hits eventhough their sparial ordering
+      // // is the other way around (that is, eventhough the geometry is closer to the ray source than the
+      // // boundary). Hence, we always want to continue tracing after a boundary hit.
+      // validptr[0] = 0; // continue this ray
+
+      /* old code */
+      if ( (! rticontextptr->geoNotIntersected) &&
+          rayptr->tfar < rticontextptr->geoTFarMax) {
+        args->valid[0] = 0; // continue this ray
+      }
+      // Accept boundary hit.
+      args->valid[0] = -1; // accept / stop this rayptr
     }
 
     private:
@@ -245,29 +279,47 @@ namespace rti { namespace trace {
         << std::endl;
       RLOG_DEBUG << "this->rayWeight == " << this->rayWeight << std::endl;
 
-      assert((pRayHit.hit.geomID != RTC_INVALID_GEOMETRY_ID) || this->boundNotIntersected &&
-             "Violation of Assumption: \
-              If the Embree intersectin test returns RTC_INVALID_GEOMETRY, then no element of the \
-              bounding box (boundary) has been hit and this->boundNotIntersected still equals true.");
-      // Note that (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID && ! this->mGeoHitPrimIDs.empty())
-      // may hold since we do not always clear the vector mGeoHitPrimIDs. (We clear it only when we
-      // have a first new hit.) The right way to check that the ray did not hit anything is to check
-      // the geomID and this->geoNotIntersected.
-      if (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID && this->geoNotIntersected) {
+      // // // assert((pRayHit.hit.geomID != RTC_INVALID_GEOMETRY_ID) || this->boundNotIntersected &&
+      // // //        "Violation of Assumption: \
+      // // //         If the Embree intersectin test returns RTC_INVALID_GEOMETRY, then no element of the \
+      // // //         bounding box (boundary) has been hit and this->boundNotIntersected still equals true.");
+      // // // // Note that (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID && ! this->mGeoHitPrimIDs.empty())
+      // // // // may hold since we do not always clear the vector mGeoHitPrimIDs. (We clear it only when we
+      // // // // have a first new hit.) The right way to check that the ray did not hit anything is to check
+      // // // // the geomID and this->geoNotIntersected.
+
+      // The right way to check that the ray did not hit anything is to check this->geoNotIntersected and
+      // this->boundNotIntersected.
+
+      if (this->geoNotIntersected && this->boundNotIntersected) {
         // The ray did not hit anything
         this->reflect = false;
         this->tfar = pRayHit.ray.tfar;
         return;
       }
       this->reflect = true;
-      if ( !this->boundNotIntersected ) {
-        if ( this->geoNotIntersected || this->boundFirstHitTFar < this->geoFirstHitTFar) {
-          // We hit the bounding box
+
+      // if ( !this->boundNotIntersected ) {
+      //   if ( this->geoNotIntersected ||
+      //        ( ! this->geoNotIntersected && // Here we consider that a disc which pertrudes
+      //                                       // the bounding box might still be relevant.
+      //          this->boundFirstHitTFar < (this->geoFirstHitTFar - (this->geoTFarMax - this->geoFirstHitTFar)))) {
+      //     // We hit the bounding box
+      //     this->rayout = this->boundRayout;
+      //     this->tfar = this->boundFirstHitTFar;
+      //     return;
+      //   }
+      // }
+      if ( ! this->boundNotIntersected ) {
+        if ( this->geoNotIntersected ||
+             this->boundFirstHitTFar < this->geoFirstHitTFar) {
+          // We hit bounding box
           this->rayout = this->boundRayout;
           this->tfar = this->boundFirstHitTFar;
           return;
         }
       }
+
       // else
       assert( ! this->geoNotIntersected && ! this->mGeoHitPrimIDs.empty() && "Assertion");
       // Normal hit on the surface
@@ -295,7 +347,8 @@ namespace rti { namespace trace {
       auto hitprimcount = set.size();
       assert(this->rayWeight >= sumvaluedroped / hitprimcount && "Assertion");
       this->rayWeight -= sumvaluedroped / hitprimcount;
-      // We do what is called Roulette in MC literatur.
+      // We do what is sometimes called Roulette in MC literatur.
+      // Jun Liu calls it "rejection controll" in his book.
       // If the weight of the ray is above a certain threshold, we always reflect.
       // If the weight of the ray is below the threshold, we randomly decide to either kill the
       // ray or increase its weight (in an unbiased way).

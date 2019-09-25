@@ -122,9 +122,25 @@ target_link_libraries(read_dsv
   ${VTK_LIBRARIES}
   )
 
+# Executable to read gmsh input files
+include(${VTK_USE_FILE}) # VTK specific
+add_executable(read_gmsh rti/main_gmsh_reader.cpp)
+target_include_directories(read_gmsh
+  PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${VTK_INCLUDE_DIRS}
+  ${GMSH_INCLUDE_DIRS}
+  )
+target_link_libraries(read_gmsh
+  PRIVATE
+  Boost::system
+  ${VTK_LIBRARIES}
+	${GMSH_LIBRARIES}
+  )
+
 
 # Copy executable straight into the directory given by the variable CMAKE_INSTALL_PREFIX.
-install(TARGETS rti_m read_dsv
+install(TARGETS rti_m read_dsv read_gmsh
   DESTINATION "."
   # If one wants to install the executable somewhere else, then one should consider
   # to include GNUInstallDirs and the variable CMAKE_INSTALL_BINDIR.
@@ -143,8 +159,6 @@ install(TARGETS rti_m read_dsv
 #message(STATUS "[src/CMakeLists.txt] EMBREE_INCLUDE_DIRS == ${EMBREE_INCLUDE_DIRS}")
 #message(STATUS "[src/CMakeLists.txt] EMBREE_LIBRARY == ${EMBREE_LIBRARY}")
 #message(STATUS "[src/CMakeLists.txt] EMBREE_LIBRARIES == ${EMBREE_LIBRARIES}")
-#message(STATUS "[src/CMakeLists.txt] GMSH_DIR == ${GMSH_DIR}")
-#message(STATUS "[src/CMakeLists.txt] GMSH_INCLUDEDIR == ${GMSH_INCLUDEDIR}")
-#message(STATUS "[src/CMakeLists.txt] GMSH_LIBRARYDIR == ${GMSH_LIBRARYDIR}")
-#message(STATUS "[src/CMakeLists.txt] GMSH_INCLUDE_DIR == ${GMSH_INCLUDE_DIR}")
-#message(STATUS "[src/CMakeLists.txt] GMSH_LIBRARY == ${GMSH_LIBRARY}")
+message(STATUS "[src/CMakeLists.txt] GMSH_DIR == ${GMSH_DIR}")
+message(STATUS "[src/CMakeLists.txt] GMSH_INCLUDE_DIRS == ${GMSH_INCLUDE_DIRS}")
+message(STATUS "[src/CMakeLists.txt] GMSH_LIBRARIES == ${GMSH_LIBRARIES}")

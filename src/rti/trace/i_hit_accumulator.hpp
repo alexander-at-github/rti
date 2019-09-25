@@ -9,7 +9,8 @@ namespace rti { namespace trace {
   public:
     virtual ~i_hit_accumulator() {}
     virtual void use(unsigned int pPrimID, Ty value) = 0;
-    virtual std::vector<Ty> get_counts() = 0;
+    virtual std::vector<Ty> get_values() = 0;
+    virtual std::vector<size_t> get_cnts() = 0;
     virtual void print(std::ostream& pOs) const = 0;
   };
 }}

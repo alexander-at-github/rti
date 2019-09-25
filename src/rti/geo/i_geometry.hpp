@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rti/geo/i_abs_geometry.hpp"
+#include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {
   // Interface
@@ -19,5 +20,7 @@ namespace rti { namespace geo {
     virtual rti::util::pair<rti::util::triple<Ty> > get_bounding_box() const = 0;
     //virtual rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const = 0;
     virtual Ty get_sticking_coefficient() const = 0;
+    // get_primitive returns the values from the underlying Embree primitive (a disc, a sphere, or something else)
+    virtual rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const = 0;
   };
 }} // namespace

@@ -25,12 +25,12 @@ namespace rti { namespace geo {
   public:
     // abstract class
     virtual ~absc_point_cloud_geometry() {}
-    virtual rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const = 0;
     // inherits also some virtual function declarations from i_geometry
 
     // constructor
-    absc_point_cloud_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
+    absc_point_cloud_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader, Ty pStickingC) :
       mDevice(pDevice),
+      mStickingC(pStickingC),
       mInfilename(pGReader.get_input_file_name()) {
       // one cannot call a pure virtual function in the constructor.
       // too bad!
@@ -65,7 +65,7 @@ namespace rti { namespace geo {
       assert(mVVBuffer != nullptr && "No data");
       if (mVVBuffer == nullptr) // no data in this instance
         return {rti::util::triple<Ty> {0,0,0}, rti::util::triple<Ty> {0,0,0}};
-      Ty min = std::numeric_limits<Ty>::min();
+      Ty min = std::numeric_limits<Ty>::lowest();
       Ty max = std::numeric_limits<Ty>::max();
       Ty xmin=max, xmax=min, ymin=max, ymax=min, zmin=max, zmax=min;
       for (size_t idx = 0; idx < mNumPoints; ++idx) {
@@ -83,9 +83,14 @@ namespace rti { namespace geo {
       return this->mNumPoints;
     }
 
+    Ty get_sticking_coefficient() const override final {
+      return mStickingC;
+    }
+
   protected:
     // Data members
     RTCDevice& mDevice;
+    Ty mStickingC = 1; // initialize to some value
     RTCGeometry mGeometry;
     point_4f_t* mVVBuffer = nullptr;
     size_t mNumPoints = 0;

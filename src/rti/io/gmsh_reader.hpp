@@ -1,5 +1,8 @@
 #pragma once
 
+#include <algorithm>
+#include <cassert>
+
 #include <gmsh.h>
 
 #include "rti/util/command_line_options.hpp"
@@ -10,10 +13,10 @@ namespace rti { namespace io {
   class gmsh_reader {
     // This is a singleton class
   public:
-    static gmsh_reader& getInstance() {
+    static gmsh_reader& getInstance(std::string& pFilePath) {
       // the static keyword ensures that there is only one instance.
       // (per translation unit).
-      static gmsh_reader instance;
+      static gmsh_reader instance (pFilePath);
       return instance;
     }
 
@@ -23,26 +26,17 @@ namespace rti { namespace io {
 
   private:
     // Declare constructor private
-    gmsh_reader() {
-      std::cerr
-        << std::endl << "WARNING: DID FIX THE SURFACE ORIENTATION? (invert normals)"
-        << std::endl << std::endl;
-
-      mMshFilePath = rti::util::command_line_options::get_instance().
-        get_option_value(rti::util::command_line_options::option_type::INFILE_NAME);
-      if (mMshFilePath.empty()) {
-        // Try default path
-        mMshFilePath = "../resources/gmsh-based/cylinder/c45.msh";
-      }
+    gmsh_reader(std::string& pFilePath) {
       gmsh::initialize();
       gmsh::option::setNumber("General.Terminal", 1);
-      RLOG_DEBUG << "Reading input file " << mMshFilePath << std::endl;
-      gmsh::open(mMshFilePath);
+      RLOG_DEBUG << "Reading input file " << pFilePath << std::endl;
+      gmsh::open(pFilePath);
       // RLOG_DEBUG << "Will read vertices" << std::endl;
       mVertices = read_vertices();
       // RLOG_DEBUG << "Will read triangles" << std::endl;
       mTriangles = read_triangles();
     }
+
     // Destructor calls gmsh::finalize(); RAII
     ~gmsh_reader() {
       gmsh::finalize();

@@ -36,6 +36,7 @@ namespace rti { namespace trace {
       assert(rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
              "Error: Embree filter functions are not supported by your Embree instance.");
       std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
+      std::cerr << "tnear set to a constant! FIX" << std::endl;
     }
 
     rti::trace::result<Ty> run() {
@@ -78,7 +79,7 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 22; // int
+      auto nrexp = 28; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -152,7 +153,13 @@ namespace rti { namespace trace {
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) numRays; ++idx) {
 
-          rayhit.ray.tnear = 0;
+          // Note: Embrees backface culling does not solve our problem of intersections
+          // when starting a new ray very close to or a tiny bit below the surface.
+          // For that reason we set tnear to some value.
+          // There is a risk though: when setting tnear to some strictly positive value
+          // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
+          // TODO: FIX: tnear set to a constant
+          rayhit.ray.tnear = 1e-4;
           rayhit.ray.time = 0;
           // prepare our custom ray tracing context
           rtiContext.rayWeight = rtiContext.INITIAL_RAY_WEIGHT;
@@ -187,8 +194,7 @@ namespace rti { namespace trace {
 
             //std::cout << "AFTER INTERSECT" << std::endl;
 
-            RAYLOG(rayhit, (rtiContext.tfar < 50 ? rtiContext.tfar : 50));
-            //RAYLOG(rayhit, rtiContext.tfar);
+            RAYLOG(rayhit, rtiContext.tfar);
 
             // // TODO: is that correct? What if we hit surface elements first and only then the invalid area?
             // // Can that happen?
@@ -201,7 +207,12 @@ namespace rti { namespace trace {
             // else
             // A hit
             reflect = rtiContext.reflect;
-            RLOG_DEBUG << "tracer::run().reflect == " << (reflect ? "true" : "false")  << std::endl;
+            auto hitpoint = rti::util::triple<float> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext.tfar,
+                                                      rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext.tfar,
+                                                      rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext.tfar};
+            RLOG_DEBUG
+              << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
+              << " reflect == " << (reflect ? "true" : "false")  << std::endl;
 
             //std::cout << "reflect == " << reflect << std::endl;
 
@@ -240,6 +251,44 @@ namespace rti { namespace trace {
       rtcReleaseGeometry(geometry);
       rtcReleaseGeometry(boundary);
 
+
+      // { // Count buckets
+      //   auto numOfBuckets = 1024;
+      //   auto zvalToValueMap = std::vector<rti::util::pair<Ty> > {};
+      //   for (unsigned int primid = 0 ; primid < mGeo.get_num_primitives(); ++primid) {
+      //     auto value = hitAccumulator.get_values()[primid];
+      //     auto coords = mGeo.get_prim(primid);
+      //     auto zcoord = coords[2];
+      //     zvalToValueMap.push_back({zcoord, value});
+      //   }
+      //   // sort vector by first element of pair
+      //   std::sort(zvalToValueMap.begin(), zvalToValueMap.end(),
+      //             [](rti::util::pair<Ty> p1, rti::util::pair<Ty> p2) { return p1[0] < p2[0]; });
+      //   //
+      //   auto deltaZ = std::fabs(zvalToValueMap.front()[0] - zvalToValueMap.back()[0]) / numOfBuckets;
+      //   auto cBucketMinZ = zvalToValueMap.front()[0];
+      //   //
+      //   auto lastzcoord = std::numeric_limits<Ty>::lowest();
+      //   auto valuesum = (Ty) 0;
+      //   for (auto const& pair : zvalToValueMap) {
+      //     auto zcoord = pair[0];
+      //     auto value = pair[1];
+      //
+      //     assert(cBucketMinZ <= zcoord && "Error");
+      //     if (zcoord < cBucketMinZ + deltaZ) {
+      //       valuesum += value;
+      //       continue;
+      //     }
+      //     // else
+      //     assert(cBucketMinZ + deltaZ <= zcoord && "Error");
+      //     // write bucket out
+      //     std::cerr << cBucketMinZ + (deltaZ/2) << " " << valuesum << std::endl;
+      //     // move to next bucket
+      //     cBucketMinZ += deltaZ;
+      //     valuesum = value;
+      //   }
+      //   std::cerr << cBucketMinZ + (deltaZ/2) << " " << valuesum << std::endl;
+      // }
 
       return result;
     }

@@ -23,6 +23,7 @@
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/disc_origin_x.hpp"
+#include "rti/ray/disc_origin_z.hpp"
 #include "rti/ray/dummy_direction.hpp"
 #include "rti/ray/source.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
@@ -91,6 +92,9 @@ namespace rti {
       RLOG_INFO
         << "RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED == "
         << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) << std::endl;
+      RLOG_INFO
+        << "RTC_DEVICE_PROPERTY_RAY_STREAM_SUPPORTED == "
+        << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_RAY_STREAM_SUPPORTED) << std::endl;
     }
   }
 }
@@ -128,13 +132,13 @@ int main(int argc, char* argv[]) {
   //rti::ray::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
 
   auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
-  // auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader};
-  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 0.1};
+  //auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader, 0.01};
+  auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 1e-9};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z achsis.
-  auto epsilon = 0.1;
+  auto epsilon = 0.1; //0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
     bdBox[0][2] += epsilon;
   } else {
@@ -146,7 +150,12 @@ int main(int argc, char* argv[]) {
   // std::cout << std::endl;
 
   // Prepare boundary
-  auto boundary = rti::geo::boundary_x_y<numeric_type> {device, bdBox};
+  auto bdBoxAltered = bdBox;
+  // bdBoxAltered[0][0] -= 0.1; // x
+  // bdBoxAltered[0][1] -= 0.1; // y
+  // bdBoxAltered[1][0] += 0.1; // x
+  // bdBoxAltered[1][1] += 0.1; // y
+  auto boundary = rti::geo::boundary_x_y<numeric_type> {device, bdBoxAltered};
 
   // Prepare source
   auto zmax = std::max(bdBox[0][2], bdBox[1][2]);
@@ -156,7 +165,19 @@ int main(int argc, char* argv[]) {
   // ASSUMPTION: the source is on a plain above (positive values) the structure
   // such that z == c for some constant c. (That is in accordance with the silvaco
   // verification instances.)
+  //
   auto origin = rti::ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
+  //
+  // auto origin = rti::ray::disc_origin_z<numeric_type> {(originC1[0] + originC2[0])/2,
+  //                                                      (originC1[1] + originC2[1])/2,
+  //                                                      zmax,
+  //                                                      (originC2[0] - originC1[0])/2};
+  //
+  // auto origin = rti::ray::disc_origin_z<numeric_type> {(originC1[0] + originC2[0])/2,
+  //                                                      (originC1[1] + originC2[1])/2,
+  //                                                      zmax,
+  //                                                      0.5};
+
   // Cosine direction in the opposite direction of the z-axis
   auto direction = rti::ray::cosine_direction<numeric_type> {
     {rti::util::triple<numeric_type> {0.f, 0.f, -1.f},

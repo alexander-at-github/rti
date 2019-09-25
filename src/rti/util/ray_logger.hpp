@@ -26,6 +26,7 @@ namespace rti { namespace util {
 #define RAYLOG(rh, tfar)                             \
   { \
     auto p1 = rti::util::triple<float> {(rh).ray.org_x, (rh).ray.org_y, (rh).ray.org_z}; \
+    tfar = ((tfar) > 10 ? 10 : (tfar));                                 \
     auto p2 = rti::util::triple<float> {p1[0] + tfar * (rh).ray.dir_x,  \
                                         p1[1] + tfar * (rh).ray.dir_y,  \
                                         p1[2] + tfar * (rh).ray.dir_z}; \

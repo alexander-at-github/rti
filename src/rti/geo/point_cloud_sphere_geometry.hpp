@@ -10,8 +10,8 @@ namespace rti { namespace geo {
   class point_cloud_sphere_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
   public:
 
-    point_cloud_sphere_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) :
-      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader) {
+    point_cloud_sphere_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader, Ty pStickingC) :
+      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader, pStickingC) {
       init_this(pDevice, pGReader);
     }
 
@@ -47,7 +47,7 @@ namespace rti { namespace geo {
       auto normal = mNormals[pPrimID];
       assert(rti::util::is_normalized(normal) && "Condition: Surface normal is normalized");
       // ... such that the new origin is just above the sphere
-      auto scale = sphere.radius * 1.01f; // plus 1 percent
+      auto scale = sphere.radius;
       auto xx = sphere.xx + normal[0] * scale;
       auto yy = sphere.yy + normal[1] * scale;
       auto zz = sphere.zz + normal[2] * scale;
