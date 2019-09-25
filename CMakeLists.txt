@@ -32,13 +32,27 @@ include(ExternalProject)
 add_subdirectory(external/upstream)
 
 if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug)
-  #set(CMAKE_BUILD_TYPE Release)
+  message(STATUS "NOT CMAKE_BUILD_TYPE holds")
+  #set(CMAKE_BUILD_TYPE Debug)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Set build type to \"Debug\" or \"Release\"" FORCE)
 endif()
+message(STATUS "CMAKE_BUILD_TYPE == ${CMAKE_BUILD_TYPE}")
+
+
 # -Wno-unused-parameter
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
+#set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -march=native -flto")
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG}" )
+  message(STATUS "CMAKE_BUILD_TYPE == Debug and CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
+endif()
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_RELEASE}" )
+  message(STATUS "CMAKE_BUILD_TYPE == Release and CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
+endif()
+message(STATUS "CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
 
 externalproject_add(rti
   DEPENDS
