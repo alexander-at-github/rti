@@ -11,6 +11,7 @@ namespace rti { namespace trace {
     virtual void use(unsigned int pPrimID, Ty value) = 0;
     virtual std::vector<Ty> get_values() = 0;
     virtual std::vector<size_t> get_cnts() = 0;
+    virtual std::vector<Ty> get_relative_error() = 0;
     virtual void print(std::ostream& pOs) const = 0;
   };
 }}

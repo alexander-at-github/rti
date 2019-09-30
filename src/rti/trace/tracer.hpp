@@ -14,8 +14,9 @@
 #include "rti/reflection/diffuse.hpp"
 //#include "rti/reflection/specular.hpp"
 //#include "rti/trace/counter.hpp"
-#include "rti/trace/context.hpp"
+#include "rti/trace/point_cloud_context.hpp"
 #include "rti/trace/hit_accumulator.hpp"
+#include "rti/trace/hit_accumulator_with_checks.hpp"
 #include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/result.hpp"
 #include "rti/util/logger.hpp"
@@ -67,7 +68,7 @@ namespace rti { namespace trace {
       auto boundaryID = rtcAttachGeometry(scene, boundary);
       auto geometryID = rtcAttachGeometry(scene, geometry);
 
-      rti::trace::context<Ty>::register_intersect_filter_funs(mGeo, mBoundary);
+      rti::trace::point_cloud_context<Ty>::register_intersect_filter_funs(mGeo, mBoundary);
       assert(rtcGetDeviceError(device) == RTC_ERROR_NONE);
 
       // Use openMP for parallelization
@@ -79,7 +80,7 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 28; // int
+      auto nrexp = 20; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -91,15 +92,15 @@ namespace rti { namespace trace {
       auto geohitc = 0ull; // unsigned long long int
       auto nongeohitc = 0ull;
       //auto hitCounter = rti::trace::counter {mGeo.get_num_primitives()};
-      auto hitAccumulator = rti::trace::hit_accumulator<Ty> {mGeo.get_num_primitives()};
+      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<Ty> {mGeo.get_num_primitives()};
 
       // TODO: in order to make this reduction independent of the concrete type one could
       // use an abstract factory.
       #pragma omp declare \
         reduction(hit_accumulator_combine : \
-                  rti::trace::hit_accumulator<Ty> : \
-                  omp_out = rti::trace::hit_accumulator<Ty>(omp_out, omp_in)) \
-        initializer(omp_priv = rti::trace::hit_accumulator<Ty>(omp_orig))
+                  rti::trace::hit_accumulator_with_checks<Ty> : \
+                  omp_out = rti::trace::hit_accumulator_with_checks<Ty>(omp_out, omp_in)) \
+        initializer(omp_priv = rti::trace::hit_accumulator_with_checks<Ty>(omp_orig))
         //initializer(omp_priv = rti::trace::counter(omp_orig))
 
       // omp_set_dynamic(false);
@@ -133,9 +134,9 @@ namespace rti { namespace trace {
 
         // We will attach our data to the memory immediately following the context as described
         // in https://www.embree.org/api.html#rtcinitintersectcontext .
-        auto rtiContext = rti::trace::context<Ty> {geometryID, mGeo, reflectionModel, hitAccumulator,
-                                                   boundaryID, mBoundary, boundaryReflection,
-                                                   *rng, *rngSeed2};
+        auto rtiContext = rti::trace::point_cloud_context<Ty> {geometryID, mGeo, reflectionModel,
+                                                               hitAccumulator, boundaryID, mBoundary,
+                                                               boundaryReflection, *rng, *rngSeed2};
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext.init();
 
@@ -238,7 +239,7 @@ namespace rti { namespace trace {
       }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
-      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator<Ty> >(hitAccumulator);
+      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<Ty> >(hitAccumulator);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
 

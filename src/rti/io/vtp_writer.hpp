@@ -29,6 +29,7 @@ namespace rti { namespace io {
       auto polydata = get_polydata(pGeometry);
       add_hit_values(polydata, pHA);
       try_add_hit_counts(polydata, pHA);
+      try_add_statistical_data(polydata, pHA);
       write(polydata, pOutfilename);
     }
 
@@ -95,6 +96,22 @@ namespace rti { namespace io {
       }
       hitCnts->SetName(hitcntStr);
       pPolydata->GetCellData()->AddArray(hitCnts);
+    }
+    
+    static
+    void try_add_statistical_data(vtkSmartPointer<vtkPolyData> pPolydata,
+                                  rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto indata = pAc.get_relative_error();
+      if (indata.size() <= 0)
+        return; // no data; just return
+      auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
+      rerr->SetNumberOfComponents(1); // 1 dimension
+      rerr->SetNumberOfTuples(indata.size());
+      for (size_t idx = 0; idx < indata.size(); ++idx) {
+        rerr->InsertValue(idx, indata[idx]);
+      }
+      rerr->SetName(relativeErrorStr);
+      pPolydata->GetCellData()->AddArray(rerr);
     }
 
     static
@@ -203,5 +220,6 @@ namespace rti { namespace io {
     static constexpr char const* radiusStr = "radius";
     static constexpr char const* valueStr = "value";
     static constexpr char const* hitcntStr = "hitcnt";
+    static constexpr char const* relativeErrorStr = "relative-error";
   };
 }} // namespace

@@ -13,25 +13,25 @@
 // This class needs to be used according to the following protocol. If one does not
 // follow the protocol, then the behaviour is undefined.
 //
-// (0) Call the static function rti::trace::context<Ty>::register_intersect_filter_funs().
+// (0) Call the static function rti::trace::point_cloud_context<Ty>::register_intersect_filter_funs().
 //     It will register the intersection filter functions for you in Embree.
 //     This needs to be done only once (in one thread).
 //     The call of this function needs to be done before the rtcCommitScene() call.
 //     (See https://www.embree.org/api.html#scene-object)
-// (1) Construct one rti::trace::context<Ty> instance in each thread.
-//     Rationale: The functions in rti::trace::context<Ty> are not thread-safe.
-// (2) Call init() on each rti::trace::context<Ty> intstance at least once to initialize
+// (1) Construct one rti::trace::point_cloud_context<Ty> instance in each thread.
+//     Rationale: The functions in rti::trace::point_cloud_context<Ty> are not thread-safe.
+// (2) Call init() on each rti::trace::point_cloud_context<Ty> intstance at least once to initialize
 //     the Embree data structures contained in the instance.
-// (3) Set context.rayWeight = context.INITIAL_RAY_WEIGHT whenever you need it.
+// (3) Set point_cloud_context.rayWeight = point_cloud_context.INITIAL_RAY_WEIGHT whenever you need it.
 // (4) For each tracing operation proceed as follows
-//   (4.1) Call context.intersect1() to trace a ray.
-//   (4.2) context.tfar contains a reliable value in any case.
-//   (4.3) context.reflect is a boolean value specifying if a reflection should happen.
-//         If a reflection should happen, then context.rayout contains the new ray.
+//   (4.1) Call point_cloud_context.intersect1() to trace a ray.
+//   (4.2) point_cloud_context.tfar contains a reliable value in any case.
+//   (4.3) point_cloud_context.reflect is a boolean value specifying if a reflection should happen.
+//         If a reflection should happen, then point_cloud_context.rayout contains the new ray.
 
 namespace rti { namespace trace {
   template<typename Ty> // intended to be a numeric type
-  class context {
+  class point_cloud_context {
   public:
     // a wrapper aroung struct RTCIntersectContext which attaches additional,
     // rti-project specific data to the context.
@@ -74,7 +74,7 @@ namespace rti { namespace trace {
     // Class members which will be used in a conventional way.
   private:
     unsigned int mGeometryID;
-    rti::geo::i_geometry<Ty>& mGeometry;
+    rti::geo::absc_point_cloud_geometry<Ty>& mGeometry;
     rti::reflection::i_reflection_model<Ty>& mReflectionModel;
     rti::trace::i_hit_accumulator<Ty>& mHitAccumulator;
     unsigned int mBoundaryID;
@@ -97,7 +97,7 @@ namespace rti { namespace trace {
 
     // Constructor
   public:
-    context(unsigned int pGeometryID,
+    point_cloud_context(unsigned int pGeometryID,
             rti::geo::i_geometry<Ty>& pGeometry,
             rti::reflection::i_reflection_model<Ty>& pReflectionModel,
             rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
@@ -107,7 +107,8 @@ namespace rti { namespace trace {
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState) :
       mGeometryID(pGeometryID),
-      mGeometry(pGeometry),
+      // TODO: FIX the cast
+      mGeometry(*dynamic_cast<rti::geo::absc_point_cloud_geometry<Ty>*>(&pGeometry)),
       mReflectionModel(pReflectionModel),
       mHitAccumulator(pHitAccumulator),
       mBoundaryID(pBoundaryID),
@@ -116,7 +117,7 @@ namespace rti { namespace trace {
       mRng(pRng),
       mRngState(pRngState) {
       //
-      std::cerr << "rti::trace::context::context()" << std::endl;
+      std::cerr << "rti::trace::point_cloud_context::point_cloud_context()" << std::endl;
       std::cerr << "Warning: This class uses a dummy epsilon value" << std::endl;
       //
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
@@ -127,10 +128,13 @@ namespace rti { namespace trace {
     static
     void register_intersect_filter_funs(rti::geo::i_geometry<Ty>& pGeometry,
                                         rti::geo::i_boundary<Ty>& pBoundary) {
+      // The following cast characterizes a precondition to this function
+      auto pPCGeoPointer = dynamic_cast<rti::geo::absc_point_cloud_geometry<Ty>*> (&pGeometry);
+      auto& pPCGeo = *pPCGeoPointer;
       RLOG_DEBUG << "register_intersect_filter_funs()" << std::endl;
-      rtcSetGeometryIntersectFilterFunction(pGeometry.get_rtc_geometry(), &filter_fun_geometry);
+      rtcSetGeometryIntersectFilterFunction(pPCGeo.get_rtc_geometry(), &filter_fun_geometry);
       rtcSetGeometryIntersectFilterFunction(pBoundary.get_rtc_geometry(), &filter_fun_boundary);
-      rtcCommitGeometry(pGeometry.get_rtc_geometry()); // TODO: needed?
+      rtcCommitGeometry(pPCGeo.get_rtc_geometry()); // TODO: needed?
       rtcCommitGeometry(pBoundary.get_rtc_geometry());
     }
 
@@ -145,8 +149,8 @@ namespace rti { namespace trace {
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
       // The following cast also characterizes a precondition to this function
-      auto  rticonstcontextptr = reinterpret_cast<rti::trace::context<Ty> const*> (cc);
-      auto  rticontextptr = const_cast<rti::trace::context<Ty>*> (rticonstcontextptr);
+      auto  rticonstcontextptr = reinterpret_cast<rti::trace::point_cloud_context<Ty> const*> (cc);
+      auto  rticontextptr = const_cast<rti::trace::point_cloud_context<Ty>*> (rticonstcontextptr);
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");
@@ -221,8 +225,8 @@ namespace rti { namespace trace {
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
       // The following cast also characterizes a precondition to this function
-      auto  rticonstcontextptr = reinterpret_cast<rti::trace::context<Ty> const*> (cc);
-      auto  rticontextptr = const_cast<rti::trace::context<Ty>*> (rticonstcontextptr);
+      auto  rticonstcontextptr = reinterpret_cast<rti::trace::point_cloud_context<Ty> const*> (cc);
+      auto  rticontextptr = const_cast<rti::trace::point_cloud_context<Ty>*> (rticonstcontextptr);
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");

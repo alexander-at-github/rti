@@ -27,6 +27,9 @@ namespace rti { namespace geo {
     virtual ~absc_point_cloud_geometry() {}
     // inherits also some virtual function declarations from i_geometry
 
+    // pure virtual function
+    virtual rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const = 0;
+
     // constructor
     absc_point_cloud_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader, Ty pStickingC) :
       mDevice(pDevice),

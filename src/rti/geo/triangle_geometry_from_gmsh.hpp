@@ -95,7 +95,7 @@ namespace rti { namespace geo {
     // Local algebraic types
     ////////////////////////
     struct vertex_f3_t {
-      float xx, yy, zz, rr; // No padding here!
+      float xx, yy, zz; // No padding here!
       // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
       // single precision x, y, z floating point coordinates
       // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred

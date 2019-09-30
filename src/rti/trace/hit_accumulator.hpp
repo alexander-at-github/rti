@@ -68,6 +68,11 @@ namespace rti { namespace trace {
     std::vector<size_t> get_cnts() override final {
       return mCnts;
     }
+    
+    std::vector<Ty> get_relative_error() override final {
+      // Does not have this functionality
+      return {};
+    }
 
     void print(std::ostream& pOs) const override final {
       pOs << "(";
