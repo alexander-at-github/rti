@@ -14,10 +14,11 @@
 #include "rti/reflection/diffuse.hpp"
 //#include "rti/reflection/specular.hpp"
 //#include "rti/trace/counter.hpp"
-#include "rti/trace/point_cloud_context.hpp"
+#include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/hit_accumulator.hpp"
 #include "rti/trace/hit_accumulator_with_checks.hpp"
-#include "rti/trace/dummy_counter.hpp"
+#include "rti/trace/point_cloud_context.hpp"
+#include "rti/trace/triangle_context.hpp"
 #include "rti/trace/result.hpp"
 #include "rti/util/logger.hpp"
 #include "rti/util/ray_logger.hpp"
@@ -68,7 +69,7 @@ namespace rti { namespace trace {
       auto boundaryID = rtcAttachGeometry(scene, boundary);
       auto geometryID = rtcAttachGeometry(scene, geometry);
 
-      rti::trace::point_cloud_context<Ty>::register_intersect_filter_funs(mGeo, mBoundary);
+      rti::trace::triangle_context<Ty>::register_intersect_filter_funs(mGeo, mBoundary);
       assert(rtcGetDeviceError(device) == RTC_ERROR_NONE);
 
       // Use openMP for parallelization
@@ -80,7 +81,7 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 20; // int
+      auto nrexp = 24; // int
       auto numRays = std::pow(2.0, nrexp); // returns a double
       result.numRays = numRays; // Save the number of rays also to the test result
 
@@ -134,7 +135,7 @@ namespace rti { namespace trace {
 
         // We will attach our data to the memory immediately following the context as described
         // in https://www.embree.org/api.html#rtcinitintersectcontext .
-        auto rtiContext = rti::trace::point_cloud_context<Ty> {geometryID, mGeo, reflectionModel,
+        auto rtiContext = rti::trace::triangle_context<Ty> {geometryID, mGeo, reflectionModel,
                                                                hitAccumulator, boundaryID, mBoundary,
                                                                boundaryReflection, *rng, *rngSeed2};
         // Initialize (also takes care for the initialization of the Embree context)

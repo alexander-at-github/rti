@@ -28,17 +28,17 @@ namespace rti { namespace geo {
     // (RTC_FORMAT_FLOAT3 format), and the number of vertices are inferred
     // from the size of that buffer. "
     // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
-    // struct vertex_f3_t {
-    //   float xx, yy, zz;
-    // };
-    using vertex_f3_t = rti::util::triple<float>;
+    struct vertex_f3_t {
+      float xx, yy, zz;
+    };
+    // using vertex_f3_t = rti::util::triple<float>;
     // "RTC_GEOMETRY_TYPE_TRIANGLE: The index buffer contains an array of three
     // 32-bit indices per triangle (RTC_FORMAT_UINT format)"
     // Source: https://embree.github.io/api.html#rtc_geometry_type_triangle
-    // struct triangle_t {
-    //   uint32_t v0, v1, v2;
-    // };
-    using triangle_t = rti::util::triple<uint32_t>;
+    struct triangle_t {
+      uint32_t v0, v1, v2;
+    };
+    // using triangle_t = rti::util::triple<uint32_t>;
 
     void init_this(RTCDevice& pDevice, rti::io::christoph::vtu_triangle_reader<Ty>& pReader) {
       this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
@@ -53,7 +53,9 @@ namespace rti { namespace geo {
                                 this->mNumVertices);
       for (size_t idx = 0; idx < this->mNumVertices; ++idx) {
         auto& vv = vertices[idx];
-        this->mVVBuffer[idx] = vv; // TODO: correct?
+        this->mVVBuffer[idx].xx = vv[0];
+        this->mVVBuffer[idx].yy = vv[1];
+        this->mVVBuffer[idx].zz = vv[2];
       }
       auto triangles = pReader.get_triangles();
       this->mNumTriangles = triangles.size();
@@ -72,11 +74,13 @@ namespace rti { namespace geo {
 
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
         auto& tt = triangles[idx];
-        this->mTTBuffer[idx] = tt;
+        this->mTTBuffer[idx].v0 = tt[0];
+        this->mTTBuffer[idx].v1 = tt[1];
+        this->mTTBuffer[idx].v2 = tt[2];
         // assert(0 <= mTTBuffer[idx][0]); // not necessary; unsigned
-        assert(mTTBuffer[idx][0] < (long long) mNumVertices && "Invalid Vertex");
-        assert(mTTBuffer[idx][1] < (long long) mNumVertices && "Invalid Vertex");
-        assert(mTTBuffer[idx][2] < (long long) mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v0 < (long long) mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v1 < (long long) mNumVertices && "Invalid Vertex");
+        assert(mTTBuffer[idx].v2 < (long long) mNumVertices && "Invalid Vertex");
       }
       rtcCommitGeometry(this->mGeometry);
     }
@@ -100,10 +104,12 @@ namespace rti { namespace geo {
 
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
       auto& tri = this->mTTBuffer[pPrimID];
-      auto& v0 = this->mVVBuffer[tri[0]];
-      auto& v1 = this->mVVBuffer[tri[1]];
-      auto& v2 = this->mVVBuffer[tri[2]];
-      auto triangle = rti::util::triple<rti::util::triple<Ty> > {v0, v1, v2};
+      auto& v0 = this->mVVBuffer[tri.v0];
+      auto& v1 = this->mVVBuffer[tri.v1];
+      auto& v2 = this->mVVBuffer[tri.v2];
+      auto triangle = rti::util::triple<rti::util::triple<Ty> > {v0.xx, v0.yy, v0.zz,
+                                                                 v1.xx, v1.yy, v1.zz,
+                                                                 v2.xx, v2.yy, v2.zz};
       return rti::util::compute_normal(triangle);
     }
 
@@ -129,9 +135,9 @@ namespace rti { namespace geo {
     }
 
     std::string prim_to_string(unsigned int pPrimID) const override final {
+      assert(false && "Not implemented");
       auto& tt = this->mTTBuffer[pPrimID];
       std::stringstream strs;
-      strs << "(" << tt[0] << " " << tt[1] << " " << tt[2] << ")";
       return strs.str();
     }
 
@@ -143,12 +149,12 @@ namespace rti { namespace geo {
       Ty max = std::numeric_limits<Ty>::max();
       Ty xmin=max, xmax=min, ymin=max, ymax=min, zmin=max, zmax=min;
       for (size_t idx = 0; idx < mNumVertices; ++idx) {
-        xmin = std::min(xmin, mVVBuffer[idx][0]);
-        xmax = std::max(xmax, mVVBuffer[idx][0]);
-        ymin = std::min(ymin, mVVBuffer[idx][1]);
-        ymax = std::max(ymax, mVVBuffer[idx][1]);
-        zmin = std::min(zmin, mVVBuffer[idx][2]);
-        zmax = std::max(zmax, mVVBuffer[idx][2]);
+        xmin = std::min(xmin, mVVBuffer[idx].xx);
+        xmax = std::max(xmax, mVVBuffer[idx].xx);
+        ymin = std::min(ymin, mVVBuffer[idx].yy);
+        ymax = std::max(ymax, mVVBuffer[idx].yy);
+        zmin = std::min(zmin, mVVBuffer[idx].zz);
+        zmax = std::max(zmax, mVVBuffer[idx].zz);
       }
       return {rti::util::triple<Ty> {xmin, ymin, zmin}, rti::util::triple<Ty> {xmax, ymax, zmax}};
     }
