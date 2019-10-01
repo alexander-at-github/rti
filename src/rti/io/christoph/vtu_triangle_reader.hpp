@@ -80,7 +80,7 @@ namespace rti { namespace io { namespace christoph {
       while (cellarray->GetNextCell(idlist)) {
         if (idlist->GetNumberOfIds() != 3) // it is not a triangles
           continue;
-        mTriangles.push_back({idlist->GetId(0), idlist->GetId(1), idlist->GetId(2)});
+        mTriangles.push_back({(size_t) idlist->GetId(0), (size_t) idlist->GetId(1), (size_t) idlist->GetId(2)});
       }
       // Shrink memory
       mPoints.shrink_to_fit();
@@ -91,7 +91,7 @@ namespace rti { namespace io { namespace christoph {
       return mPoints;
     }
 
-    std::vector<rti::util::triple<uint32_t> > get_triangles() {
+    std::vector<rti::util::triple<size_t> > get_triangles() {
       return mTriangles;
     }
 
@@ -101,7 +101,7 @@ namespace rti { namespace io { namespace christoph {
   private:
     std::string mInfilename;
     std::vector<rti::util::triple<Ty> > mPoints;
-    std::vector<rti::util::triple<uint32_t> > mTriangles;
+    std::vector<rti::util::triple<size_t> > mTriangles;
 
   };
 }}} // namespace

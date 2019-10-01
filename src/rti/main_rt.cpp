@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
   //auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader, 0.01};
   //auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 1e-2};
   auto triangleReader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-  auto geometry = rti::geo::triangle_geometry<numeric_type> {device, triangleReader, 1e-2};
+  auto geometry = rti::geo::triangle_geometry<numeric_type> {device, triangleReader, 0.8};
 
   // Compute bounding box
   auto bdBox = geometry.get_bounding_box();
@@ -195,35 +195,35 @@ int main(int argc, char* argv[]) {
   std::cout << result; // << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
 
-  // if ( ! outfilename.empty()) {
-  //   // Write output to file
-  //   if (vtksys::SystemTools::GetFilenameLastExtension(outfilename) != ".vtp") {
-  //     std::cout << "Appending .vtp to the given file name" << std::endl;
-  //     outfilename.append(".vtp");
-  //   }
-  //   auto bbfilename = vtksys::SystemTools::
-  //     GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
+  if ( ! outfilename.empty()) {
+    // Write output to file
+    if (vtksys::SystemTools::GetFilenameLastExtension(outfilename) != ".vtp") {
+      std::cout << "Appending .vtp to the given file name" << std::endl;
+      outfilename.append(".vtp");
+    }
+    auto bbfilename = vtksys::SystemTools::
+      GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
-  //   std::cout << "Writing output to " << outfilename << std::endl;
-  //   rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitAccumulator, outfilename);
-  //   std::cout << "Writing bounding box to " << bbfilename << std::endl;
-  //   rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
+    std::cout << "Writing output to " << outfilename << std::endl;
+    rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitAccumulator, outfilename);
+    std::cout << "Writing bounding box to " << bbfilename << std::endl;
+    rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 
-  //   auto raylog = RAYLOG_GET_PTR();
-  //   if (raylog != nullptr) {
-  //     auto raylogfilename = vtksys::SystemTools::
-  //       GetFilenameWithoutExtension(outfilename).append(".ray-log.vtp");
-  //     std::cout << "Writing ray log to " << raylogfilename << std::endl;
-  //     rti::io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
-  //   }
-  //   auto raysrclog = RAYSRCLOG_GET_PTR();
-  //   if (raysrclog != nullptr) {
-  //     auto raysrclogfilename = vtksys::SystemTools::
-  //       GetFilenameWithoutExtension(outfilename).append(".ray-src-log.vtp");
-  //     std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
-  //     rti::io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
-  //   }
-  // }
+    auto raylog = RAYLOG_GET_PTR();
+    if (raylog != nullptr) {
+      auto raylogfilename = vtksys::SystemTools::
+        GetFilenameWithoutExtension(outfilename).append(".ray-log.vtp");
+      std::cout << "Writing ray log to " << raylogfilename << std::endl;
+      rti::io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
+    }
+    auto raysrclog = RAYSRCLOG_GET_PTR();
+    if (raysrclog != nullptr) {
+      auto raysrclogfilename = vtksys::SystemTools::
+        GetFilenameWithoutExtension(outfilename).append(".ray-src-log.vtp");
+      std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
+      rti::io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
+    }
+  }
 
   rtcReleaseDevice(device);
 

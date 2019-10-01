@@ -97,7 +97,9 @@ namespace rti { namespace trace {
         auto s1squared = mS1s[idx] * mS1s[idx];
         if (s1squared == 0) {
           result[idx] = std::numeric_limits<Ty>::max();
+          continue;
         }
+        assert(mCnts[idx] != 0 && "Assumption");
         // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
         // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
         // page 83 and 84.

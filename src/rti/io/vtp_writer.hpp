@@ -27,9 +27,23 @@ namespace rti { namespace io {
       assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
-      add_hit_values(polydata, pHA);
-      try_add_hit_counts(polydata, pHA);
-      try_add_statistical_data(polydata, pHA);
+      add_hit_values_to_points(polydata, pHA);
+      try_add_hit_counts_to_points(polydata, pHA);
+      try_add_statistical_data_to_points(polydata, pHA);
+      write(polydata, pOutfilename);
+    }
+
+    static
+    void write(rti::geo::triangle_geometry<Ty>& pGeometry,
+               rti::trace::i_hit_accumulator<Ty>& pHA,
+               std::string pOutfilename) {
+      // Precondition:
+      assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
+              "hit count accumulator does not fit the given geometry");
+      auto polydata = get_polydata(pGeometry);
+      add_hit_values_to_triangles(polydata, pHA);
+      try_add_hit_counts_to_triangles(polydata, pHA);
+      try_add_statistical_data_to_triangles(polydata, pHA);
       write(polydata, pOutfilename);
     }
 
@@ -66,7 +80,7 @@ namespace rti { namespace io {
     }
 
     static
-    void add_hit_values(vtkSmartPointer<vtkPolyData> pPolydata,
+    void add_hit_values_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
                         rti::trace::i_hit_accumulator<Ty>& pAc) {
       auto invalues = pAc.get_values();
       assert (pPolydata->GetNumberOfPoints() == invalues.size() &&
@@ -82,8 +96,25 @@ namespace rti { namespace io {
       pPolydata->GetCellData()->AddArray(hitValues);
     }
 
+    // TODO: Combine with add_hit_values_to_points into one abstraction?
     static
-    void try_add_hit_counts(vtkSmartPointer<vtkPolyData> pPolydata,
+    void add_hit_values_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
+                                     rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto invalues = pAc.get_values();
+      assert (pPolydata->GetNumberOfCells() == invalues.size() &&
+              "number of cells in polydata does not fit the hit counter accumulator");
+      auto hitValues = vtkSmartPointer<vtkDoubleArray>::New();
+      hitValues->SetNumberOfComponents(1); // 1 dimension
+      hitValues->SetNumberOfTuples(invalues.size());
+      for (size_t idx = 0; idx < invalues.size(); ++idx) {
+        hitValues->InsertValue(idx, invalues[idx]);
+      }
+      hitValues->SetName(valueStr);
+      pPolydata->GetCellData()->AddArray(hitValues);
+    }
+
+    static
+    void try_add_hit_counts_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
                             rti::trace::i_hit_accumulator<Ty>& pAc) {
       auto incnts = pAc.get_cnts();
       if (incnts.size() <= 0)
@@ -97,9 +128,27 @@ namespace rti { namespace io {
       hitCnts->SetName(hitcntStr);
       pPolydata->GetCellData()->AddArray(hitCnts);
     }
-    
+
     static
-    void try_add_statistical_data(vtkSmartPointer<vtkPolyData> pPolydata,
+    void try_add_hit_counts_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
+                                     rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto incnts = pAc.get_cnts();
+      assert (pPolydata->GetNumberOfCells() == incnts.size() &&
+              "number of cells in polydata does not fit the hit counter accumulator");
+      if (incnts.size() <= 0)
+        return; // no hit counts; simply return
+      auto hitCnts = vtkSmartPointer<vtkUnsignedIntArray>::New();
+      hitCnts->SetNumberOfComponents(1); // 1 dimension
+      hitCnts->SetNumberOfTuples(incnts.size());
+      for (size_t idx = 0; idx < incnts.size(); ++idx) {
+        hitCnts->InsertValue(idx, incnts[idx]);
+      }
+      hitCnts->SetName(hitcntStr);
+      pPolydata->GetCellData()->AddArray(hitCnts);
+    }
+
+    static
+    void try_add_statistical_data_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
                                   rti::trace::i_hit_accumulator<Ty>& pAc) {
       auto indata = pAc.get_relative_error();
       if (indata.size() <= 0)
@@ -112,6 +161,54 @@ namespace rti { namespace io {
       }
       rerr->SetName(relativeErrorStr);
       pPolydata->GetCellData()->AddArray(rerr);
+    }
+
+    static
+    void try_add_statistical_data_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
+                                         rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto indata = pAc.get_relative_error();
+      assert (pPolydata->GetNumberOfCells() == indata.size() &&
+              "number of cells in polydata does not fit the hit counter accumulator");
+      if (indata.size() <= 0)
+        return; // no data; just return
+      auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
+      rerr->SetNumberOfComponents(1); // 1 dimension
+      rerr->SetNumberOfTuples(indata.size());
+      for (size_t idx = 0; idx < indata.size(); ++idx) {
+        rerr->InsertValue(idx, indata[idx]);
+      }
+      rerr->SetName(relativeErrorStr);
+      pPolydata->GetCellData()->AddArray(rerr);
+    }
+
+    static
+    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::triangle_geometry<Ty>& pGeometry) {
+      auto inpoints = pGeometry.get_vertices();
+      auto intriangles = pGeometry.get_triangles();
+      auto numpoints = inpoints.size();
+      auto numtriangles = intriangles.size();
+
+      auto vtkpoints = vtkSmartPointer<vtkPoints>::New();
+      auto vtkcells = vtkSmartPointer<vtkCellArray>::New();
+
+      // Handle points
+      for (size_t idx = 0; idx < numpoints; ++idx) {
+        auto& point = inpoints[idx];
+        auto writepointID = vtkpoints->InsertNextPoint(point[0], point[1], point[2]);
+      }
+      // Handle triangles
+      for (size_t idx = 0; idx < numtriangles; ++idx) {
+        auto& intriangle = intriangles[idx];
+        auto outtriangle = vtkSmartPointer<vtkTriangle>::New();
+        outtriangle->GetPointIds()->SetId (0, intriangle[0]);
+        outtriangle->GetPointIds()->SetId (1, intriangle[1]);
+        outtriangle->GetPointIds()->SetId (2, intriangle[2]);
+        vtkcells->InsertNextCell(outtriangle);
+      }
+      auto polydata = vtkSmartPointer<vtkPolyData>::New();
+      polydata->SetPoints(vtkpoints);
+      polydata->SetPolys(vtkcells);
+      return polydata;
     }
 
     static

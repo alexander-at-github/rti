@@ -68,6 +68,7 @@ namespace rti { namespace geo {
                                 this->mNumTriangles);
 
       // Check Embree device error
+      assert (RTC_ERROR_NONE == rtcGetDeviceError(pDevice) && "Error");
       if (RTC_ERROR_NONE != rtcGetDeviceError(pDevice)) {
         RLOG_DEBUG << "Embree device error after rtcSetNewGeometryBuffer()" << std::endl;
       }
@@ -167,14 +168,14 @@ namespace rti { namespace geo {
     // Instead it reads the data from the input data structure of type
     // rti::io::christoph::vtu_triangle_reader<Ty>.
     std::vector<rti::util::triple<Ty> > get_vertices() const {
-      return this->mReader->get_vertices();
+      return this->mReader.get_points();
     }
 
     // Note: this function does not read the data from this->mVVBuffer (the Embree buffer).
     // Instead it reads the data from the input data structure of type
     // rti::io::christoph::vtu_triangle_reader<Ty>.
     std::vector<rti::util::triple<size_t> > get_triangles() const {
-      return this->mReader->get_triangles();
+      return this->mReader.get_triangles();
     }
 
     rti::util::triple<rti::util::triple<Ty> > get_prim(unsigned int pPrimID) const {

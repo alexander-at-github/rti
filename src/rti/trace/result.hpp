@@ -28,7 +28,9 @@ namespace rti { namespace trace {
         << inputFilePath << " "
         << numRays << "rays "
         << hitc << "hits "
-        << nonhitc << "nonhits" << std::endl;
+        << nonhitc << "nonhits "
+        << timeNanoseconds*1e-9 << "seconds"
+        << std::endl;
     }
   };
 }} // namespace

@@ -214,8 +214,6 @@ namespace rti { namespace trace {
         << std::endl;
       RLOG_DEBUG << "this->rayWeight == " << this->rayWeight << std::endl;
 
-      assert(this->boundNotIntersected || this->geoFirstHitTFar <= this->boundFirstHitTFar && "Assumption");
-
       if (this->geoNotIntersected && this->boundNotIntersected) {
         // The ray did not hit anything
         this->reflect = false;
@@ -225,7 +223,8 @@ namespace rti { namespace trace {
 
       this->reflect = true;
 
-      if ( ! this->boundNotIntersected && this->geoNotIntersected) {
+      if ( ( ! this->boundNotIntersected && this->geoNotIntersected) ||
+           ( ! this->boundNotIntersected && this->boundFirstHitTFar < this->geoFirstHitTFar)) {
         // Geometry not hit but boundary hit
         this->rayout = this->boundRayout;
         this->tfar = this->boundFirstHitTFar;
