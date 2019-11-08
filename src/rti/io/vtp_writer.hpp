@@ -4,6 +4,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkLine.h>
 #include <vtkPoints.h>
+#include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkTriangle.h>
 #include <vtkUnsignedIntArray.h>

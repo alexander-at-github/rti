@@ -8,61 +8,46 @@
 #include "rti/reflection/i_reflection_model.hpp"
 #include "rti/reflection/specular.hpp"
 #include "rti/trace/dummy_counter.hpp"
+#include "rti/trace/absc_context.hpp"
 #include "rti/trace/i_hit_accumulator.hpp"
 
-// This class needs to be used according to the following protocol. If one does not
-// follow the protocol, then the behaviour is undefined:
-// See rti::trace::point_cloud_context
+// This class needs to be used according to a protocol! See base class rti::trace::absc_context
 
 namespace rti { namespace trace {
   template<typename Ty> // intended to be a numeric type
-  class triangle_context {
-  public:
-    // a wrapper aroung struct RTCIntersectContext which attaches additional,
-    // rti-project specific data to the context.
-    // See https://www.embree.org/api.html#rtcinitintersectcontext
-    //
-    // Data layout:
-    // The first member HAS TO BE the RTC context, that is, context from the Embree library.
-    RTCIntersectContext mRtcContext; // not a reference or pointer but full data stored here
-    //
+  class triangle_context : public rti::trace::absc_context<Ty> {
+  private:
     static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
     // =================================================================
     // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
     // =================================================================
     static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.1f;
-    static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD;
+    static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
     //
-    // additional data
-    // Here we violate the naming convention (to name a member variable with a string
-    // starting with the character 'm') on purpose. Rationale: The context provides
-    // (contextual) local data to the outside.
-    // TODO: change the naming?
-    //
-    // geometry related data
   private:
     bool geoNotIntersected = true;
     Ty geoFirstHitTFar = 0; // the type will probably be float since Embree uses float for its RTCRay.tfar
     Ty geoTFarMax = 0;
-    rti::util::pair<rti::util::triple<Ty> > geoRayout;
+    rti::util::pair<rti::util::triple<Ty> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // boundary related data
     bool boundNotIntersected = true;
     Ty boundFirstHitTFar = 0;
-    rti::util::pair<rti::util::triple<Ty> > boundRayout;
+    rti::util::pair<rti::util::triple<Ty> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // other data
   public:
-    float rayWeight = INITIAL_RAY_WEIGHT;
-    bool reflect = false;
-    rti::util::pair<rti::util::triple<Ty> >& rayout = geoRayout; // initialize to some value
-    Ty tfar = 0; // initialize to some value
+    // float rayWeight = INITIAL_RAY_WEIGHT;
+    // bool reflect = false;
+    // rti::util::pair<rti::util::triple<Ty> >& rayout = geoRayout; // initialize to some value
+    // Ty tfar = 0; // initialize to some value
+    //
     //
     // Class members which will be used in a conventional way.
   private:
-    unsigned int mGeometryID;
+    unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
     rti::geo::triangle_geometry<Ty>& mGeometry;
     rti::reflection::i_reflection_model<Ty>& mReflectionModel;
     rti::trace::i_hit_accumulator<Ty>& mHitAccumulator;
-    unsigned int mBoundaryID;
+    unsigned int mBoundaryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
     rti::geo::i_boundary<Ty>& mBoundary;
     rti::reflection::i_reflection_model<Ty>& mBoundaryReflectionModel;
 
@@ -77,13 +62,12 @@ namespace rti { namespace trace {
     // will then post process in the post_process_intersection() function.
     // Initialize to some reasonable size. The vector may grow, if needed.
     // Weird initialization necessary
-    std::vector<unsigned int> mGeoHitPrimIDs;
-
+    std::vector<unsigned int> mGeoHitPrimIDs {};
 
     // Constructor
   public:
     triangle_context(unsigned int pGeometryID,
-            rti::geo::i_geometry<Ty>& pGeometry,
+            rti::geo::i_geometry<Ty>& pGeometry, // TODO: Why not use rti::geo::triangle_context<Ty>&
             rti::reflection::i_reflection_model<Ty>& pReflectionModel,
             rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
             unsigned int pBoundaryID,
@@ -91,6 +75,8 @@ namespace rti { namespace trace {
             rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState) :
+      // initialize members of virtual base class
+      rti::trace::absc_context<Ty>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
       mGeometryID(pGeometryID),
       // TODO: FIX the cast
       mGeometry(*dynamic_cast<rti::geo::triangle_geometry<Ty>*>(&pGeometry)),
@@ -133,9 +119,13 @@ namespace rti { namespace trace {
       assert(args->N == 1 && "Precondition");
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
-      // The following cast also characterizes a precondition to this function
-      auto  rticonstcontextptr = reinterpret_cast<rti::trace::triangle_context<Ty> const*> (cc);
-      auto  rticontextptr = const_cast<rti::trace::triangle_context<Ty>*> (rticonstcontextptr);
+
+      std::cerr << "filter_fun_geometry(): the address of the rtc context: " << cc << std::endl;
+      auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
+      auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
+      auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<Ty>*> (rtiabscontextptr);
+      std::cerr << "filter_fun_geometry(): address of the rti context: " << rticontextptr << std::endl;
+
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");
@@ -173,9 +163,13 @@ namespace rti { namespace trace {
       assert(args->N == 1 && "Precondition");
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
-      // The following cast also characterizes a precondition to this function
-      auto  rticonstcontextptr = reinterpret_cast<rti::trace::triangle_context<Ty> const*> (cc);
-      auto  rticontextptr = const_cast<rti::trace::triangle_context<Ty>*> (rticonstcontextptr);
+
+      std::cerr << "filter_fun_boundary(): the address of the rtc context: " << cc << std::endl;
+      auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
+      auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
+      auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<Ty>*> (rtiabscontextptr);
+      std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
+
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");
@@ -265,7 +259,7 @@ namespace rti { namespace trace {
       // If the ray has enough weight, then we reflect it in any case.
     }
   public:
-    void intersect1(RTCScene& pScene, RTCRayHit& pRayHit) {
+    void intersect1(RTCScene& pScene, RTCRayHit& pRayHit) override final {
       // prepare
       pRayHit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
       pRayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
@@ -274,16 +268,31 @@ namespace rti { namespace trace {
       // Embree intersect
       // This call uses our intersection functions which must have been registered with
       // register_intersect_filter_funs() .
-      auto rtcContextPtr = reinterpret_cast<RTCIntersectContext*> (this);
-      rtcIntersect1(pScene, rtcContextPtr, &pRayHit);
+
+      std::cerr << "intersect1(): the address of the rtc context: "
+                << &this->mContextCWrapper.mRtcContext << std::endl;
+      std::cerr << "intersect1(): address of the rti context: " << this << std::endl;
+
+      rtcIntersect1(pScene, &this->mContextCWrapper.mRtcContext, &pRayHit);
+
       // post process
       this->post_process_intersect(pRayHit);
     }
 
-    void init() {
+    void init() override final {
       // // RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT flag uses an optimized traversal
       // // algorithm for incoherent rays (default)
-      rtcInitIntersectContext(&this->mRtcContext);
+      rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
+      // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
+      // this->mRtcContext.filter = nullptr;
+      // // std::cerr << "triangle_context.init(): RTC_MAX_INSTANCE_LEVEL_COUNT == "
+      // //           << RTC_MAX_INSTANCE_LEVEL_COUNT << " holds." << std::endl;
+      // assert(RTC_MAX_INSTANCE_LEVEL_COUNT == 1 && "Assumption");
+      // this->mRtcContext.instID[0] = RTC_INVALID_GEOMETRY_ID; // initialize to some value
+    }
+
+    void init_ray_weight() override final {
+      this->rayWeight = this->INITIAL_RAY_WEIGHT;
     }
   };
 }} // namespace

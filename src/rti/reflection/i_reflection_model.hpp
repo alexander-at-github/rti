@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rti/rng/i_rng.hpp"
+
 namespace rti { namespace reflection {
   template<typename Ty>
   class i_reflection_model {

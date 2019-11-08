@@ -4,6 +4,7 @@
 
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
+#include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkDataSetAttributes.h>
 #include <vtkGenericCell.h>

@@ -5,6 +5,7 @@
 #include <embree3/rtcore.h>
 
 #include "rti/geo/i_boundary.hpp"
+#include "rti/util/logger.hpp"
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {
@@ -12,7 +13,7 @@ namespace rti { namespace geo {
   class boundary_x_y : public rti::geo::i_boundary<Ty> {
   public:
 
-    boundary_x_y (RTCDevice& pDevice, rti::util::pair<rti::util::triple<Ty> > pBdBox) :
+    boundary_x_y (RTCDevice& pDevice, rti::util::pair<rti::util::triple<Ty> >& pBdBox) :
       mDevice(pDevice),
       mBdBox(pBdBox) {
       // For the time beeing the following assumption is not needed.
@@ -20,7 +21,30 @@ namespace rti { namespace geo {
       //        mBdBox[0][1] <= mBdBox[1][1] &&
       //        mBdBox[0][2] <= mBdBox[1][2] &&
       //        "ordering of coordinates in bounding box");
+      std::cerr << "constructor of boundary_x_y<Ty> before init_this()" << std::endl;
+      std::cerr << "boundary_x_y mBdBox: " << mBdBox[0][0] << " " << mBdBox[0][1] << " " << mBdBox[0][2] << " " << mBdBox[1][0] << " " << mBdBox[1][1] << " " << mBdBox[1][2] << " " << std::endl;
+
       init_this();
+      std::cerr << "constructor of boundary_x_y<Ty> after init_this()" << std::endl;
+    }
+
+    // boundary_x_y (const boundary_x_y<Ty> & rhs) = delete;
+    // boundary_x_y (const boundary_x_y<Ty> && rhs) = delete;
+    boundary_x_y<Ty>& operator=(const boundary_x_y<Ty>& rhs) = delete;
+    boundary_x_y<Ty>& operator=(const boundary_x_y<Ty>&& rhs) = delete;
+
+    boundary_x_y (const boundary_x_y<Ty> & rhs) :
+      mDevice(rhs.mDevice),
+      mBdBox(rhs.mBdBox) {
+      std::cerr << "copy constructor of boundary_x_y<Ty>" << std::endl;
+      std::cerr << "Error: copy constructor incomplete" << std::endl << std::flush;
+    }
+
+    boundary_x_y (const boundary_x_y<Ty> && rhs) :
+      mDevice(rhs.mDevice),
+      mBdBox(rhs.mBdBox) {
+      std::cerr << "move constructor of boundary_x_y<Ty>" << std::endl;
+      std::cerr << "Error: move constructor incomplete" << std::endl << std::flush;
     }
 
     RTCDevice& get_rtc_device() override final {
@@ -92,8 +116,8 @@ namespace rti { namespace geo {
     // Member functions
     void init_this() {
       this->mGeometry = rtcNewGeometry(mDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
-      mNumVertices = 8u;
-      mNumTriangles = 8u;
+      mNumVertices = 8;
+      mNumTriangles = 8;
       mVertBuff = (vertex_f3_t*)
         rtcSetNewGeometryBuffer(mGeometry,
                                 RTC_BUFFER_TYPE_VERTEX,
@@ -101,6 +125,11 @@ namespace rti { namespace geo {
                                 RTC_FORMAT_FLOAT3,
                                 sizeof(vertex_f3_t),
                                 mNumVertices);
+      assert(mVertBuff != nullptr && "Error in acquiring new buffer from Embree");
+      auto deverr1 = rtcGetDeviceError(mDevice);
+      RLOG_DEBUG << "rtc device error: " << deverr1 << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_UNKOWN == " << RTC_ERROR_UNKNOWN << " holds." << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_INVALID_ARGUMENT == " << RTC_ERROR_INVALID_ARGUMENT << " holds." << std::endl;
       mTriBuff = (triangle_t*)
         rtcSetNewGeometryBuffer(mGeometry,
                                 RTC_BUFFER_TYPE_INDEX,
@@ -108,6 +137,13 @@ namespace rti { namespace geo {
                                 RTC_FORMAT_UINT3,
                                 sizeof(triangle_t),
                                 mNumTriangles);
+      assert(mTriBuff != nullptr && "Error in acquiring new buffer from Embree");
+      //assert(false && "test");
+      auto deverr2 = rtcGetDeviceError(mDevice);
+      RLOG_DEBUG << "rtc device error: " << deverr2 << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_UNKOWN == " << RTC_ERROR_UNKNOWN << " holds." << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_INVALID_ARGUMENT == " << RTC_ERROR_INVALID_ARGUMENT << " holds." << std::endl;
+
       // Fill the vertiex
       auto xmin = std::min(mBdBox[0][0], mBdBox[1][0]);
       auto xmax = std::max(mBdBox[0][0], mBdBox[1][0]);

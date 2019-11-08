@@ -5,7 +5,6 @@
 
 #include <gmsh.h>
 
-#include "rti/util/command_line_options.hpp"
 #include "rti/util/logger.hpp"
 #include "rti/util/utils.hpp"
 

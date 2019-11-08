@@ -28,40 +28,61 @@ namespace rti { namespace trace {
   template<typename Ty>
   class tracer {
   public:
-
-    tracer(rti::geo::i_geometry<Ty>& pGeo, rti::geo::i_boundary<Ty>& pBoundary, rti::ray::i_source& pSource) :
-      mGeo(pGeo),
+    tracer(rti::geo::i_factory<Ty>& pFactory,
+           rti::geo::i_boundary<Ty>& pBoundary,
+           rti::ray::i_source& pSource,
+           size_t pNumRays) :
+      mFactory(pFactory),
       mBoundary(pBoundary),
-      mSource(pSource) {
-      assert (pGeo.get_rtc_device() == pBoundary.get_rtc_device() &&
-        "the geometry and the boundary need to refer to the same Embree (rtc) device");
-      assert(rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
+      mSource(pSource),
+      mNumRays(pNumRays) {
+      assert (mFactory.get_geometry().get_rtc_device() == pBoundary.get_rtc_device() &&
+              "the geometry and the boundary need to refer to the same Embree (rtc) device");
+      assert(rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
              "Error: Embree filter functions are not supported by your Embree instance.");
-      std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
+      std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
       std::cerr << "tnear set to a constant! FIX" << std::endl;
     }
+
+    // tracer(rti::geo::i_geometry<Ty>& pGeo,
+    //        rti::geo::i_boundary<Ty>& pBoundary,
+    //        rti::ray::i_source& pSource,
+    //        size_t pNumRays) :
+    //   mGeo(pGeo),
+    //   mBoundary(pBoundary),
+    //   mSource(pSource),
+    //   mNumRays(pNumRays) {
+    //   assert (pGeo.get_rtc_device() == pBoundary.get_rtc_device() &&
+    //     "the geometry and the boundary need to refer to the same Embree (rtc) device");
+    //   assert(rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
+    //          "Error: Embree filter functions are not supported by your Embree instance.");
+    //   std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
+    //   std::cerr << "tnear set to a constant! FIX" << std::endl;
+    // }
 
     rti::trace::result<Ty> run() {
       // Prepare a data structure for the result.
       auto result = rti::trace::result<Ty> {};
-      result.inputFilePath = mGeo.get_input_file_path();
-      result.geometryClassName = boost::core::demangle(typeid(mGeo).name());
+      auto& geo = mFactory.get_geometry();
+      result.inputFilePath = geo.get_input_file_path();
+      result.geometryClassName = boost::core::demangle(typeid(geo).name());
 
       // Prepare Embree
-      auto device = mGeo.get_rtc_device();
+      auto device = geo.get_rtc_device();
       auto scene = rtcNewScene(device);
 
       //std::cerr << "rtc get scene flags == " << rtcGetSceneFlags(scene) << std::endl;
       // scene flags
-      //rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
-      rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
+      // this flag needs to be set even if one uses the registered functions for each geometry
+      rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
+      //rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
       //std::cerr << "rtc get scene flags == " << rtcGetSceneFlags(scene) << std::endl;
 
       // Selecting higher build quality results in better rendering performance but slower
       // scene commit times. The default build quality for a scene is RTC_BUILD_QUALITY_MEDIUM.
       auto bbquality = RTC_BUILD_QUALITY_HIGH;
       rtcSetSceneBuildQuality(scene, bbquality);
-      auto geometry = mGeo.get_rtc_geometry();
+      auto geometry = geo.get_rtc_geometry();
       // rtcCommitGeometry(geometry); // Removed; should be done in the implementations of i_geometry
       auto boundary = mBoundary.get_rtc_geometry();
 
@@ -69,7 +90,7 @@ namespace rti { namespace trace {
       auto boundaryID = rtcAttachGeometry(scene, boundary);
       auto geometryID = rtcAttachGeometry(scene, geometry);
 
-      rti::trace::triangle_context<Ty>::register_intersect_filter_funs(mGeo, mBoundary);
+      rti::trace::triangle_context<Ty>::register_intersect_filter_funs(geo, mBoundary);
       assert(rtcGetDeviceError(device) == RTC_ERROR_NONE);
 
       // Use openMP for parallelization
@@ -81,9 +102,8 @@ namespace rti { namespace trace {
 
       // *Ray queries*
       //size_t nrexp = 27;
-      auto nrexp = 24; // int
-      auto numRays = std::pow(2.0, nrexp); // returns a double
-      result.numRays = numRays; // Save the number of rays also to the test result
+      //auto nrexp = 24; // int
+      result.numRays = mNumRays; // Save the number of rays also to the test result
 
       //rti::reflection::specular reflectionModel;
       //rti::reflection::diffuse reflectionModel(0.015625);
@@ -93,7 +113,7 @@ namespace rti { namespace trace {
       auto geohitc = 0ull; // unsigned long long int
       auto nongeohitc = 0ull;
       //auto hitCounter = rti::trace::counter {mGeo.get_num_primitives()};
-      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<Ty> {mGeo.get_num_primitives()};
+      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<Ty> {geo.get_num_primitives()};
 
       // TODO: in order to make this reduction independent of the concrete type one could
       // use an abstract factory.
@@ -135,11 +155,16 @@ namespace rti { namespace trace {
 
         // We will attach our data to the memory immediately following the context as described
         // in https://www.embree.org/api.html#rtcinitintersectcontext .
-        auto rtiContext = rti::trace::triangle_context<Ty> {geometryID, mGeo, reflectionModel,
-                                                               hitAccumulator, boundaryID, mBoundary,
-                                                               boundaryReflection, *rng, *rngSeed2};
+        // auto rtiContext = rti::trace::triangle_context<Ty> {geometryID, geo, reflectionModel,
+        //                                                        hitAccumulator, boundaryID, mBoundary,
+        //                                                        boundaryReflection, *rng, *rngSeed2};
+        auto rtiContext = mFactory.get_new_context(geometryID, geo, reflectionModel,
+                                                   hitAccumulator, boundaryID, mBoundary,
+                                                   boundaryReflection, *rng, *rngSeed2);
+
+
         // Initialize (also takes care for the initialization of the Embree context)
-        rtiContext.init();
+        rtiContext->init();
 
         std::cerr << "Thread number " << omp_get_thread_num() << std::endl;
 
@@ -153,7 +178,7 @@ namespace rti { namespace trace {
         // rtcContext.filter = &rti::trace::context<Ty>::filter_fun;
 
         #pragma omp for
-        for (size_t idx = 0; idx < (unsigned long long int) numRays; ++idx) {
+        for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
 
           // Note: Embrees backface culling does not solve our problem of intersections
           // when starting a new ray very close to or a tiny bit below the surface.
@@ -164,7 +189,7 @@ namespace rti { namespace trace {
           rayhit.ray.tnear = 1e-4;
           rayhit.ray.time = 0;
           // prepare our custom ray tracing context
-          rtiContext.rayWeight = rtiContext.INITIAL_RAY_WEIGHT;
+          rtiContext->init_ray_weight();
 
           RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1);
@@ -182,21 +207,21 @@ namespace rti { namespace trace {
 
             // rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-            // rtiContext.geoFirstHit = true;
-            // rtiContext.boundFirstHit = true;
+            // rtiContext->geoFirstHit = true;
+            // rtiContext->boundFirstHit = true;
 
             // // performing ray queries in a scene is thread-safe
             // rtcIntersect1(scene, &rtcContext, &rayhit);
-            // rtiContext.post_process_intersect(rayhit);
+            // rtiContext->post_process_intersect(rayhit);
 
             rayhit.ray.tfar = std::numeric_limits<Ty>::max();
 
             // Runn the intersection
-            rtiContext.intersect1(scene, rayhit);
+            rtiContext->intersect1(scene, rayhit);
 
             //std::cout << "AFTER INTERSECT" << std::endl;
 
-            RAYLOG(rayhit, rtiContext.tfar);
+            RAYLOG(rayhit, rtiContext->tfar);
 
             // // TODO: is that correct? What if we hit surface elements first and only then the invalid area?
             // // Can that happen?
@@ -208,10 +233,10 @@ namespace rti { namespace trace {
 
             // else
             // A hit
-            reflect = rtiContext.reflect;
-            auto hitpoint = rti::util::triple<float> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext.tfar,
-                                                      rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext.tfar,
-                                                      rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext.tfar};
+            reflect = rtiContext->reflect;
+            auto hitpoint = rti::util::triple<float> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
+                                                      rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
+                                                      rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
             RLOG_DEBUG
               << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
               << " reflect == " << (reflect ? "true" : "false")  << std::endl;
@@ -220,12 +245,12 @@ namespace rti { namespace trace {
 
             // the following data is actually only used if a reflection happens
             // if a new ray is started from the source, these data values will be overwritten
-            rayhit.ray.org_x = rtiContext.rayout[0][0];
-            rayhit.ray.org_y = rtiContext.rayout[0][1];
-            rayhit.ray.org_z = rtiContext.rayout[0][2];
-            rayhit.ray.dir_x = rtiContext.rayout[1][0];
-            rayhit.ray.dir_y = rtiContext.rayout[1][1];
-            rayhit.ray.dir_z = rtiContext.rayout[1][2];
+            rayhit.ray.org_x = rtiContext->rayout[0][0];
+            rayhit.ray.org_y = rtiContext->rayout[0][1];
+            rayhit.ray.org_z = rtiContext->rayout[0][2];
+            rayhit.ray.dir_x = rtiContext->rayout[1][0];
+            rayhit.ray.dir_y = rtiContext->rayout[1][1];
+            rayhit.ray.dir_z = rtiContext->rayout[1][2];
             // if (rayhit.hit.geomID == boundaryID) {
             //   // Ray hit the boundary
             //   reflect = boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary);
@@ -295,8 +320,9 @@ namespace rti { namespace trace {
       return result;
     }
   private:
-    rti::geo::i_geometry<Ty>& mGeo;
+    rti::geo::i_factory<Ty>& mFactory;
     rti::geo::i_boundary<Ty>& mBoundary;
     rti::ray::i_source& mSource;
+    size_t mNumRays;
   };
 }} // namespace

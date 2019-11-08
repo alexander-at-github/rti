@@ -176,7 +176,7 @@ namespace rti { namespace util { namespace clo {
         tmpS.erase(tmpS.end() - _or.size(), tmpS.end());
         msg << tmpS << std::endl;
         // Add the help message as specified by the user of this class
-        msg << spaces << bo.mHelpStr << std::endl;
+        msg << spaces << "   " << bo.mHelpStr << std::endl; // add two spaces of indent of helper string
       }
       for (auto& som : mStrOpts) {
         auto& so = som.second;
@@ -191,7 +191,7 @@ namespace rti { namespace util { namespace clo {
         // write to the message buffer
         msg << tmpS << std::endl;
         // Add the help message as specified by the user of this class
-        msg << spaces << so.mHelpStr << std::endl;
+        msg << spaces << "   " << so.mHelpStr << std::endl;
       }
       return msg.str();
     }

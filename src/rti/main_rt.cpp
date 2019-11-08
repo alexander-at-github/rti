@@ -17,6 +17,7 @@
 #include "rti/geo/point_cloud_disc_geometry.hpp"
 #include "rti/geo/point_cloud_sphere_geometry.hpp"
 #include "rti/geo/sphere_geometry_from_gmsh.hpp"
+#include "rti/geo/triangle_factory.hpp"
 #include "rti/geo/triangle_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_geometry.hpp"
 #include "rti/io/vtp_point_cloud_reader.hpp"
@@ -50,6 +51,12 @@ namespace rti {
       // We might want the output file to be mandatory in the future
       optMan->addCmlParam(rti::util::clo::string_option
         {"OUTPUT_FILE", {"--outfile", "-o"}, "specifies the path of the output file", false});
+      optMan->addCmlParam(rti::util::clo::string_option
+        {"NUM_RAYS", {"--number-of-rays", "--n-rays", "-r"}, "specifies the number of rays to use", false});
+      optMan->addCmlParam(rti::util::clo::bool_option
+        {"TRIANGLES", {"--triangles"}, "sets triangles as surface primitives"});
+      optMan->addCmlParam(rti::util::clo::bool_option
+        {"DISCS", {"--discs"}, "sets discs as surface primitives"});
       bool succ = optMan->parse_args(argc, argv);
       if (!succ) {
         std::cout << optMan->get_usage_msg();
@@ -134,15 +141,24 @@ int main(int argc, char* argv[]) {
   //rti::geo::sphere_geometry_from_gmsh geometry(device, gmshReader);
   //rti::ray::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
 
+
   //auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
   //auto pntCldReader = rti::io::christoph::vtu_point_cloud_reader<numeric_type> {infilename};
   //auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader, 0.01};
   //auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 1e-2};
   auto triangleReader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-  auto geometry = rti::geo::triangle_geometry<numeric_type> {device, triangleReader, 0.8};
+  //auto geometry = rti::geo::triangle_geometry<numeric_type> {device, triangleReader, 0.8};
+
+  std::unique_ptr<rti::geo::i_factory<numeric_type> > geoFactory;
+  auto stickingC = 0.8f;
+  geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
+  // if (optMan->get_bool_option_value("TRIANGLES")) {
+  //   geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
+  // }
+
 
   // Compute bounding box
-  auto bdBox = geometry.get_bounding_box();
+  auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z achsis.
   auto epsilon = 0.1; //0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
@@ -150,6 +166,7 @@ int main(int argc, char* argv[]) {
   } else {
     bdBox[1][2] += epsilon;
   }
+  std::cerr << "main bdBox: " << bdBox[0][0] << " " << bdBox[0][1] << " " << bdBox[0][2] << " " << bdBox[1][0] << " " << bdBox[1][1] << " " << bdBox[1][2] << " " << std::endl;
   // for (auto const& bb : bdBox)
   //   for (auto const& cc : bb)
   //     std::cout << cc << " ";
@@ -184,13 +201,20 @@ int main(int argc, char* argv[]) {
   //                                                      zmax,
   //                                                      0.5};
 
+  auto defaultNumberRays = 1024 * 1024; // magic number
+
   // Cosine direction in the opposite direction of the z-axis
   auto direction = rti::ray::cosine_direction<numeric_type> {
     {rti::util::triple<numeric_type> {0.f, 0.f, -1.f},
      rti::util::triple<numeric_type> {0.f, 1.f,  0.f},
      rti::util::triple<numeric_type> {1.f, 0.f,  0.f}}};
   auto source = rti::ray::source<numeric_type> {origin, direction};
-  auto tracer = rti::trace::tracer<numeric_type> {geometry, boundary, source};
+
+  auto numraysstr = optMan->get_string_option_value("NUM_RAYS");
+  auto numrays = std::stoull(numraysstr);
+  numrays = numrays < 0 ? 0 : numrays;
+
+  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays};
   auto result = tracer.run();
   std::cout << result; // << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
@@ -205,7 +229,8 @@ int main(int argc, char* argv[]) {
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl;
-    rti::io::vtp_writer<numeric_type>::write(geometry, *result.hitAccumulator, outfilename);
+    //rti::io::vtp_writer<numeric_type>::write(geoFactory->get_geometry(), *result.hitAccumulator, outfilename);
+    geoFactory->write_to_file(*result.hitAccumulator, outfilename);
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 
