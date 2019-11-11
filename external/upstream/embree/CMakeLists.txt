@@ -1,9 +1,12 @@
 externalproject_add(embree-external
   GIT_REPOSITORY
     https://github.com/embree/embree.git
-  # Hash of tags/v3.5.2
   GIT_TAG
-    e766297adcdaf8e5d8dd996c15aed753255230fd
+    ## Hash of tags/v3.5.2
+    #e766297adcdaf8e5d8dd996c15aed753255230fd
+    #
+    # Hash of tags/v3.6.1
+    d17aec1491a6c664f4da2f0b8ba03c171cbf36a1
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
