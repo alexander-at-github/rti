@@ -20,6 +20,7 @@ namespace rti { namespace geo {
     std::string prim_to_string(unsigned int pPrimID) const override final {
       auto strs = std::stringstream {};
       assert(false && "Not implemented");
+      return "prim_to_string() not implemented";
     }
 
     rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const override final {

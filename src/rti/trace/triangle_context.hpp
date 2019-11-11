@@ -88,8 +88,8 @@ namespace rti { namespace trace {
       mRng(pRng),
       mRngState(pRngState) {
       //
-      std::cerr << "rti::trace::triangle_context::triangle_context()" << std::endl;
-      std::cerr << "Warning: This class uses a dummy epsilon value" << std::endl;
+      //std::cerr << "rti::trace::triangle_context::triangle_context()" << std::endl;
+      //std::cerr << "Warning: This class uses a dummy epsilon value" << std::endl;
       //
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
@@ -120,11 +120,11 @@ namespace rti { namespace trace {
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
 
-      std::cerr << "filter_fun_geometry(): the address of the rtc context: " << cc << std::endl;
+      //std::cerr << "filter_fun_geometry(): the address of the rtc context: " << cc << std::endl;
       auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
       auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
       auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<Ty>*> (rtiabscontextptr);
-      std::cerr << "filter_fun_geometry(): address of the rti context: " << rticontextptr << std::endl;
+      //std::cerr << "filter_fun_geometry(): address of the rti context: " << rticontextptr << std::endl;
 
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
@@ -164,11 +164,11 @@ namespace rti { namespace trace {
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
 
-      std::cerr << "filter_fun_boundary(): the address of the rtc context: " << cc << std::endl;
+      //std::cerr << "filter_fun_boundary(): the address of the rtc context: " << cc << std::endl;
       auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
       auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
       auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<Ty>*> (rtiabscontextptr);
-      std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
+      //std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
 
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
@@ -269,9 +269,9 @@ namespace rti { namespace trace {
       // This call uses our intersection functions which must have been registered with
       // register_intersect_filter_funs() .
 
-      std::cerr << "intersect1(): the address of the rtc context: "
-                << &this->mContextCWrapper.mRtcContext << std::endl;
-      std::cerr << "intersect1(): address of the rti context: " << this << std::endl;
+      //std::cerr << "intersect1(): the address of the rtc context: "
+      //          << &this->mContextCWrapper.mRtcContext << std::endl;
+      //std::cerr << "intersect1(): address of the rti context: " << this << std::endl;
 
       rtcIntersect1(pScene, &this->mContextCWrapper.mRtcContext, &pRayHit);
 

@@ -16,16 +16,7 @@ namespace rti { namespace geo {
     boundary_x_y (RTCDevice& pDevice, rti::util::pair<rti::util::triple<Ty> >& pBdBox) :
       mDevice(pDevice),
       mBdBox(pBdBox) {
-      // For the time beeing the following assumption is not needed.
-      // assert(mBdBox[0][0] <= mBdBox[1][0] &&
-      //        mBdBox[0][1] <= mBdBox[1][1] &&
-      //        mBdBox[0][2] <= mBdBox[1][2] &&
-      //        "ordering of coordinates in bounding box");
-      std::cerr << "constructor of boundary_x_y<Ty> before init_this()" << std::endl;
-      std::cerr << "boundary_x_y mBdBox: " << mBdBox[0][0] << " " << mBdBox[0][1] << " " << mBdBox[0][2] << " " << mBdBox[1][0] << " " << mBdBox[1][1] << " " << mBdBox[1][2] << " " << std::endl;
-
       init_this();
-      std::cerr << "constructor of boundary_x_y<Ty> after init_this()" << std::endl;
     }
 
     // boundary_x_y (const boundary_x_y<Ty> & rhs) = delete;
@@ -65,6 +56,7 @@ namespace rti { namespace geo {
 
     rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final {
       assert(false && "Not implemented");
+      return {(Ty) 0, (Ty) 0, (Ty) 0};
     }
 
     std::vector<rti::util::triple<Ty> > get_vertices() const override final {

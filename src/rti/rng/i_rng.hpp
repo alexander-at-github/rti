@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 namespace rti { namespace rng {
   // Realization of the i_rng interface is intended to be a random number
   // generator together with the definition of a struct which holds all the

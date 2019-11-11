@@ -14,6 +14,7 @@
 #include "rti/geo/boundary_x_y.hpp"
 #include "rti/geo/disc_geometry_from_gmsh.hpp"
 #include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
+#include "rti/geo/point_cloud_disc_factory.hpp"
 #include "rti/geo/point_cloud_disc_geometry.hpp"
 #include "rti/geo/point_cloud_sphere_geometry.hpp"
 #include "rti/geo/sphere_geometry_from_gmsh.hpp"
@@ -146,15 +147,27 @@ int main(int argc, char* argv[]) {
   //auto pntCldReader = rti::io::christoph::vtu_point_cloud_reader<numeric_type> {infilename};
   //auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader, 0.01};
   //auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 1e-2};
-  auto triangleReader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
+  // auto triangleReader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
   //auto geometry = rti::geo::triangle_geometry<numeric_type> {device, triangleReader, 0.8};
 
-  std::unique_ptr<rti::geo::i_factory<numeric_type> > geoFactory;
   auto stickingC = 0.8f;
-  geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
-  // if (optMan->get_bool_option_value("TRIANGLES")) {
-  //   geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
-  // }
+  // create variable
+  auto geoFactory = std::unique_ptr<rti::geo::i_factory<numeric_type> > (nullptr);
+  //geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
+  if (optMan->get_bool_option_value("TRIANGLES")) {
+    auto reader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
+    geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, reader, stickingC);
+  } else { // Default
+  //} else if (optMan->get_bool_option_value("DISCS")) {
+    if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtp") {
+      auto reader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
+      geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type> > (device, reader, stickingC);
+    } else {
+      //} else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
+      auto reader = rti::io::christoph::vtu_point_cloud_reader<numeric_type> {infilename};
+      geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type> > (device, reader, stickingC);
+    }
+  }
 
 
   // Compute bounding box
@@ -216,7 +229,7 @@ int main(int argc, char* argv[]) {
 
   auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays};
   auto result = tracer.run();
-  std::cout << result; // << std::endl;
+  std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
 
   if ( ! outfilename.empty()) {
