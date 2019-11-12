@@ -34,7 +34,10 @@ namespace rti { namespace geo {
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState) override final {
       auto cntxt = std::make_unique<rti::trace::point_cloud_context<Ty> >
-        (pGeometryID, pGeometry, pReflectionModel,
+        (pGeometryID,
+         // the cast characterizes a precondition to this function
+         *dynamic_cast<rti::geo::absc_point_cloud_geometry<Ty>*>(&pGeometry),
+         pReflectionModel,
          pHitAccumulator, pBoundaryID, pBoundary,
          pBoundaryReflectionModel, pRng, pRngState);
       return cntxt;

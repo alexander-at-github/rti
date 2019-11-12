@@ -58,6 +58,8 @@ namespace rti {
         {"TRIANGLES", {"--triangles"}, "sets triangles as surface primitives"});
       optMan->addCmlParam(rti::util::clo::bool_option
         {"DISCS", {"--discs"}, "sets discs as surface primitives"});
+      optMan->addCmlParam(rti::util::clo::string_option
+        {"STICKING_COEFFICIENT", {"--sticking-coefficient", "--sticking-c", "--sticking", "-s"}, "specifies the sticking coefficient of the surface", false});
       bool succ = optMan->parse_args(argc, argv);
       if (!succ) {
         std::cout << optMan->get_usage_msg();
@@ -71,7 +73,7 @@ namespace rti {
           omp_set_num_threads(maxThreads);
         }
       }
-      std::cout << "Using " << omp_get_max_threads() << " threads" << std::endl;
+      std::cout << "Maximum number of threads used == " << omp_get_max_threads() << std::endl;
 
       // Enable Flush-to-Zero and Denormals-are-Zero for the MXSCR status and
       // control registers for performance reasons.
@@ -117,7 +119,6 @@ int main(int argc, char* argv[]) {
   using numeric_type = float;
 
   auto optMan = rti::main_rt::init(argc, argv);
-  //rti::io::gmsh_reader& gmshReader = rti::io::gmsh_reader::getInstance();
   auto infilename = optMan->get_string_option_value("INPUT_FILE");
   auto outfilename = optMan->get_string_option_value("OUTPUT_FILE");
 
@@ -128,29 +129,16 @@ int main(int argc, char* argv[]) {
   assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) != 0 &&
          "Error: backface culling is not enabled");
 
-  // rti::ray::source<numeric_type> source(
-  //   std::make_unique<rti::ray::disc_origin_x<numeric_type> >(0, 0, 0, 0.5),
-  //   std::make_unique<rti::ray::cosine_direction<numeric_type> >(
-  //     rti::util::triple<rti::util::triple<numeric_type> > {
-  //       {1.f, 0.f, 0.f},
-  //       {0.f, 1.f, 0.f},
-  //       {0.f, 0.f, 1.f}}));
-
-  //rti::geo::triangle_geometry_from_gmsh geometry(device, gmshReader);
-  //rti::geo::oriented_disc_geometry_from_gmsh orntdDiscGeo(device, gmshReader);
-  //rti::geo::disc_geometry_from_gmsh discGeo(device, gmshReader);
-  //rti::geo::sphere_geometry_from_gmsh geometry(device, gmshReader);
-  //rti::ray::disc_origin_x<numeric_type> origin(0, 0, 0, 0.5);
-
-
-  //auto pntCldReader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
-  //auto pntCldReader = rti::io::christoph::vtu_point_cloud_reader<numeric_type> {infilename};
-  //auto geometry = rti::geo::point_cloud_sphere_geometry<numeric_type> {device, pntCldReader, 0.01};
-  //auto geometry = rti::geo::point_cloud_disc_geometry<numeric_type> {device, pntCldReader, 1e-2};
-  // auto triangleReader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-  //auto geometry = rti::geo::triangle_geometry<numeric_type> {device, triangleReader, 0.8};
-
-  auto stickingC = 0.8f;
+  auto stickingCDefault = 0.8f; // float // default value
+  auto stickingC = stickingCDefault;
+  try {
+    stickingC = static_cast<float> (std::stod(optMan->get_string_option_value("STICKING_COEFFICIENT")));
+  } catch (...) {}
+  if ( ! (0 < stickingC && stickingC <= 1)) {
+    std::cout << "Warning: sticking coefficient has been reset to sane value." << std::endl;
+    stickingC = 1.0f; // reset to sane value
+  }
+  std::cout << "sticking coefficient == " << stickingC << std::endl;
   // create variable
   auto geoFactory = std::unique_ptr<rti::geo::i_factory<numeric_type> > (nullptr);
   //geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
@@ -173,7 +161,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-
   // Compute bounding box
   auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z achsis.
@@ -183,11 +170,11 @@ int main(int argc, char* argv[]) {
   } else {
     bdBox[1][2] += epsilon;
   }
-  std::cerr << "main bdBox: " << bdBox[0][0] << " " << bdBox[0][1] << " " << bdBox[0][2] << " " << bdBox[1][0] << " " << bdBox[1][1] << " " << bdBox[1][2] << " " << std::endl;
+  // std::cerr << "[main] bdBox: ";
   // for (auto const& bb : bdBox)
   //   for (auto const& cc : bb)
-  //     std::cout << cc << " ";
-  // std::cout << std::endl;
+  //     std::cerr << cc << " ";
+  // std::cerr << std::endl;
 
   // Prepare boundary
   auto bdBoxAltered = bdBox;
@@ -207,18 +194,10 @@ int main(int argc, char* argv[]) {
   // verification instances.)
   //
   auto origin = rti::ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
-  //
   // auto origin = rti::ray::disc_origin_z<numeric_type> {(originC1[0] + originC2[0])/2,
   //                                                      (originC1[1] + originC2[1])/2,
   //                                                      zmax,
   //                                                      (originC2[0] - originC1[0])/2};
-  //
-  // auto origin = rti::ray::disc_origin_z<numeric_type> {(originC1[0] + originC2[0])/2,
-  //                                                      (originC1[1] + originC2[1])/2,
-  //                                                      zmax,
-  //                                                      0.5};
-
-  auto defaultNumberRays = 1024 * 1024; // magic number
 
   // Cosine direction in the opposite direction of the z-axis
   auto direction = rti::ray::cosine_direction<numeric_type> {
@@ -228,8 +207,11 @@ int main(int argc, char* argv[]) {
   auto source = rti::ray::source<numeric_type> {origin, direction};
 
   auto numraysstr = optMan->get_string_option_value("NUM_RAYS");
-  auto numrays = std::stoull(numraysstr);
-  numrays = numrays < 0 ? 0 : numrays;
+  auto numrays = 128 * 1024ull; // default value // magic number
+  try {
+    numrays = std::stoull(numraysstr);
+  } catch (...) {}
+
 
   auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays};
   auto result = tracer.run();
@@ -246,7 +228,6 @@ int main(int argc, char* argv[]) {
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl;
-    //rti::io::vtp_writer<numeric_type>::write(geoFactory->get_geometry(), *result.hitAccumulator, outfilename);
     geoFactory->write_to_file(*result.hitAccumulator, outfilename);
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);

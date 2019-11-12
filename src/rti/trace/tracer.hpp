@@ -40,25 +40,9 @@ namespace rti { namespace trace {
               "the geometry and the boundary need to refer to the same Embree (rtc) device");
       assert(rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
              "Error: Embree filter functions are not supported by your Embree instance.");
-      std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
-      std::cerr << "tnear set to a constant! FIX" << std::endl;
+      // std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
+      std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
     }
-
-    // tracer(rti::geo::i_geometry<Ty>& pGeo,
-    //        rti::geo::i_boundary<Ty>& pBoundary,
-    //        rti::ray::i_source& pSource,
-    //        size_t pNumRays) :
-    //   mGeo(pGeo),
-    //   mBoundary(pBoundary),
-    //   mSource(pSource),
-    //   mNumRays(pNumRays) {
-    //   assert (pGeo.get_rtc_device() == pBoundary.get_rtc_device() &&
-    //     "the geometry and the boundary need to refer to the same Embree (rtc) device");
-    //   assert(rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
-    //          "Error: Embree filter functions are not supported by your Embree instance.");
-    //   std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(pGeo.get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
-    //   std::cerr << "tnear set to a constant! FIX" << std::endl;
-    // }
 
     rti::trace::result<Ty> run() {
       // Prepare a data structure for the result.
@@ -71,11 +55,10 @@ namespace rti { namespace trace {
       auto device = geo.get_rtc_device();
       auto scene = rtcNewScene(device);
 
-      //std::cerr << "rtc get scene flags == " << rtcGetSceneFlags(scene) << std::endl;
       // scene flags
-      // this flag needs to be set even if one uses the registered functions for each geometry
-      rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
-      //rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
+      // Does one need to set this flag if one uses the registered call-back functions only?
+      //rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
+      rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
       //std::cerr << "rtc get scene flags == " << rtcGetSceneFlags(scene) << std::endl;
 
       // Selecting higher build quality results in better rendering performance but slower
@@ -90,9 +73,8 @@ namespace rti { namespace trace {
       auto boundaryID = rtcAttachGeometry(scene, boundary);
       auto geometryID = rtcAttachGeometry(scene, geometry);
 
-      // rti::trace::triangle_context<Ty>::register_intersect_filter_funs(geo, mBoundary);
       mFactory.register_intersect_filter_funs(mBoundary);
-      assert(rtcGetDeviceError(device) == RTC_ERROR_NONE);
+      assert(rtcGetDeviceError(device) == RTC_ERROR_NONE && "Error");
 
       // Use openMP for parallelization
       #pragma omp parallel
@@ -101,13 +83,9 @@ namespace rti { namespace trace {
         // TODO: move to the other parallel region at the bottom
       }
 
-      // *Ray queries*
-      //size_t nrexp = 27;
-      //auto nrexp = 24; // int
+      // Ray queries
       result.numRays = mNumRays; // Save the number of rays also to the test result
 
-      //rti::reflection::specular reflectionModel;
-      //rti::reflection::diffuse reflectionModel(0.015625);
       auto reflectionModel = rti::reflection::diffuse<Ty> {};
       auto boundaryReflection = rti::reflection::specular<Ty> {};
 
@@ -116,7 +94,7 @@ namespace rti { namespace trace {
       //auto hitCounter = rti::trace::counter {mGeo.get_num_primitives()};
       auto hitAccumulator = rti::trace::hit_accumulator_with_checks<Ty> {geo.get_num_primitives()};
 
-      // TODO: in order to make this reduction independent of the concrete type one could
+      // in order to make this reduction independent of the concrete type one could
       // use an abstract factory.
       #pragma omp declare \
         reduction(hit_accumulator_combine : \
@@ -124,8 +102,6 @@ namespace rti { namespace trace {
                   omp_out = rti::trace::hit_accumulator_with_checks<Ty>(omp_out, omp_in)) \
         initializer(omp_priv = rti::trace::hit_accumulator_with_checks<Ty>(omp_orig))
         //initializer(omp_priv = rti::trace::counter(omp_orig))
-
-      // omp_set_dynamic(false);
 
       // The random number generator itself is stateless (has no members which
       // are modified). Hence, it may be shared by threads.
@@ -156,27 +132,17 @@ namespace rti { namespace trace {
 
         // We will attach our data to the memory immediately following the context as described
         // in https://www.embree.org/api.html#rtcinitintersectcontext .
-        // auto rtiContext = rti::trace::triangle_context<Ty> {geometryID, geo, reflectionModel,
-        //                                                        hitAccumulator, boundaryID, mBoundary,
-        //                                                        boundaryReflection, *rng, *rngSeed2};
+        // Note: the memory layout only works with plain old data, that is, C-style structs.
+        // Otherwise the compiler might change the memory layout, e.g., with the vtable.
         auto rtiContext = mFactory.get_new_context(geometryID, geo, reflectionModel,
                                                    hitAccumulator, boundaryID, mBoundary,
                                                    boundaryReflection, *rng, *rngSeed2);
 
-
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext->init();
+        rayhit.ray.time = 0;
 
-        std::cerr << "Thread number " << omp_get_thread_num() << std::endl;
-
-
-        // std::cerr << "rtc get scene flags == " << rtcGetSceneFlags(scene) << std::endl;
-        // std::cerr << "RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION == "
-        // << RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION << std::endl;
-
-        // assert((rtcGetSceneFlags(scene) & RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION) != 0 &&
-        //        "Assumption: context filter-function is enabled");
-        // rtcContext.filter = &rti::trace::context<Ty>::filter_fun;
+        //std::cerr << "Thread number " << omp_get_thread_num() << std::endl;
 
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
@@ -188,7 +154,6 @@ namespace rti { namespace trace {
           // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
           // TODO: FIX: tnear set to a constant
           rayhit.ray.tnear = 1e-4;
-          rayhit.ray.time = 0;
           // prepare our custom ray tracing context
           rtiContext->init_ray_weight();
 
@@ -206,21 +171,10 @@ namespace rti { namespace trace {
               << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
               << ")" << std::endl;
 
-            // rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-            // rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-            // rtiContext->geoFirstHit = true;
-            // rtiContext->boundFirstHit = true;
-
-            // // performing ray queries in a scene is thread-safe
-            // rtcIntersect1(scene, &rtcContext, &rayhit);
-            // rtiContext->post_process_intersect(rayhit);
-
             rayhit.ray.tfar = std::numeric_limits<Ty>::max();
 
             // Runn the intersection
             rtiContext->intersect1(scene, rayhit);
-
-            //std::cout << "AFTER INTERSECT" << std::endl;
 
             RAYLOG(rayhit, rtiContext->tfar);
 
@@ -269,9 +223,6 @@ namespace rti { namespace trace {
       result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<Ty> >(hitAccumulator);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
-
-      // // Turn dynamic adjustment of number of threads on again
-      // omp_set_dynamic(true);
 
       // The geometry object will be destructed when the scene object is
       // destructed, because the geometry object is attached to the scene

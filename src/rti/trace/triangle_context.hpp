@@ -17,14 +17,15 @@ namespace rti { namespace trace {
   template<typename Ty> // intended to be a numeric type
   class triangle_context : public rti::trace::absc_context<Ty> {
   private:
+    // managment for ray weights
     static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
     // =================================================================
     // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
     // =================================================================
     static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.1f;
     static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
-    //
   private:
+    // geometry related data
     bool geoNotIntersected = true;
     Ty geoFirstHitTFar = 0; // the type will probably be float since Embree uses float for its RTCRay.tfar
     Ty geoTFarMax = 0;
@@ -34,14 +35,6 @@ namespace rti { namespace trace {
     Ty boundFirstHitTFar = 0;
     rti::util::pair<rti::util::triple<Ty> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // other data
-  public:
-    // float rayWeight = INITIAL_RAY_WEIGHT;
-    // bool reflect = false;
-    // rti::util::pair<rti::util::triple<Ty> >& rayout = geoRayout; // initialize to some value
-    // Ty tfar = 0; // initialize to some value
-    //
-    //
-    // Class members which will be used in a conventional way.
   private:
     unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
     rti::geo::triangle_geometry<Ty>& mGeometry;
@@ -54,10 +47,6 @@ namespace rti { namespace trace {
     rti::rng::i_rng& mRng;
     rti::rng::i_rng::i_state& mRngState;
 
-    // struct hit_t {
-    //   unsigned int geomID;
-    //   unsigned int primID;
-    // };
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
     // Initialize to some reasonable size. The vector may grow, if needed.
@@ -67,7 +56,7 @@ namespace rti { namespace trace {
     // Constructor
   public:
     triangle_context(unsigned int pGeometryID,
-            rti::geo::i_geometry<Ty>& pGeometry, // TODO: Why not use rti::geo::triangle_context<Ty>&
+            rti::geo::triangle_geometry<Ty>& pGeometry,
             rti::reflection::i_reflection_model<Ty>& pReflectionModel,
             rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
             unsigned int pBoundaryID,
@@ -78,8 +67,7 @@ namespace rti { namespace trace {
       // initialize members of virtual base class
       rti::trace::absc_context<Ty>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
       mGeometryID(pGeometryID),
-      // TODO: FIX the cast
-      mGeometry(*dynamic_cast<rti::geo::triangle_geometry<Ty>*>(&pGeometry)),
+      mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
       mHitAccumulator(pHitAccumulator),
       mBoundaryID(pBoundaryID),
@@ -87,10 +75,6 @@ namespace rti { namespace trace {
       mBoundaryReflectionModel(pBoundaryReflectionModel),
       mRng(pRng),
       mRngState(pRngState) {
-      //
-      //std::cerr << "rti::trace::triangle_context::triangle_context()" << std::endl;
-      //std::cerr << "Warning: This class uses a dummy epsilon value" << std::endl;
-      //
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
     }
@@ -105,7 +89,7 @@ namespace rti { namespace trace {
       RLOG_DEBUG << "register_intersect_filter_funs()" << std::endl;
       rtcSetGeometryIntersectFilterFunction(pPCGeo.get_rtc_geometry(), &filter_fun_geometry);
       rtcSetGeometryIntersectFilterFunction(pBoundary.get_rtc_geometry(), &filter_fun_boundary);
-      rtcCommitGeometry(pPCGeo.get_rtc_geometry()); // TODO: needed?
+      rtcCommitGeometry(pPCGeo.get_rtc_geometry());
       rtcCommitGeometry(pBoundary.get_rtc_geometry());
     }
 
@@ -219,7 +203,7 @@ namespace rti { namespace trace {
 
       if ( ( ! this->boundNotIntersected && this->geoNotIntersected) ||
            ( ! this->boundNotIntersected && this->boundFirstHitTFar < this->geoFirstHitTFar)) {
-        // Geometry not hit but boundary hit
+        // /the geometry has not been hit. Nevertheless, the boundary has been hit
         this->rayout = this->boundRayout;
         this->tfar = this->boundFirstHitTFar;
         return;
@@ -273,6 +257,7 @@ namespace rti { namespace trace {
       //          << &this->mContextCWrapper.mRtcContext << std::endl;
       //std::cerr << "intersect1(): address of the rti context: " << this << std::endl;
 
+      // performing ray queries in a scene is thread-safe
       rtcIntersect1(pScene, &this->mContextCWrapper.mRtcContext, &pRayHit);
 
       // post process
@@ -285,8 +270,6 @@ namespace rti { namespace trace {
       rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
       // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
       // this->mRtcContext.filter = nullptr;
-      // // std::cerr << "triangle_context.init(): RTC_MAX_INSTANCE_LEVEL_COUNT == "
-      // //           << RTC_MAX_INSTANCE_LEVEL_COUNT << " holds." << std::endl;
       // assert(RTC_MAX_INSTANCE_LEVEL_COUNT == 1 && "Assumption");
       // this->mRtcContext.instID[0] = RTC_INVALID_GEOMETRY_ID; // initialize to some value
     }

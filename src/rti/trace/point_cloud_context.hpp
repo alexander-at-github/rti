@@ -11,26 +11,21 @@
 #include "rti/trace/absc_context.hpp"
 #include "rti/trace/i_hit_accumulator.hpp"
 
+// This class needs to be used according to a protocol! See base class rti::trace::absc_context
 
 namespace rti { namespace trace {
   template<typename Ty> // intended to be a numeric type
   class point_cloud_context : public absc_context<Ty> {
   public:
+    // managment for ray weights
     static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
     // =================================================================
     // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
     // =================================================================
     static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.1f;
     static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
-    //
-    // additional data
-    // Here we violate the naming convention (to name a member variable with a string
-    // starting with the character 'm') on purpose. Rationale: The context provides
-    // (contextual) local data to the outside.
-    // TODO: change the naming?
-    //
-    // geometry related data
   private:
+    // geometry related data
     bool geoNotIntersected = true;
     Ty geoFirstHitTFar = 0; // the type will probably be float since Embree uses float for its RTCRay.tfar
     Ty geoTFarMax = 0;
@@ -40,13 +35,6 @@ namespace rti { namespace trace {
     Ty boundFirstHitTFar = 0;
     rti::util::pair<rti::util::triple<Ty> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // other data
-  public:
-    // float rayWeight = INITIAL_RAY_WEIGHT;
-    // bool reflect = false;
-    // rti::util::pair<rti::util::triple<Ty> >& rayout = geoRayout; // initialize to some value
-    // Ty tfar = 0; // initialize to some value
-    //
-    // Class members which will be used in a conventional way.
   private:
     unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID;
     rti::geo::absc_point_cloud_geometry<Ty>& mGeometry;
@@ -59,10 +47,6 @@ namespace rti { namespace trace {
     rti::rng::i_rng& mRng;
     rti::rng::i_rng::i_state& mRngState;
 
-    // struct hit_t {
-    //   unsigned int geomID;
-    //   unsigned int primID;
-    // };
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
     // Initialize to some reasonable size. The vector may grow, if needed.
@@ -73,7 +57,7 @@ namespace rti { namespace trace {
     // Constructor
   public:
     point_cloud_context(unsigned int pGeometryID,
-            rti::geo::i_geometry<Ty>& pGeometry,
+            rti::geo::absc_point_cloud_geometry<Ty>& pGeometry,
             rti::reflection::i_reflection_model<Ty>& pReflectionModel,
             rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
             unsigned int pBoundaryID,
@@ -83,8 +67,7 @@ namespace rti { namespace trace {
             rti::rng::i_rng::i_state& pRngState) :
       rti::trace::absc_context<Ty>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
       mGeometryID(pGeometryID),
-      // TODO: FIX the cast
-      mGeometry(*dynamic_cast<rti::geo::absc_point_cloud_geometry<Ty>*>(&pGeometry)),
+      mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
       mHitAccumulator(pHitAccumulator),
       mBoundaryID(pBoundaryID),
@@ -92,10 +75,6 @@ namespace rti { namespace trace {
       mBoundaryReflectionModel(pBoundaryReflectionModel),
       mRng(pRng),
       mRngState(pRngState) {
-      //
-      // std::cerr << "rti::trace::point_cloud_context::point_cloud_context()" << std::endl;
-      // std::cerr << "Warning: This class uses a dummy epsilon value" << std::endl;
-      //
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
     }
@@ -110,7 +89,7 @@ namespace rti { namespace trace {
       RLOG_DEBUG << "register_intersect_filter_funs()" << std::endl;
       rtcSetGeometryIntersectFilterFunction(pPCGeo.get_rtc_geometry(), &filter_fun_geometry);
       rtcSetGeometryIntersectFilterFunction(pBoundary.get_rtc_geometry(), &filter_fun_boundary);
-      rtcCommitGeometry(pPCGeo.get_rtc_geometry()); // TODO: needed?
+      rtcCommitGeometry(pPCGeo.get_rtc_geometry());
       rtcCommitGeometry(pBoundary.get_rtc_geometry());
     }
 
@@ -185,7 +164,7 @@ namespace rti { namespace trace {
         // set tfar
         rticontextptr->geoFirstHitTFar = rayptr->tfar;
         // determine epsilon:
-        // Set epsilon equal to three times the radius of the first disc which is hit by the ray.
+        // Set epsilon equal to two times the radius of the first disc which is hit by the ray.
         // the fourth element of the primitive is the radius
         auto epsilon = 2 * geometry.get_prim(hitptr->primID)[3];
         rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
@@ -210,7 +189,7 @@ namespace rti { namespace trace {
       auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
       auto rticontextptr = reinterpret_cast<rti::trace::point_cloud_context<Ty>*> (rtiabscontextptr);
       // std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
-      
+
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
       assert(args->N == 1 && "Precondition: for the cast");
@@ -239,6 +218,7 @@ namespace rti { namespace trace {
         rticontextptr->boundNotIntersected = false;
       }
 
+      // *Is the statement in the following paragraph true?*
       // //
       // // It may happen that a disc protrudes the boundary. If one would stop searching for intersections
       // // at any boundary hit (that is, at this location in the code), then one could miss discs (the ones
@@ -248,7 +228,7 @@ namespace rti { namespace trace {
       // // boundary). Hence, we always want to continue tracing after a boundary hit.
       // validptr[0] = 0; // continue this ray
 
-      /* old code */
+      /* old code ? */
       if ( (! rticontextptr->geoNotIntersected) &&
           rayptr->tfar < rticontextptr->geoTFarMax) {
         args->valid[0] = 0; // continue this ray
@@ -267,10 +247,6 @@ namespace rti { namespace trace {
         << std::endl;
       RLOG_DEBUG << "this->rayWeight == " << this->rayWeight << std::endl;
 
-      // // // assert((pRayHit.hit.geomID != RTC_INVALID_GEOMETRY_ID) || this->boundNotIntersected &&
-      // // //        "Violation of Assumption: \
-      // // //         If the Embree intersectin test returns RTC_INVALID_GEOMETRY, then no element of the \
-      // // //         bounding box (boundary) has been hit and this->boundNotIntersected still equals true.");
       // // // // Note that (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID && ! this->mGeoHitPrimIDs.empty())
       // // // // may hold since we do not always clear the vector mGeoHitPrimIDs. (We clear it only when we
       // // // // have a first new hit.) The right way to check that the ray did not hit anything is to check
@@ -301,7 +277,7 @@ namespace rti { namespace trace {
       if ( ! this->boundNotIntersected ) {
         if ( this->geoNotIntersected ||
              this->boundFirstHitTFar < this->geoFirstHitTFar) {
-          // We hit bounding box
+          // We hit the bounding box
           this->rayout = this->boundRayout;
           this->tfar = this->boundFirstHitTFar;
           return;
@@ -380,6 +356,7 @@ namespace rti { namespace trace {
       // // RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT flag uses an optimized traversal
       // // algorithm for incoherent rays (default)
       rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
+      // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
     }
 
     void init_ray_weight() override final {

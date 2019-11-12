@@ -37,7 +37,10 @@ namespace rti { namespace geo {
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState) override final {
       auto cntxt = std::make_unique<rti::trace::triangle_context<Ty> >
-        (pGeometryID, pGeometry, pReflectionModel,
+        (pGeometryID,
+         // the cast characterizes a precondition to this function
+         *dynamic_cast<rti::geo::triangle_geometry<Ty>*>(&pGeometry),
+         pReflectionModel,
          pHitAccumulator, pBoundaryID, pBoundary,
          pBoundaryReflectionModel, pRng, pRngState);
       // We have to move the unique_ptr out

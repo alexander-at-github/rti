@@ -24,11 +24,12 @@ namespace rti { namespace trace {
 
     void print(std::ostream& pOs) const {
       pOs
+        << "===[" << boost::core::demangle(typeid(this).name()) << "]=== "
         << geometryClassName << " "
         << inputFilePath << " "
         << numRays << "rays "
-        << hitc << "hits "
-        << nonhitc << "nonhits "
+        // << hitc << "hits "
+        // << nonhitc << "nonhits "
         << timeNanoseconds*1e-9 << "seconds"
         << std::endl;
     }
