@@ -41,6 +41,8 @@ namespace rti { namespace trace {
       assert(rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
              "Error: Embree filter functions are not supported by your Embree instance.");
       // std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
+      auto& device = mFactory.get_geometry().get_rtc_device();
+      assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_VERSION) >= 306001 && "Error: The minimum version of Embree is 3.6.1");
       std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
     }
 

@@ -21,7 +21,7 @@ find_package(Boost REQUIRED COMPONENTS log system timer # "${BOOST_COMPONENTS_RE
   PATHS ${BOOST_ROOT}
   NO_DEFAULT_PATH
   )
-find_package(embree 3 REQUIRED
+find_package(embree 3.6 REQUIRED
   PATHS ${EMBREE_DIR}
   NO_DEFAULT_PATH
   )
