@@ -11,6 +11,7 @@ namespace rti { namespace geo {
   public:
     virtual ~i_factory() {}
     virtual rti::geo::i_geometry<Ty>& get_geometry() = 0;
+    virtual void register_intersect_filter_funs(rti::geo::i_boundary<Ty>&) = 0;
     virtual std::unique_ptr<rti::trace::absc_context<Ty> > get_new_context(
       unsigned int pGeometryID,
       rti::geo::i_geometry<Ty>& pGeometry,

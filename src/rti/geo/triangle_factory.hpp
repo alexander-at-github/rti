@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_factory.hpp"
 #include "rti/geo/triangle_geometry.hpp"
 #include "rti/io/christoph/vtu_triangle_reader.hpp"
@@ -19,6 +20,10 @@ namespace rti { namespace geo {
 
     rti::geo::i_geometry<Ty>& get_geometry() override final {
       return mGeometry;
+    }
+
+    void register_intersect_filter_funs(rti::geo::i_boundary<Ty>& pBoundary) {
+      rti::trace::triangle_context<Ty>::register_intersect_filter_funs(mGeometry, pBoundary);
     }
 
     std::unique_ptr<rti::trace::absc_context<Ty> > get_new_context(

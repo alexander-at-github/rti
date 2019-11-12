@@ -19,6 +19,10 @@ namespace rti { namespace geo {
       return mGeometry;
     }
 
+    void register_intersect_filter_funs(rti::geo::i_boundary<Ty>& pBoundary) {
+      rti::trace::point_cloud_context<Ty>::register_intersect_filter_funs(mGeometry, pBoundary);
+    }
+
     std::unique_ptr<rti::trace::absc_context<Ty> > get_new_context(
       unsigned int pGeometryID,
       rti::geo::i_geometry<Ty>& pGeometry,

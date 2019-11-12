@@ -90,7 +90,8 @@ namespace rti { namespace trace {
       auto boundaryID = rtcAttachGeometry(scene, boundary);
       auto geometryID = rtcAttachGeometry(scene, geometry);
 
-      rti::trace::triangle_context<Ty>::register_intersect_filter_funs(geo, mBoundary);
+      // rti::trace::triangle_context<Ty>::register_intersect_filter_funs(geo, mBoundary);
+      mFactory.register_intersect_filter_funs(mBoundary);
       assert(rtcGetDeviceError(device) == RTC_ERROR_NONE);
 
       // Use openMP for parallelization
