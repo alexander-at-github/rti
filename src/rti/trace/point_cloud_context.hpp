@@ -125,11 +125,11 @@ namespace rti { namespace trace {
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
 
-      std::cerr << "filter_fun_geometry(): the address of the rtc context: " << cc << std::endl;
+      // std::cerr << "filter_fun_geometry(): the address of the rtc context: " << cc << std::endl;
       auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
       auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
       auto rticontextptr = reinterpret_cast<rti::trace::point_cloud_context<Ty>*> (rtiabscontextptr);
-      std::cerr << "filter_fun_geometry(): address of the rti context: " << rticontextptr << std::endl;
+      // std::cerr << "filter_fun_geometry(): address of the rti context: " << rticontextptr << std::endl;
 
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
@@ -205,11 +205,11 @@ namespace rti { namespace trace {
       // This function gets a pointer to a context object in args.context
       auto cc = args->context;
 
-      std::cerr << "filter_fun_boundary(): the address of the rtc context: " << cc << std::endl;
+      // std::cerr << "filter_fun_boundary(): the address of the rtc context: " << cc << std::endl;
       auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
       auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
       auto rticontextptr = reinterpret_cast<rti::trace::point_cloud_context<Ty>*> (rtiabscontextptr);
-      std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
+      // std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
       
       // The rticontextptr now serves an equal function as the this pointer in a conventional
       // (non-static) member function.
