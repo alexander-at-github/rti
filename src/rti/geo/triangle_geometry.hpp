@@ -187,7 +187,7 @@ namespace rti { namespace geo {
 
   private:
     RTCDevice& mRTCDevice;
-    rti::io::christoph::vtu_triangle_reader<Ty>& mReader;
+    rti::io::christoph::vtu_triangle_reader<Ty> mReader;
     Ty mStickingC = 1; // initialize to some value
 
     RTCGeometry mGeometry;

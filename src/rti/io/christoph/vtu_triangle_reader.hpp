@@ -88,11 +88,11 @@ namespace rti { namespace io { namespace christoph {
       mTriangles.shrink_to_fit();
     }
 
-    std::vector<rti::util::triple<Ty> > get_points() {
+    std::vector<rti::util::triple<Ty> > get_points() const {
       return mPoints;
     }
 
-    std::vector<rti::util::triple<size_t> > get_triangles() {
+    std::vector<rti::util::triple<size_t> > get_triangles() const {
       return mTriangles;
     }
 
