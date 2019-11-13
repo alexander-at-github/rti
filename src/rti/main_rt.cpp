@@ -141,11 +141,10 @@ int main(int argc, char* argv[]) {
   std::cout << "sticking coefficient == " << stickingC << std::endl;
   // create variable
   auto geoFactory = std::unique_ptr<rti::geo::i_factory<numeric_type> > (nullptr);
-  //geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, triangleReader, stickingC);
   if (optMan->get_bool_option_value("TRIANGLES")) {
     RLOG_DEBUG << "recognized cmd line option TRIANGLES" << std::endl;
     auto reader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-    geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type> > (device, reader, stickingC);
+    geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader, stickingC);
   } else { // Default
   //} else if (optMan->get_bool_option_value("DISCS")) {
     RLOG_DEBUG << "using DISCS (default option)" << std::endl;

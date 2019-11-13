@@ -217,11 +217,16 @@ namespace rti { namespace trace {
       this->mHitAccumulator.use(hitprimId, valuetodrop);
       this->rayWeight -= valuetodrop;
 
+      weight_check_reweight_kill();
+    }
+
+    void weight_check_reweight_kill() {
       // We do what is sometimes called Roulette in MC literatur.
       // Jun Liu calls it "rejection controll" in his book.
       // If the weight of the ray is above a certain threshold, we always reflect.
       // If the weight of the ray is below the threshold, we randomly decide to either kill the
       // ray or increase its weight (in an unbiased way).
+      this->reflect = true;
       if (this->rayWeight < RAY_WEIGHT_LOWER_THRESHOLD) {
         RLOG_DEBUG << "in post_process_intersect() (rayWeight < RAY_WEIGHT_LOWER_THRESHOLD) holds" << std::endl;
         // We want to set the weight of (the reflection of) the ray to RAY_NEW_WEIGHT.
@@ -241,6 +246,7 @@ namespace rti { namespace trace {
       }
       // If the ray has enough weight, then we reflect it in any case.
     }
+
   public:
     void intersect1(RTCScene& pScene, RTCRayHit& pRayHit) override final {
       // prepare

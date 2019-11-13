@@ -18,7 +18,6 @@
 #include "rti/trace/hit_accumulator.hpp"
 #include "rti/trace/hit_accumulator_with_checks.hpp"
 #include "rti/trace/point_cloud_context.hpp"
-#include "rti/trace/triangle_context.hpp"
 #include "rti/trace/result.hpp"
 #include "rti/util/logger.hpp"
 #include "rti/util/ray_logger.hpp"

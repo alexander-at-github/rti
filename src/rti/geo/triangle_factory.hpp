@@ -8,9 +8,10 @@
 #include "rti/io/christoph/vtu_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
 #include "rti/trace/triangle_context.hpp"
+#include "rti/trace/triangle_context_simplified.hpp"
 
 namespace rti { namespace geo {
-  template<typename Ty>
+  template<typename Ty, typename ContextType>
   class triangle_factory : public rti::geo::i_factory<Ty> {
   public:
     triangle_factory(RTCDevice& pDevice,
@@ -23,7 +24,7 @@ namespace rti { namespace geo {
     }
 
     void register_intersect_filter_funs(rti::geo::i_boundary<Ty>& pBoundary) {
-      rti::trace::triangle_context<Ty>::register_intersect_filter_funs(mGeometry, pBoundary);
+      ContextType::register_intersect_filter_funs(mGeometry, pBoundary);
     }
 
     std::unique_ptr<rti::trace::absc_context<Ty> > get_new_context(
@@ -36,7 +37,7 @@ namespace rti { namespace geo {
       rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState) override final {
-      auto cntxt = std::make_unique<rti::trace::triangle_context<Ty> >
+      auto cntxt = std::make_unique<ContextType>
         (pGeometryID,
          // the cast characterizes a precondition to this function
          *dynamic_cast<rti::geo::triangle_geometry<Ty>*>(&pGeometry),
