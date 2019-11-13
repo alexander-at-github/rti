@@ -208,7 +208,7 @@ namespace rti { namespace trace {
         this->tfar = this->boundFirstHitTFar;
         return;
       }
-      // A hit on the boundary
+      // A hit on the geometry
       assert ( ! this->geoNotIntersected && "Assumption");
       this->rayout = this->geoRayout;
       this->tfar = this->geoFirstHitTFar;
@@ -216,7 +216,6 @@ namespace rti { namespace trace {
       auto valuetodrop = this->rayWeight * this->mGeometry.get_sticking_coefficient();
       this->mHitAccumulator.use(hitprimId, valuetodrop);
       this->rayWeight -= valuetodrop;
-      return;
 
       // We do what is sometimes called Roulette in MC literatur.
       // Jun Liu calls it "rejection controll" in his book.
