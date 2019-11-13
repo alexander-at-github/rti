@@ -24,6 +24,7 @@
 #include "rti/io/vtp_point_cloud_reader.hpp"
 #include "rti/io/christoph/vtu_point_cloud_reader.hpp"
 #include "rti/io/christoph/vtu_triangle_reader.hpp"
+#include "rti/io/vtp_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
@@ -143,8 +144,15 @@ int main(int argc, char* argv[]) {
   auto geoFactory = std::unique_ptr<rti::geo::i_factory<numeric_type> > (nullptr);
   if (optMan->get_bool_option_value("TRIANGLES")) {
     RLOG_DEBUG << "recognized cmd line option TRIANGLES" << std::endl;
-    auto reader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-    geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader, stickingC);
+    if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtp") {
+      RLOG_DEBUG << "recognized .vtp file" << std::endl;
+      auto reader = rti::io::vtp_triangle_reader<numeric_type> {infilename};
+      geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader, stickingC);
+    } else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
+      RLOG_DEBUG << "recognized .vtu file" << std::endl;
+      auto reader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
+      geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader, stickingC);
+    }
   } else { // Default
   //} else if (optMan->get_bool_option_value("DISCS")) {
     RLOG_DEBUG << "using DISCS (default option)" << std::endl;

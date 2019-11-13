@@ -5,7 +5,7 @@
 #include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_factory.hpp"
 #include "rti/geo/triangle_geometry.hpp"
-#include "rti/io/christoph/vtu_triangle_reader.hpp"
+#include "rti/io/i_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
 #include "rti/trace/triangle_context.hpp"
 #include "rti/trace/triangle_context_simplified.hpp"
@@ -15,7 +15,7 @@ namespace rti { namespace geo {
   class triangle_factory : public rti::geo::i_factory<Ty> {
   public:
     triangle_factory(RTCDevice& pDevice,
-                     rti::io::christoph::vtu_triangle_reader<Ty>& pReader,
+                     rti::io::i_triangle_reader<Ty>& pReader,
                      Ty pStickingC) :
       mGeometry(pDevice, pReader, pStickingC) {}
 

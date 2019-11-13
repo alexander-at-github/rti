@@ -17,6 +17,7 @@
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
+#include "rti/io/i_triangle_reader.hpp"
 #include "rti/util/utils.hpp"
 
 // There is an example at https://vtk.org/doc/nightly/html/classvtkCellIterator.html
@@ -27,10 +28,10 @@
 namespace rti { namespace io { namespace christoph {
   // The parameter Ty is intended to be instantiated as a numeric type.
   template<typename Ty>
-  class vtu_triangle_reader {
+  class vtu_triangle_reader : public rti::io::i_triangle_reader<Ty> {
   public:
     vtu_triangle_reader(const std::string& pFilename) :
-      mInfilename(pFilename) {
+      rti::io::i_triangle_reader<Ty>(pFilename) {
       std::string extension = vtksys::SystemTools::GetFilenameLastExtension(pFilename);
       auto extensionCondition = std::string {".vtu"};
       if (extension != extensionCondition) {
@@ -64,45 +65,28 @@ namespace rti { namespace io { namespace christoph {
           << " could not find data in the file " << pFilename << std::endl;
       }
       // Write points from vtk to this data structure
-      mPoints.reserve(numPnts);
+      this->mPoints.reserve(numPnts);
       for (vtkIdType idx = 0; idx < numPnts; ++idx) {
         double xyz[3]; // 3 dimensions
         unstructuredgrid->GetPoint(idx, xyz);
-        mPoints.push_back({(Ty) xyz[0], (Ty) xyz[1], (Ty) xyz[2]});
+        this->mPoints.push_back({(Ty) xyz[0], (Ty) xyz[1], (Ty) xyz[2]});
       }
 
       // Write triangles from the VTK data structure
       auto cellarray = vtkSmartPointer<vtkCellArray> (unstructuredgrid->GetCells());
       auto numCells = cellarray->GetNumberOfCells(); // vtkIdType
-      mTriangles.reserve(numCells);
+      this->mTriangles.reserve(numCells);
       // Traverse over VTK triangles
       cellarray->InitTraversal();
       auto idlist = vtkSmartPointer<vtkIdList>::New();
       while (cellarray->GetNextCell(idlist)) {
         if (idlist->GetNumberOfIds() != 3) // it is not a triangles
           continue;
-        mTriangles.push_back({(size_t) idlist->GetId(0), (size_t) idlist->GetId(1), (size_t) idlist->GetId(2)});
+        this->mTriangles.push_back({(size_t) idlist->GetId(0), (size_t) idlist->GetId(1), (size_t) idlist->GetId(2)});
       }
       // Shrink memory
-      mPoints.shrink_to_fit();
-      mTriangles.shrink_to_fit();
+      this->mPoints.shrink_to_fit();
+      this->mTriangles.shrink_to_fit();
     }
-
-    std::vector<rti::util::triple<Ty> > get_points() const {
-      return mPoints;
-    }
-
-    std::vector<rti::util::triple<size_t> > get_triangles() const {
-      return mTriangles;
-    }
-
-    std::string get_input_file_name() {
-      return mInfilename;
-    }
-  private:
-    std::string mInfilename;
-    std::vector<rti::util::triple<Ty> > mPoints;
-    std::vector<rti::util::triple<size_t> > mTriangles;
-
   };
 }}} // namespace

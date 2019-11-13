@@ -6,7 +6,7 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/io/christoph/vtu_triangle_reader.hpp"
+#include "rti/io/i_triangle_reader.hpp"
 #include "rti/geo/i_geometry.hpp"
 #include "rti/util/utils.hpp"
 
@@ -15,7 +15,7 @@ namespace rti { namespace geo {
   class triangle_geometry : public rti::geo::i_geometry<Ty> {
   public:
     triangle_geometry(RTCDevice& pRTCDevice,
-                      rti::io::christoph::vtu_triangle_reader<Ty>& pReader,
+                      rti::io::i_triangle_reader<Ty>& pReader,
                       Ty pStickingC) :
       mRTCDevice(pRTCDevice),
       mReader(pReader),
@@ -40,7 +40,7 @@ namespace rti { namespace geo {
     };
     // using triangle_t = rti::util::triple<uint32_t>;
 
-    void init_this(RTCDevice& pDevice, rti::io::christoph::vtu_triangle_reader<Ty>& pReader) {
+    void init_this(RTCDevice& pDevice, rti::io::i_triangle_reader<Ty>& pReader) {
       this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
       auto vertices = pReader.get_points();
       this->mNumVertices = vertices.size();
@@ -166,14 +166,14 @@ namespace rti { namespace geo {
 
     // Note: this function does not read the data from this->mVVBuffer (the Embree buffer).
     // Instead it reads the data from the input data structure of type
-    // rti::io::christoph::vtu_triangle_reader<Ty>.
+    // rti::io::i_triangle_reader<Ty>.
     std::vector<rti::util::triple<Ty> > get_vertices() const {
       return this->mReader.get_points();
     }
 
     // Note: this function does not read the data from this->mVVBuffer (the Embree buffer).
     // Instead it reads the data from the input data structure of type
-    // rti::io::christoph::vtu_triangle_reader<Ty>.
+    // rti::io::i_triangle_reader<Ty>.
     std::vector<rti::util::triple<size_t> > get_triangles() const {
       return this->mReader.get_triangles();
     }
@@ -187,7 +187,7 @@ namespace rti { namespace geo {
 
   private:
     RTCDevice& mRTCDevice;
-    rti::io::christoph::vtu_triangle_reader<Ty> mReader;
+    rti::io::i_triangle_reader<Ty> mReader;
     Ty mStickingC = 1; // initialize to some value
 
     RTCGeometry mGeometry;
