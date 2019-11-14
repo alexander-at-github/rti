@@ -1,3 +1,5 @@
+#include <boost/filesystem.hpp>
+
 #include <algorithm>
 #include <iostream>
 #include <omp.h>
@@ -231,8 +233,13 @@ int main(int argc, char* argv[]) {
       std::cout << "Appending .vtp to the given file name" << std::endl;
       outfilename.append(".vtp");
     }
+    auto bbpath = vtksys::SystemTools::GetFilenamePath(outfilename);
     auto bbfilename = vtksys::SystemTools::
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
+    { // boost uses portable path separator
+      namespace bfs = boost::filesystem;
+      bbfilename = (bfs::path{bbpath} / bfs::path{bbfilename}).string();
+    }
 
     std::cout << "Writing output to " << outfilename << std::endl;
     geoFactory->write_to_file(*result.hitAccumulator, outfilename);
