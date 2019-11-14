@@ -12,7 +12,7 @@
 #include <vtksys/SystemTools.hxx>
 #include <vtkXMLPolyDataReader.h>
 
-#include "rti/io/i_geometry_reader.hpp"
+#include "rti/io/i_point_cloud_reader.hpp"
 #include "rti/util/utils.hpp"
 
 // There is an example at https://vtk.org/doc/nightly/html/classvtkCellIterator.html
@@ -23,7 +23,7 @@
 namespace rti { namespace io {
   // The parameter Ty is intended to be instantiated as a numeric type.
   template<typename Ty>
-  class vtp_point_cloud_reader : public rti::io::i_geometry_reader<Ty> {
+  class vtp_point_cloud_reader : public rti::io::i_point_cloud_reader<Ty> {
   public:
     vtp_point_cloud_reader(const std::string& pFilename) :
       mInfilename(pFilename) {

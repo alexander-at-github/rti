@@ -11,7 +11,7 @@ namespace rti { namespace geo {
   class point_cloud_disc_factory : public rti::geo::i_factory<Ty> {
   public:
     point_cloud_disc_factory(RTCDevice& pDevice,
-                             rti::io::i_geometry_reader<Ty>& pReader,
+                             rti::io::i_point_cloud_reader<Ty>& pReader,
                              Ty pStickingC) :
       mGeometry(pDevice, pReader, pStickingC) {}
 

@@ -4,7 +4,7 @@
 #include <sstream>
 
 #include "rti/geo/absc_point_cloud_geometry.hpp"
-#include "rti/io/i_geometry_reader.hpp"
+#include "rti/io/i_point_cloud_reader.hpp"
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {
@@ -12,7 +12,7 @@ namespace rti { namespace geo {
   class point_cloud_disc_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
   public:
 
-    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader, Ty pStickingC) :
+    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader, Ty pStickingC) :
       rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader, pStickingC) {
       init_this(pDevice, pGReader);
     }
@@ -57,7 +57,7 @@ namespace rti { namespace geo {
     // Normals are saved in an Embree-buffer
     normal_vec_3f_t* mNNBuffer = nullptr;
 
-    void init_this(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader) {
+    void init_this(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader) {
       // "Points with per vertex radii are supported with sphere, ray-oriented
       // discs, and normal-oriented discs geometric represetntations. Such point
       // geometries are created by passing RTC_GEOMETRY_TYPE_SPHERE_POINT,

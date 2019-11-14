@@ -3,7 +3,7 @@
 #include <boost/core/demangle.hpp>
 
 #include "rti/geo/i_geometry.hpp"
-#include "rti/io/i_geometry_reader.hpp"
+#include "rti/io/i_point_cloud_reader.hpp"
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {
@@ -31,7 +31,7 @@ namespace rti { namespace geo {
     virtual rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const = 0;
 
     // constructor
-    absc_point_cloud_geometry(RTCDevice& pDevice, rti::io::i_geometry_reader<Ty>& pGReader, Ty pStickingC) :
+    absc_point_cloud_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader, Ty pStickingC) :
       mDevice(pDevice),
       mStickingC(pStickingC),
       mInfilename(pGReader.get_input_file_name()) {
