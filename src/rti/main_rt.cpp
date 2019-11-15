@@ -9,9 +9,14 @@
 
 #include <embree3/rtcore.h>
 #include <gmsh.h>
+//#include <xmmintrin.h> // SSE
 #include <immintrin.h> // AVX
-#include <pmmintrin.h>
-#include <xmmintrin.h>
+#include <pmmintrin.h> // SSE3
+#include <tmmintrin.h> // SSSE3
+#include <smmintrin.h> // SSE4
+#include <nmmintrin.h> // SSE4
+// Can we replace all the includes for the instrinsics with one single include?
+//#include <x86intrin.h>
 
 #include "rti/geo/boundary_x_y.hpp"
 #include "rti/geo/disc_geometry_from_gmsh.hpp"
