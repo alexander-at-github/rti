@@ -33,7 +33,8 @@ namespace rti { namespace io {
       auto polydata = get_polydata(pGeometry);
       add_hit_values_to_points(polydata, pHA);
       try_add_hit_counts_to_points(polydata, pHA);
-      try_add_statistical_data_to_points(polydata, pHA);
+      //try_add_statistical_data_to_points(polydata, pHA);
+      try_add_statistical_data(polydata, pHA);
       add_metadata(polydata, pMetadata);
       write(polydata, pOutfilename);
     }
@@ -49,7 +50,8 @@ namespace rti { namespace io {
       auto polydata = get_polydata(pGeometry);
       add_hit_values_to_triangles(polydata, pHA);
       try_add_hit_counts_to_triangles(polydata, pHA);
-      try_add_statistical_data_to_triangles(polydata, pHA);
+      //try_add_statistical_data_to_triangles(polydata, pHA);
+      try_add_statistical_data(polydata, pHA);
       add_metadata(polydata, pMetadata);
       write(polydata, pOutfilename);
     }
@@ -166,38 +168,82 @@ namespace rti { namespace io {
       pPolydata->GetCellData()->AddArray(hitCnts);
     }
 
-    static
-    void try_add_statistical_data_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
-                                  rti::trace::i_hit_accumulator<Ty>& pAc) {
-      auto indata = pAc.get_relative_error();
-      if (indata.size() <= 0)
-        return; // no data; just return
-      auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
-      rerr->SetNumberOfComponents(1); // 1 dimension
-      rerr->SetNumberOfTuples(indata.size());
-      for (size_t idx = 0; idx < indata.size(); ++idx) {
-        rerr->InsertValue(idx, indata[idx]);
-      }
-      rerr->SetName(relativeErrorStr);
-      pPolydata->GetCellData()->AddArray(rerr);
-    }
+    // static
+    // void try_add_statistical_data_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
+    //                               rti::trace::i_hit_accumulator<Ty>& pAc) {
+    //   auto indatarerr = pAc.get_relative_error();
+    //   if (indatarerr.size() <= 0)
+    //     return; // no data; just return
+    //   auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
+    //   rerr->SetNumberOfComponents(1); // 1 dimension
+    //   rerr->SetNumberOfTuples(indatarerr.size());
+    //   for (size_t idx = 0; idx < indatarerr.size(); ++idx) {
+    //     rerr->InsertValue(idx, indatarerr[idx]);
+    //   }
+    //   rerr->SetName(relativeErrorStr);
+    //   pPolydata->GetCellData()->AddArray(rerr);
+    //   //
+    //   auto indatavov = pAc.get_vov();
+    //   if (indatavov.size() <= 0)
+    //     return;
+    //   auto vov = vtkSmartPointer<vtkDoubleArray>::New();
+    //   vov->SetNumberOfComponents(1); // 1 dimension
+    //   vov->SetNumberOfTuples(indatavov.size());
+    //   for (size_t idx = 0; idx < indatavov.size(); ++idx) {
+    //     vov->InsertValue(idx, indatavov[idx]);
+    //   }
+    //   vov->SetName(varOfVarStr);
+    //   pPolydata->GetCellData()->AddArray(vov);
+    // }
+
+    // static
+    // void try_add_statistical_data_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
+    //                                      rti::trace::i_hit_accumulator<Ty>& pAc) {
+    //   auto indata = pAc.get_relative_error();
+    //   assert (pPolydata->GetNumberOfCells() == indata.size() &&
+    //           "number of cells in polydata does not fit the hit counter accumulator");
+    //   if (indata.size() <= 0)
+    //     return; // no data; just return
+    //   auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
+    //   rerr->SetNumberOfComponents(1); // 1 dimension
+    //   rerr->SetNumberOfTuples(indata.size());
+    //   for (size_t idx = 0; idx < indata.size(); ++idx) {
+    //     rerr->InsertValue(idx, indata[idx]);
+    //   }
+    //   rerr->SetName(relativeErrorStr);
+    //   pPolydata->GetCellData()->AddArray(rerr);
+    // }
 
     static
-    void try_add_statistical_data_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
-                                         rti::trace::i_hit_accumulator<Ty>& pAc) {
-      auto indata = pAc.get_relative_error();
-      assert (pPolydata->GetNumberOfCells() == indata.size() &&
-              "number of cells in polydata does not fit the hit counter accumulator");
-      if (indata.size() <= 0)
+    void try_add_statistical_data(vtkSmartPointer<vtkPolyData> pPolydata,
+                                  rti::trace::i_hit_accumulator<Ty>& pAc) {
+      auto indatarerr = pAc.get_relative_error();
+      assert (pPolydata->GetNumberOfCells() == indatarerr.size() &&
+              "number of cells in polydata does not fit the accumulator");
+      if (indatarerr.size() <= 0)
         return; // no data; just return
       auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
       rerr->SetNumberOfComponents(1); // 1 dimension
-      rerr->SetNumberOfTuples(indata.size());
-      for (size_t idx = 0; idx < indata.size(); ++idx) {
-        rerr->InsertValue(idx, indata[idx]);
+      rerr->SetNumberOfTuples(indatarerr.size());
+      for (size_t idx = 0; idx < indatarerr.size(); ++idx) {
+        rerr->InsertValue(idx, indatarerr[idx]);
       }
       rerr->SetName(relativeErrorStr);
       pPolydata->GetCellData()->AddArray(rerr);
+      //
+      auto indatavov = pAc.get_vov();
+      assert (pPolydata->GetNumberOfCells() == indatavov.size() &&
+              "number of cells in polydata does not fit the accumulator");
+      if (indatavov.size() <= 0)
+        return;
+      auto vov = vtkSmartPointer<vtkDoubleArray>::New();
+      vov->SetNumberOfComponents(1); // 1 dimension
+      vov->SetNumberOfTuples(indatavov.size());
+      for (size_t idx = 0; idx < indatavov.size(); ++idx) {
+        vov->InsertValue(idx, indatavov[idx]);
+      }
+      vov->SetName(varOfVarStr);
+      pPolydata->GetCellData()->AddArray(vov);
     }
 
     static
@@ -337,5 +383,6 @@ namespace rti { namespace io {
     static constexpr char const* valueStr = "value";
     static constexpr char const* hitcntStr = "hitcnt";
     static constexpr char const* relativeErrorStr = "relative-error";
+    static constexpr char const* varOfVarStr = "variance-of-variance";
   };
 }} // namespace

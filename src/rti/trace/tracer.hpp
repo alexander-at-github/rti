@@ -117,7 +117,7 @@ namespace rti { namespace trace {
       {
         // Thread local data goes here, if it is not needed anymore after the
         // execution of the parallel region.
-        auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
         // REMARK: All data which is modified in the parallel loop should be
         // handled here explicitely.
@@ -141,7 +141,6 @@ namespace rti { namespace trace {
 
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext->init();
-        rayhit.ray.time = 0;
 
         //std::cerr << "Thread number " << omp_get_thread_num() << std::endl;
 
@@ -153,13 +152,13 @@ namespace rti { namespace trace {
           // For that reason we set tnear to some value.
           // There is a risk though: when setting tnear to some strictly positive value
           // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
-          // TODO: FIX: tnear set to a constant
-          rayhit.ray.tnear = 1e-4;
+
           // prepare our custom ray tracing context
           rtiContext->init_ray_weight();
 
           RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
-          mSource.fill_ray(rayhit.ray, *rng, *rngSeed1);
+          // TODO: FIX: tnear set to a constant
+          mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
 
           RAYSRCLOG(rayhit);
 
@@ -201,12 +200,48 @@ namespace rti { namespace trace {
 
             // the following data is actually only used if a reflection happens
             // if a new ray is started from the source, these data values will be overwritten
-            rayhit.ray.org_x = rtiContext->rayout[0][0];
-            rayhit.ray.org_y = rtiContext->rayout[0][1];
-            rayhit.ray.org_z = rtiContext->rayout[0][2];
-            rayhit.ray.dir_x = rtiContext->rayout[1][0];
-            rayhit.ray.dir_y = rtiContext->rayout[1][1];
-            rayhit.ray.dir_z = rtiContext->rayout[1][2];
+
+            // ATTENTION tnear is set in another function, too! When the ray starts from the source, then
+            // the source class also sets tnear!
+            auto tnear = 1e-4f; // float
+            // Same holds for time
+            auto time = 0.0f; // float
+            // rayhit.ray.org_x = rtiContext->rayout[0][0];
+            // rayhit.ray.org_y = rtiContext->rayout[0][1];
+            // rayhit.ray.org_z = rtiContext->rayout[0][2];
+            // rayhit.ray.tnear = tnear;
+            // rayhit.ray.dir_x = rtiContext->rayout[1][0];
+            // rayhit.ray.dir_y = rtiContext->rayout[1][1];
+            // rayhit.ray.dir_z = rtiContext->rayout[1][2];
+            // rayhit.time = time;
+
+
+            // float vara[4] = {(float) rtiContext->rayout[0][0],
+            //                  (float) rtiContext->rayout[0][1],
+            //                  (float) rtiContext->rayout[0][2],
+            //                  tnear};
+            // float varb[4] = {(float) rtiContext->rayout[1][0],
+            //                  (float) rtiContext->rayout[1][1],
+            //                  (float) rtiContext->rayout[1][2],
+            //                  time};
+            // reinterpret_cast<__m128&>(rayhit.ray) = _mm_load_ps(vara);
+            // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
+
+            reinterpret_cast<__m128&>(rayhit.ray) = _mm_set_ps(tnear, (float)
+                                                         (float) rtiContext->rayout[0][2],
+                                                         (float) rtiContext->rayout[0][1],
+                                                         (float) rtiContext->rayout[0][0]
+                                                         );
+            reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_set_ps(time,
+                                                               (float) rtiContext->rayout[1][2],
+                                                               (float) rtiContext->rayout[1][1],
+                                                               (float) rtiContext->rayout[1][0]
+                                                               );
+
+
+
+
+
             // if (rayhit.hit.geomID == boundaryID) {
             //   // Ray hit the boundary
             //   reflect = boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary);
