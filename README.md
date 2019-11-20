@@ -12,7 +12,7 @@ The following commands will download and build Boost, OCE, Gmsh, and Embree in t
 ````
 cmake ..
 cmake --build . --target boost-external
-cmake --build . --target gmsh-external
+cmake --build . --target vtk-external
 cmake --build . --target embree-external
 ````
 

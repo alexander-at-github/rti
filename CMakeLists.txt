@@ -59,19 +59,17 @@ message(STATUS "CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
 externalproject_add(rti
   DEPENDS
     #boost-external
-    #gmsh-external
 		#embree-external
     #vtk-external
     #
+    # optional:
     #gtest-external
     #abseil-external
     #
-    # The project depends on gmsh-external and embree-external. We do not add it here,
+    # The project depends on embree-external and other external libraries. We do not add it here,
     # because otherwise the build system is very slow when rebuilding the project.
     # (The build configuration of these dependecies redo a lot of steps). You are adviced
-    # to build these two targets once yourself with the following commands:
-    # $ cmake --build . --target embree-external
-    # $ cmake --build . --target gmsh-external
+    # to build these targets once yourself.
   SOURCE_DIR
     ${CMAKE_CURRENT_LIST_DIR}/src
   # Eventhough this is a superbuild, we want the final binary in the build directory
