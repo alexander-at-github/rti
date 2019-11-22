@@ -47,6 +47,7 @@
 #include "rti/util/clo.hpp"
 #include "rti/util/logger.hpp"
 #include "rti/util/ray_logger.hpp"
+#include "rti/util/utils.hpp"
 
 namespace rti {
   namespace main_rt {
@@ -266,7 +267,10 @@ int main(int argc, char* argv[]) {
     geoFactory->write_to_file(*result.hitAccumulator, outfilename,
                               {{"running-time[ns]", std::to_string(result.timeNanoseconds)},
                                {"git-hash", rti::main_rt::get_git_hash()},
-                               {"cmd", cmdstr}});
+                               {"cmd", cmdstr},
+                               // the following line does not really give you the most derived type. FIX
+                               {"geo-factory-name", boost::core::demangle(typeid(geoFactory.get()).name())},
+                               {"geo-name", boost::core::demangle(typeid(geoFactory->get_geometry()).name())}});
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 

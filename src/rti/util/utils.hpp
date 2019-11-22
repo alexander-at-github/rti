@@ -1,5 +1,7 @@
 #pragma once
 
+//#include <boost/core/demangle.hpp>
+
 #include <array>
 #include <cmath>
 #include <functional>
@@ -178,7 +180,7 @@ namespace rti { namespace util {
                        T2 const* pT2,
                        size_t& pT2Length) {
     if (pT2Length <= 0) return pT1;
-    pT1 = pF(pT1, pT2[0]); // apply fold-function // modify the content of pT1
+    pT1 = pF(pT1, pT2[0]); // apply the fold-function // modify the content of pT1
     return foldl_aux<T1, T2>(pF, pT1, &pT2[1], --pT2Length /* modify pT2Length */);
   }
 
@@ -190,5 +192,4 @@ namespace rti { namespace util {
     auto pT2Size = pT2.size(); // copy the size once into a separate memory location.
     return foldl_aux<T1,T2>(pF, pT1, pT2.data(), pT2Size);
   }
-
 }} // namespace
