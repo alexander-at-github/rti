@@ -169,11 +169,13 @@ namespace rti { namespace util {
     return std::sqrt(p1*p1 + p2*p2 + p3*p3);
   }
 
-  // A c-style-array foldl as generic auxiliary implementation
+  // A c-style-array foldl as generic auxiliary implementation.
+  // This implementation should be reasonably efficient. It tries to minimize copies
+  // of data.
   template<typename T1, typename T2>
   static T1& foldl_aux(std::function<T1 (T1&, T2 const&)>& pF,
                        T1& pT1,
-                       T2* pT2,
+                       T2 const* pT2,
                        size_t& pT2Length) {
     if (pT2Length <= 0) return pT1;
     pT1 = pF(pT1, pT2[0]); // apply fold-function // modify the content of pT1

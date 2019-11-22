@@ -22,6 +22,9 @@ namespace rti { namespace geo {
       rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState) = 0;
-    virtual void write_to_file(rti::trace::i_hit_accumulator<Ty>& pHA, std::string pOutfilename) = 0;
+    virtual void write_to_file(
+      rti::trace::i_hit_accumulator<Ty>& pHA,
+      std::string pOutfilename,
+      std::vector<rti::util::pair<std::string> > pMetadata) = 0;
   };
 }} //namespace

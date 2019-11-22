@@ -43,8 +43,10 @@ namespace rti { namespace geo {
       return cntxt;
     }
 
-    void write_to_file(rti::trace::i_hit_accumulator<Ty>& pHA, std::string pOutfilename) override final {
-      rti::io::vtp_writer<Ty>::write(this->mGeometry, pHA, pOutfilename);
+    void write_to_file(rti::trace::i_hit_accumulator<Ty>& pHA,
+                       std::string pOutfilename,
+                       std::vector<rti::util::pair<std::string> > pMetadata) override final {
+      rti::io::vtp_writer<Ty>::write(this->mGeometry, pHA, pOutfilename, pMetadata);
     }
 
   private:

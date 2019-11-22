@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <numeric>
 #include <omp.h>
 #include <string>
 
@@ -116,6 +117,18 @@ namespace rti {
       RLOG_INFO
         << "RTC_DEVICE_PROPERTY_RAY_STREAM_SUPPORTED == "
         << rtcGetDeviceProperty(pDevice, RTC_DEVICE_PROPERTY_RAY_STREAM_SUPPORTED) << std::endl;
+    }
+
+    std::string get_git_hash() {
+      auto cmd = "git rev-parse HEAD";
+      auto result = std::string {};
+      auto buffer = std::array<char, 128> {};
+      auto pipe = std::unique_ptr<FILE, decltype(&pclose)> (popen(cmd, "r"), pclose);
+      if (!pipe)
+        return "";
+      while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+        result += buffer.data();
+      return result;
     }
   }
 }
@@ -247,7 +260,13 @@ int main(int argc, char* argv[]) {
     }
 
     std::cout << "Writing output to " << outfilename << std::endl;
-    geoFactory->write_to_file(*result.hitAccumulator, outfilename);
+    auto cmdstr = rti::util::foldl<std::string, std::string>
+      ([](auto p1, auto const p2){return (p1+=" ")+=p2;}, "", std::vector<std::string> (argv, argv+argc));
+    std::cerr << "cmdstr == " << cmdstr << std::endl;
+    geoFactory->write_to_file(*result.hitAccumulator, outfilename,
+                              {{"running-time[ns]", std::to_string(result.timeNanoseconds)},
+                               {"git-hash", rti::main_rt::get_git_hash()},
+                               {"cmd", cmdstr}});
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 

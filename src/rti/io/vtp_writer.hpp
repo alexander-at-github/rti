@@ -6,6 +6,7 @@
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
+#include <vtkStringArray.h>
 #include <vtkTriangle.h>
 #include <vtkUnsignedIntArray.h>
 #include <vtkXMLPolyDataWriter.h>
@@ -24,7 +25,8 @@ namespace rti { namespace io {
     static
     void write(rti::geo::absc_point_cloud_geometry<Ty>& pGeometry,
                rti::trace::i_hit_accumulator<Ty>& pHA,
-               std::string pOutfilename) {
+               std::string pOutfilename,
+               std::vector<rti::util::pair<std::string> >& pMetadata) {
       // Precondition:
       assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
               "hit count accumulator does not fit the given geometry");
@@ -32,13 +34,15 @@ namespace rti { namespace io {
       add_hit_values_to_points(polydata, pHA);
       try_add_hit_counts_to_points(polydata, pHA);
       try_add_statistical_data_to_points(polydata, pHA);
+      add_metadata(polydata, pMetadata);
       write(polydata, pOutfilename);
     }
 
     static
     void write(rti::geo::triangle_geometry<Ty>& pGeometry,
                rti::trace::i_hit_accumulator<Ty>& pHA,
-               std::string pOutfilename) {
+               std::string pOutfilename,
+               std::vector<rti::util::pair<std::string> >& pMetadata) {
       // Precondition:
       assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
               "hit count accumulator does not fit the given geometry");
@@ -46,6 +50,7 @@ namespace rti { namespace io {
       add_hit_values_to_triangles(polydata, pHA);
       try_add_hit_counts_to_triangles(polydata, pHA);
       try_add_statistical_data_to_triangles(polydata, pHA);
+      add_metadata(polydata, pMetadata);
       write(polydata, pOutfilename);
     }
 
@@ -79,6 +84,18 @@ namespace rti { namespace io {
       writer->SetInputData(pPolydata);
       writer->SetDataModeToAscii(); // human readable XML output
       writer->Write();
+    }
+
+    static
+    void add_metadata(vtkSmartPointer<vtkPolyData> pPolydata,
+                      std::vector<rti::util::pair<std::string> >& pMetadata) {
+      for (auto& pair : pMetadata) {
+        auto va = vtkSmartPointer<vtkStringArray>::New();
+        va->SetNumberOfComponents(1); // one string per entry
+        va->SetName(pair[0].c_str());
+        va->InsertNextValue(pair[1].c_str());
+        pPolydata->GetFieldData()->AddArray(va);
+      }
     }
 
     static
