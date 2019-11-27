@@ -43,6 +43,9 @@ message(STATUS "CMAKE_BUILD_TYPE == ${CMAKE_BUILD_TYPE}")
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -march=native -flto")
+#set(CMAKE_CXX_FLAGS_RELEASE "-O")
+#set(CMAKE_CXX_FLAGS_RELEASE "-pg -O") # arguments for gprof
+#set(CMAKE_CXX_FLAGS_RELEASE "-O -fprofile-arcs -ftest-coverage") # arguments for gcov
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_DEBUG}") # CACHE STRING "cmake c++ flags")
