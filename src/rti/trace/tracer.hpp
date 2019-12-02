@@ -13,6 +13,7 @@
 #include "rti/ray/i_source.hpp"
 #include "rti/reflection/diffuse.hpp"
 //#include "rti/reflection/specular.hpp"
+#include "rti/rng/cstdlib_rng.hpp"
 //#include "rti/trace/counter.hpp"
 #include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/hit_accumulator.hpp"
