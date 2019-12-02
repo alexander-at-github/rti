@@ -40,6 +40,10 @@ namespace rti { namespace geo {
     };
     // using triangle_t = rti::util::triple<uint32_t>;
 
+    // struct normal_vec_3f_t {
+    //   Ty xx, yy, zz;
+    // };
+
     void init_this(RTCDevice& pDevice, rti::io::i_triangle_reader<Ty>& pReader) {
       this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
       auto vertices = pReader.get_points();
@@ -84,6 +88,8 @@ namespace rti { namespace geo {
         assert(mTTBuffer[idx].v2 < (long long) mNumVertices && "Invalid Vertex");
       }
       rtcCommitGeometry(this->mGeometry);
+
+      this->mNNBuffer = pReader.get_normals();
     }
   public:
      void print(std::ostream& pOs) const override final {
@@ -104,14 +110,17 @@ namespace rti { namespace geo {
     }
 
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
-      auto& tri = this->mTTBuffer[pPrimID];
-      auto& v0 = this->mVVBuffer[tri.v0];
-      auto& v1 = this->mVVBuffer[tri.v1];
-      auto& v2 = this->mVVBuffer[tri.v2];
-      auto triangle = rti::util::triple<rti::util::triple<Ty> > {v0.xx, v0.yy, v0.zz,
-                                                                 v1.xx, v1.yy, v1.zz,
-                                                                 v2.xx, v2.yy, v2.zz};
-      return rti::util::compute_normal(triangle);
+      // auto& tri = this->mTTBuffer[pPrimID];
+      // auto& v0 = this->mVVBuffer[tri.v0];
+      // auto& v1 = this->mVVBuffer[tri.v1];
+      // auto& v2 = this->mVVBuffer[tri.v2];
+      // auto triangle = rti::util::triple<rti::util::triple<Ty> > {v0.xx, v0.yy, v0.zz,
+      //                                                            v1.xx, v1.yy, v1.zz,
+      //                                                            v2.xx, v2.yy, v2.zz};
+      // return rti::util::compute_normal(triangle);
+      //std::cerr << this->mNNBuffer.size() << " " << this->mNumTriangles << " " << pPrimID << std::endl;
+      assert(this->mNNBuffer.size() == this->mNumTriangles && pPrimID <= this->mNumTriangles && "Assumption");
+      return this->mNNBuffer[pPrimID];
     }
 
     rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final {
@@ -195,5 +204,6 @@ namespace rti { namespace geo {
     size_t mNumVertices = 0;
     triangle_t* mTTBuffer = nullptr;
     size_t mNumTriangles = 0;
+    std::vector<rti::util::triple<Ty> > mNNBuffer;
   };
 }}
