@@ -115,21 +115,28 @@ namespace rti { namespace util {
     return sum(pF, inv(pS));
   }
 
-  // This function modifies its argument when called
-  template<typename Ty>
-  void normalize(triple<Ty>& pV) {
-    Ty thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
-    pV[0] /= thrdNorm;
-    pV[1] /= thrdNorm;
-    pV[2] /= thrdNorm;
-  }
-
   template<typename Ty>
   bool is_normalized(triple<Ty> const& pV) {
     auto epsilon = 1e-6f;
     Ty length = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
     return 1-epsilon <= length && length <= 1+epsilon;
   }
+
+    // This function modifies its argument when called
+    template<typename Ty>
+    void normalize(triple<Ty>& pV) {
+      Ty thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
+      pV[0] /= thrdNorm;
+      pV[1] /= thrdNorm;
+      pV[2] /= thrdNorm;
+      // if ( ! is_normalized(pV) ) {
+      //   // DANGER: recursive call
+      //   normalize(pV); // if the original vector has been very short it may be necessary to normalze again
+      // }
+      if ( ! is_normalized(pV) )
+        std::cerr << "Warning: Assertion error is about to happen. thrdNorm == " << thrdNorm << std::endl;
+      assert( is_normalized(pV) && "Postcondition" );
+    }
 
   // Compute normal of a triangle
   template<typename Ty>
