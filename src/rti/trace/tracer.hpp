@@ -14,6 +14,7 @@
 #include "rti/reflection/diffuse.hpp"
 //#include "rti/reflection/specular.hpp"
 #include "rti/rng/cstdlib_rng.hpp"
+#include "rti/rng/mt64_rng.hpp"
 //#include "rti/trace/counter.hpp"
 #include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/hit_accumulator.hpp"
@@ -107,7 +108,8 @@ namespace rti { namespace trace {
 
       // The random number generator itself is stateless (has no members which
       // are modified). Hence, it may be shared by threads.
-      auto rng = std::make_unique<rti::rng::cstdlib_rng>();
+      // auto rng = std::make_unique<rti::rng::cstdlib_rng>();
+      auto rng = std::make_unique<rti::rng::mt64_rng>();
 
       // Start timing
       auto timer = rti::util::timer {};
@@ -126,8 +128,8 @@ namespace rti { namespace trace {
         // It seems really important to use two separate seeds / states for
         // sampling the source and sampling reflections. When we use only one
         // state for both, then the variance is very high.
-        auto rngSeed1 = std::make_unique<rti::rng::cstdlib_rng::state>(seed);
-        auto rngSeed2 = std::make_unique<rti::rng::cstdlib_rng::state>(seed+2);
+        auto rngSeed1 = std::make_unique<rti::rng::mt64_rng::state>(seed);
+        auto rngSeed2 = std::make_unique<rti::rng::mt64_rng::state>(seed+2);
 
         // A dummy counter for the boundary
         auto boundaryCntr = rti::trace::dummy_counter {};
