@@ -16,7 +16,7 @@ externalproject_add(embree-external
     -DCMAKE_CXX_STANDARD_REQUIRED=${CMAKE_CXX_STANDARD_REQUIRED}
     -DCMAKE_SHARED_LINKER_FLAGS=-lstdc++
     -DEMBREE_TUTORIALS=OFF
-    -DEMBREE_BACKFACE_CULLING=ON
+    -DEMBREE_BACKFACE_CULLING=OFF
     -DEMBREE_FILTER_FUNCTION=ON # setting this option is probably not necessary
 
     #-DCMAKE_BUILD_TYPE=Debug

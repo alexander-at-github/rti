@@ -148,8 +148,6 @@ int main(int argc, char* argv[]) {
   auto device_config = "hugepages=1";
   auto device = rtcNewDevice(device_config);
   rti::main_rt::print_rtc_device_info(device);
-  assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) != 0 &&
-         "Error: backface culling is not enabled");
 
   auto stickingCDefault = 0.8f; // float // default value
   auto stickingC = stickingCDefault;

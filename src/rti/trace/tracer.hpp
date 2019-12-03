@@ -44,6 +44,13 @@ namespace rti { namespace trace {
       // std::cerr << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == " << rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) << std::endl;
       auto& device = mFactory.get_geometry().get_rtc_device();
       assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_VERSION) >= 30601 && "Error: The minimum version of Embree is 3.6.1");
+      if (rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) != 0) {
+        std::cerr << "=== Warning: Embree backface culling enabled. This may result in incorrect results "
+                  << "(for triangles)" << std::endl;
+        assert( false && "Error: backface culling is enabled; as a consequence for triangles \
+                the tracer depends on the order of the vertices of the triangles");
+      }
+
       std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
     }
 
