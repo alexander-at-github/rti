@@ -112,6 +112,7 @@ namespace rti { namespace trace {
         this->boundRayout = this->mBoundaryReflectionModel.use(
           pRayHit.ray, pRayHit.hit, this->mBoundary, this->mRng, this->mRngState);
         this->rayout = this->boundRayout;
+        this->reflect = true;
         return;
       } else if (pRayHit.hit.geomID == this->mGeometryID) {
         // ray hit the geometry
