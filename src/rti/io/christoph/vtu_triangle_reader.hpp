@@ -72,6 +72,9 @@ namespace rti { namespace io { namespace christoph {
         this->mPoints.push_back({(Ty) xyz[0], (Ty) xyz[1], (Ty) xyz[2]});
       }
 
+      // Get normals from point data
+      auto pointnormalarray = unstructuredgrid->GetPointData()->GetArray("normal_vector");
+
       // Write triangles from the VTK data structure
       auto cellarray = vtkSmartPointer<vtkCellArray> (unstructuredgrid->GetCells());
       auto numCells = cellarray->GetNumberOfCells(); // vtkIdType
@@ -82,11 +85,34 @@ namespace rti { namespace io { namespace christoph {
       while (cellarray->GetNextCell(idlist)) {
         if (idlist->GetNumberOfIds() != 3) // it is not a triangles
           continue;
-        this->mTriangles.push_back({(size_t) idlist->GetId(0), (size_t) idlist->GetId(1), (size_t) idlist->GetId(2)});
+        auto pid0 = idlist->GetId(0);
+        auto pid1 = idlist->GetId(1);
+        auto pid2 = idlist->GetId(2);
+        this->mTriangles.push_back({(size_t) pid0, (size_t) pid2, (size_t) pid1});
+        // Read normal for points
+        double n0[3], n1[3], n2[3]; // each normal has three components
+        pointnormalarray->GetTuple(pid0, n0);
+        pointnormalarray->GetTuple(pid1, n1);
+        pointnormalarray->GetTuple(pid2, n2);
+        auto avgnormal = rti::util::triple<Ty> {(Ty) ((n0[0] + n1[0] + n2[0]) / 3),
+                                                (Ty) ((n0[1] + n1[1] + n2[1]) / 3),
+                                                (Ty) ((n0[2] + n1[2] + n2[2]) / 3)};
+        auto eps = 1e-5f; // float
+        if (avgnormal[0] < eps && avgnormal[1] < eps && avgnormal[2] < eps) {
+          // the normal is not defined
+          avgnormal = rti::util::triple<Ty> {0, 0, 1}; // set some values
+        }
+        rti::util::normalize(avgnormal);
+        this->mNormals.push_back(avgnormal);
       }
       // Shrink memory
       this->mPoints.shrink_to_fit();
       this->mTriangles.shrink_to_fit();
     }
+    virtual std::vector<rti::util::triple<Ty> > get_normals() const override final {
+      return mNormals;
+    }
+  private:
+    std::vector<rti::util::triple<Ty> > mNormals;
   };
 }}} // namespace

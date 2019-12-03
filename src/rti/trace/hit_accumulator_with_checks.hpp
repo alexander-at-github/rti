@@ -180,23 +180,23 @@ namespace rti { namespace trace {
         //result[idx] = (Ty) (numerator / denominator);
         result[idx] = (Ty) (numerator / denominator2 * nn * nn);
         // Debug
-        if (result [idx] >= 100000) {
-          std::cerr << std::setprecision(10);
-          std::cerr << "vov >= 100000 holds" << std::endl;
-          std::cerr << "nn == " << nn << "    "
-                    << "s1 == " << s1 << "    "
-                    << "s1square == " << s1square << "    "
-                    << "s2 == " << s2 << "    "
-                    << "s3 == " << s3 << "    "
-                    << "s4 == " << s4 << std::endl;
-          std::cerr << "numerator == " << numerator << "    " << "denominator == " << denominator << "    "
-                    << "denomroot == " << denomroot << std::endl;
-          std::cerr << "denominator2 == " << denominator2 << "    "
-                    << "denomroot2 == " << denomroot2 << std::endl;
-          std::cerr << "s1square / nn == " << s1square / nn << std::endl;
-          std::cerr << "vov == " << result[idx] << "    "
-                    << "relative error == " << this->get_relative_error()[idx] << std::endl;
-        }
+        // if (result [idx] >= 100000) {
+        //   std::cerr << std::setprecision(10);
+        //   std::cerr << "vov >= 100000 holds" << std::endl;
+        //   std::cerr << "nn == " << nn << "    "
+        //             << "s1 == " << s1 << "    "
+        //             << "s1square == " << s1square << "    "
+        //             << "s2 == " << s2 << "    "
+        //             << "s3 == " << s3 << "    "
+        //             << "s4 == " << s4 << std::endl;
+        //   std::cerr << "numerator == " << numerator << "    " << "denominator == " << denominator << "    "
+        //             << "denomroot == " << denomroot << std::endl;
+        //   std::cerr << "denominator2 == " << denominator2 << "    "
+        //             << "denomroot2 == " << denomroot2 << std::endl;
+        //   std::cerr << "s1square / nn == " << s1square / nn << std::endl;
+        //   std::cerr << "vov == " << result[idx] << "    "
+        //             << "relative error == " << this->get_relative_error()[idx] << std::endl;
+        // }
       }
       return result;
     }
