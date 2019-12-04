@@ -34,6 +34,7 @@
 #include "rti/io/christoph/vtu_triangle_reader.hpp"
 #include "rti/io/vtp_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
+#include "rti/io/xaver/vtu_point_cloud_reader.hpp"
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/disc_origin_x.hpp"
@@ -159,6 +160,12 @@ int main(int argc, char* argv[]) {
     stickingC = 1.0f; // reset to sane value
   }
   std::cout << "sticking coefficient == " << stickingC << std::endl;
+  // Handle input file
+  if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtk") {
+    std::cout << "Recognized \".vtk\" input file file extension. Please convert the input file to vtu (e.g., using Paraview) and rerun " << argv[0] << " with the new file." << std::endl;
+    std::cout << "terminating" << std::endl;
+    exit(EXIT_FAILURE);
+  }
   // create variable
   auto geoFactory = std::unique_ptr<rti::geo::i_factory<numeric_type> > (nullptr);
   if (optMan->get_bool_option_value("TRIANGLES")) {
@@ -179,10 +186,9 @@ int main(int argc, char* argv[]) {
       RLOG_DEBUG << "recognized .vtp file" << std::endl;
       auto reader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
       geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type> > (device, reader, stickingC);
-    //} else {
     } else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
       RLOG_DEBUG << "recognized .vtu file" << std::endl;
-      auto reader = rti::io::christoph::vtu_point_cloud_reader<numeric_type> {infilename};
+      auto reader = rti::io::xaver::vtu_point_cloud_reader<numeric_type> {infilename};
       geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type> > (device, reader, stickingC);
     }
   }
