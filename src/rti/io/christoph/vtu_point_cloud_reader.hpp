@@ -44,6 +44,7 @@ namespace rti { namespace io { namespace christoph {
       auto unstructuredgrid = reader->GetOutput(); // type: vtkUnstructuredGrid
       auto numPnts = unstructuredgrid->GetNumberOfPoints(); // type: vtkIdType
       auto pointdata = unstructuredgrid->GetPointData();
+      auto celldata = unstructuredgrid->GetCellData();
       // if (pointdata != nullptr) {
       //   std::cout << " contains point data with "
       //             << pointdata->GetNumberOfArrays()
@@ -55,7 +56,7 @@ namespace rti { namespace io { namespace christoph {
       //               << std::endl;
       //   }
       // }
-      if (pointdata == nullptr) {
+      if (pointdata == nullptr || celldata == nullptr) {
         std::cerr
           << "Warning: "  << boost::core::demangle(typeid(this).name())
           << " could not find data in the file " << pFilename << std::endl;
@@ -63,18 +64,24 @@ namespace rti { namespace io { namespace christoph {
       auto areaStr = "area_around_vertex";
       auto areasArray = pointdata->GetArray(areaStr);
       if (areasArray == nullptr) {
+        auto areaStr2 = "gridSpacing";
+        areasArray = celldata->GetArray(areaStr2);
+      }
+      if (areasArray == nullptr) {
         std::cerr
           << "Warning: "  << boost::core::demangle(typeid(this).name())
-          << " could not find data with the name \"" << areaStr
-          << "\" in the file " << pFilename << std::endl;
+          << " could not find grid spacing data in the file " << pFilename << std::endl;
       }
-      auto normalStr = "normal_vector";
-      auto normalsArray = pointdata->GetArray(normalStr);
+      auto normalStr1 = "Normals";
+      auto normalsArray = celldata->GetArray(normalStr1);
+      if (normalsArray == nullptr) {
+        auto normalStr2 = "normal_vector";
+        normalsArray = pointdata->GetArray(normalStr2);
+      }
       if (normalsArray == nullptr) {
         std::cerr
           << "Warning: "  << boost::core::demangle(typeid(this).name())
-          << " could not find data with the name \"" << normalStr
-          << "\" in the file " << pFilename << std::endl;
+          << " could not find surface normals in the file " << pFilename << std::endl;
       }
       std::cout
         << "Warning: " << boost::core::demangle(typeid(this).name())
