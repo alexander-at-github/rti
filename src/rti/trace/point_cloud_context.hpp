@@ -164,9 +164,9 @@ namespace rti { namespace trace {
         // set tfar
         rticontextptr->geoFirstHitTFar = rayptr->tfar;
         // determine epsilon:
-        // Set epsilon equal to two times the radius of the first disc which is hit by the ray.
+        // Set epsilon equal to 0.5 times the radius of the first disc which is hit by the ray.
         // the fourth element of the primitive is the radius
-        auto epsilon = 2 * geometry.get_prim(hitptr->primID)[3];
+        auto epsilon = 0.5 * geometry.get_prim(hitptr->primID)[3];
         rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
         RLOG_DEBUG << "filter_fun_geometry(): geoTFarMax set to " << rticontextptr->geoTFarMax << std::endl;
         rticontextptr->geoNotIntersected = false;
