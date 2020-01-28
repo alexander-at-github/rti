@@ -19,7 +19,7 @@ namespace rti { namespace ray {
       assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Condition on ordering of corner points");
     }
 
-    rti::util::triple<Ty> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+    rti::util::triple<Ty> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
       assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Class invariant on ordering of corner points");
       auto r1 = (Ty) pRng.get(pRngState);
       auto r2 = (Ty) pRng.get(pRngState);

@@ -8,7 +8,7 @@
 
 namespace rti { namespace ray {
   template<typename Ty>
-  class source : public rti::ray::i_source {
+  class source : public rti::ray::i_source<Ty> {
     // Combines an origin with a direction
     // Not thread safe. See direction classes for reasons.
   public:
@@ -17,7 +17,7 @@ namespace rti { namespace ray {
       mOrigin(pOrigin),
       mDirection(pDirection) {}
 
-    void fill_ray(RTCRay& pRay, rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+    void fill_ray(RTCRay& pRay, rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
 
       // "Avoid store-to-load forwarding issues with single rays
       //
@@ -54,8 +54,12 @@ namespace rti { namespace ray {
       reinterpret_cast<__m128&>(pRay.dir_x) = _mm_set_ps(time, (float) dir[2], (float) dir[1], (float) dir[0]);
     }
 
+    virtual void optional_consider(rti::util::triple<Ty> xyz, double relativeerror) override final {}
+
+    virtual void optional_update_adaptive_sampling() override final {}
+
   private:
     rti::ray::i_origin<Ty>& mOrigin;
     rti::ray::i_direction<Ty>& mDirection;
   };
-}} // namespace
+}}

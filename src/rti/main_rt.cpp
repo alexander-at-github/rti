@@ -41,7 +41,9 @@
 #include "rti/ray/disc_origin_z.hpp"
 #include "rti/ray/dummy_direction.hpp"
 #include "rti/ray/source.hpp"
+#include "rti/ray/adaptive_source.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
+#include "rti/ray/adaptive_rectangle_origin_z.hpp"
 #include "rti/test_and_benchmark/test_result.hpp"
 #include "rti/trace/tracer.hpp"
 #include "rti/trace/result.hpp"
@@ -70,7 +72,8 @@ namespace rti {
       optMan->addCmlParam(rti::util::clo::bool_option
         {"DISCS", {"--discs"}, "sets discs as surface primitives"});
       optMan->addCmlParam(rti::util::clo::string_option
-        {"STICKING_COEFFICIENT", {"--sticking-coefficient", "--sticking-c", "--sticking", "-s"}, "specifies the sticking coefficient of the surface", false});
+        {"STICKING_COEFFICIENT", {"--sticking-coefficient", "--sticking-c", "--sticking", "-s"},
+           "specifies the sticking coefficient of the surface", false});
       bool succ = optMan->parse_args(argc, argv);
       if (!succ) {
         std::cout << optMan->get_usage_msg();
@@ -226,6 +229,7 @@ int main(int argc, char* argv[]) {
   // verification instances.)
   //
   auto origin = rti::ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
+  auto adaptiveOrigin = rti::ray::adaptive_rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
   // auto origin = rti::ray::disc_origin_z<numeric_type> {(originC1[0] + originC2[0])/2,
   //                                                      (originC1[1] + originC2[1])/2,
   //                                                      zmax,
@@ -237,6 +241,7 @@ int main(int argc, char* argv[]) {
      rti::util::triple<numeric_type> {0.f, 1.f,  0.f},
      rti::util::triple<numeric_type> {1.f, 0.f,  0.f}}};
   auto source = rti::ray::source<numeric_type> {origin, direction};
+  auto adaptiveSource = rti::ray::adaptive_source<numeric_type> {adaptiveOrigin, direction};
 
   auto numraysstr = optMan->get_string_option_value("NUM_RAYS");
   auto numrays = 128 * 1024ull; // default value // magic number
@@ -245,7 +250,7 @@ int main(int argc, char* argv[]) {
   } catch (...) {}
 
 
-  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays};
+  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, adaptiveSource, numrays};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;

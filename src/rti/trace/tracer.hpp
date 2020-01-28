@@ -31,7 +31,7 @@ namespace rti { namespace trace {
   public:
     tracer(rti::geo::i_factory<Ty>& pFactory,
            rti::geo::i_boundary<Ty>& pBoundary,
-           rti::ray::i_source& pSource,
+           rti::ray::i_source<Ty>& pSource,
            size_t pNumRays) :
       mFactory(pFactory),
       mBoundary(pBoundary),
@@ -320,7 +320,7 @@ namespace rti { namespace trace {
   private:
     rti::geo::i_factory<Ty>& mFactory;
     rti::geo::i_boundary<Ty>& mBoundary;
-    rti::ray::i_source& mSource;
+    rti::ray::i_source<Ty>& mSource;
     size_t mNumRays;
   };
 }} // namespace
