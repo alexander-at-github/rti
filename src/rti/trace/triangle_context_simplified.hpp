@@ -103,6 +103,7 @@ namespace rti { namespace trace {
       if (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
         // no hit
         this->reflect = false;
+        this->lastHitRelativeError = 0.0;
         return;
       }
       // else
@@ -113,6 +114,7 @@ namespace rti { namespace trace {
           pRayHit.ray, pRayHit.hit, this->mBoundary, this->mRng, this->mRngState);
         this->rayout = this->boundRayout;
         this->reflect = true;
+        this->lastHitRelativeError = 0.0;
         return;
       } else if (pRayHit.hit.geomID == this->mGeometryID) {
         // ray hit the geometry
@@ -120,8 +122,10 @@ namespace rti { namespace trace {
           pRayHit.ray, pRayHit.hit, this->mGeometry, this->mRng, this->mRngState);
         this->rayout = this->geoRayout;
         auto valuetodrop = this->rayWeight * this->mGeometry.get_sticking_coefficient();
-        this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
+        mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
         this->rayWeight -= valuetodrop;
+
+        this->lastHitRelativeError = mHitAccumulator.get_relative_error_for_id(pRayHit.hit.primID);
       } else {
         assert(false && "Assumption");
       }
@@ -168,6 +172,10 @@ namespace rti { namespace trace {
 
     void init_ray_weight() override final {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
+    }
+
+    double get_last_hit_relative_error() override final {
+      return this->lastHitRelativeError;
     }
   };
 }} // namespace

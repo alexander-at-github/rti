@@ -17,7 +17,7 @@
 #include "rti/rng/mt64_rng.hpp"
 //#include "rti/trace/counter.hpp"
 #include "rti/trace/dummy_counter.hpp"
-#include "rti/trace/hit_accumulator.hpp"
+//#include "rti/trace/hit_accumulator.hpp"
 #include "rti/trace/hit_accumulator_with_checks.hpp"
 #include "rti/trace/point_cloud_context.hpp"
 #include "rti/trace/result.hpp"
@@ -32,11 +32,13 @@ namespace rti { namespace trace {
     tracer(rti::geo::i_factory<Ty>& pFactory,
            rti::geo::i_boundary<Ty>& pBoundary,
            rti::ray::i_source<Ty>& pSource,
-           size_t pNumRays) :
+           size_t pNumRays,
+           size_t pAdaptiveSourceUpdateInterval = 1000 * 1000) :
       mFactory(pFactory),
       mBoundary(pBoundary),
       mSource(pSource),
-      mNumRays(pNumRays) {
+      mNumRays(pNumRays),
+      adaptiveSourceUpdateInterval(pAdaptiveSourceUpdateInterval) {
       assert (mFactory.get_geometry().get_rtc_device() == pBoundary.get_rtc_device() &&
               "the geometry and the boundary need to refer to the same Embree (rtc) device");
       assert(rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
@@ -52,6 +54,7 @@ namespace rti { namespace trace {
       }
 
       std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
+      std::cout << "adaptive source update interval == " << adaptiveSourceUpdateInterval << std::endl;
     }
 
     rti::trace::result<Ty> run() {
@@ -172,6 +175,11 @@ namespace rti { namespace trace {
 
           RAYSRCLOG(rayhit);
 
+          auto maxRelativeError = 0.0;
+          auto maxRelativeErrorSourcePoint =
+            rti::util::triple<Ty>{(Ty) rayhit.ray.org_x, (Ty) rayhit.ray.org_y, (Ty) rayhit.ray.org_z};
+          auto maxRelativeErrorSet = false;
+
           auto reflect = false; // initialize to some value
           do {
             RLOG_DEBUG
@@ -196,12 +204,16 @@ namespace rti { namespace trace {
             //   break; // break do-while loop
             // }
 
-            // else
-            // A hit
             reflect = rtiContext->reflect;
             auto hitpoint = rti::util::triple<float> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
                                                       rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
                                                       rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
+            auto lastHitRelativeError = rtiContext->get_last_hit_relative_error();
+            if (lastHitRelativeError > maxRelativeError) {
+              maxRelativeError = lastHitRelativeError;
+              maxRelativeErrorSet = true;
+            }
+
             RLOG_DEBUG
               << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
               << " reflect == " << (reflect ? "true" : "false")  << std::endl;
@@ -262,6 +274,14 @@ namespace rti { namespace trace {
             //   reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo);
             // }
           } while (reflect);
+
+          if (maxRelativeErrorSet) {
+            mSource.optional_consider(maxRelativeErrorSourcePoint, maxRelativeError);
+          }
+          if (idx % adaptiveSourceUpdateInterval == 0) {
+            mSource.optional_update_adaptive_sampling();
+          }
+
         }
       }
 
@@ -322,5 +342,6 @@ namespace rti { namespace trace {
     rti::geo::i_boundary<Ty>& mBoundary;
     rti::ray::i_source<Ty>& mSource;
     size_t mNumRays;
+    size_t adaptiveSourceUpdateInterval;
   };
 }} // namespace

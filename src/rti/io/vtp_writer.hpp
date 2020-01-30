@@ -171,7 +171,7 @@ namespace rti { namespace io {
     // static
     // void try_add_statistical_data_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
     //                               rti::trace::i_hit_accumulator<Ty>& pAc) {
-    //   auto indatarerr = pAc.get_relative_error();
+    //   auto indatarerr = pAc.get_relative_errors();
     //   if (indatarerr.size() <= 0)
     //     return; // no data; just return
     //   auto rerr = vtkSmartPointer<vtkDoubleArray>::New();
@@ -199,7 +199,7 @@ namespace rti { namespace io {
     // static
     // void try_add_statistical_data_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
     //                                      rti::trace::i_hit_accumulator<Ty>& pAc) {
-    //   auto indata = pAc.get_relative_error();
+    //   auto indata = pAc.get_relative_errors();
     //   assert (pPolydata->GetNumberOfCells() == indata.size() &&
     //           "number of cells in polydata does not fit the hit counter accumulator");
     //   if (indata.size() <= 0)
@@ -217,7 +217,7 @@ namespace rti { namespace io {
     static
     void try_add_statistical_data(vtkSmartPointer<vtkPolyData> pPolydata,
                                   rti::trace::i_hit_accumulator<Ty>& pAc) {
-      auto indatarerr = pAc.get_relative_error();
+      auto indatarerr = pAc.get_relative_errors();
       assert (pPolydata->GetNumberOfCells() == indatarerr.size() &&
               "number of cells in polydata does not fit the accumulator");
       if (indatarerr.size() <= 0)

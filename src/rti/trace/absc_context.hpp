@@ -30,6 +30,7 @@ namespace rti { namespace trace {
       reflect(pReflect),
       rayout(pRayout),
       tfar(pTfar) {}
+
   protected:
     struct context_c_wrapper {
       // wraping the Embree rtc context and the rti context into a C-style struct
@@ -39,13 +40,13 @@ namespace rti { namespace trace {
       // The first member HAS TO BE the RTC context, that is, context from the Embree library.
       RTCIntersectContext mRtcContext; // not a reference or pointer but full data stored here
       rti::trace::absc_context<Ty>& mAbscContext;
-      // c-tor
       context_c_wrapper(rti::trace::absc_context<Ty>& pAC) :
         mAbscContext(pAC) {}
     };
-    context_c_wrapper mContextCWrapper {*this};
-  public:
 
+    context_c_wrapper mContextCWrapper {*this};
+
+  public:
     // virtual void register_intersect_filter_funs(rti::geo::i_geometry<Ty>& pGeometry,
     //                                             rti::geo::i_boundary<Ty>& pBoundary) = 0;
     /* register_intersect_filter_function cannot be a member of a class (it can only be static).
@@ -54,11 +55,13 @@ namespace rti { namespace trace {
     virtual void intersect1(RTCScene&, RTCRayHit&) = 0;
     virtual void init() = 0;
     virtual void init_ray_weight() = 0;
+    virtual double get_last_hit_relative_error() = 0;
 
     // Public data members
     float rayWeight; // initialize to some value
     bool reflect; // initialize to some value
     rti::util::pair<rti::util::triple<Ty> >& rayout;
     Ty tfar; // initialize to some value
+    double lastHitRelativeError;
   };
 }} // namespace

@@ -7,7 +7,7 @@
 #include "rti/geo/triangle_geometry.hpp"
 #include "rti/io/i_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
-#include "rti/trace/triangle_context.hpp"
+//#include "rti/trace/triangle_context.hpp"
 #include "rti/trace/triangle_context_simplified.hpp"
 
 namespace rti { namespace geo {

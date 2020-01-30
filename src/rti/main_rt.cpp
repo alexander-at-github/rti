@@ -250,7 +250,10 @@ int main(int argc, char* argv[]) {
   } catch (...) {}
 
 
-  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, adaptiveSource, numrays};
+  auto adaptiveUpdateInterval = 100u;
+  std::cerr << "Using a very low adaptive update interval of " << adaptiveUpdateInterval << std::endl;
+  auto tracer =
+    rti::trace::tracer<numeric_type> {*geoFactory, boundary, adaptiveSource, numrays, adaptiveUpdateInterval};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;

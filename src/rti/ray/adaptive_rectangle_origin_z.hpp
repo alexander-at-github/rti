@@ -8,10 +8,33 @@ namespace rti { namespace ray {
   template<typename Ty>
   class adaptive_rectangle_origin_z : public rti::ray::adaptive_origin<Ty> {
   private:
-    void swap(Ty& e1, Ty& e2) const {
+    using numeric_type = double;
+    using weightvector = std::vector<numeric_type>;
+    using doubleweightvector = std::vector<std::vector<double> >;
+
+    void swap(Ty& e1, Ty& e2) {
       Ty tmp = e2;
       e2 = e1;
       e1 = tmp;
+    }
+
+    template<typename localType> void
+    init_double_vector(std::vector<std::vector<localType> >& vec, size_t size1, size_t size2, localType value) {
+      vec.clear();
+      vec.resize(size1);
+      for (size_t xidx = 0; xidx < size1; ++xidx) {
+        vec[xidx].clear();
+        vec[xidx].resize(size2, value);
+      }
+    }
+
+    void update_sumstratumweights_variable() {
+      sumstratumweights = 0.0;
+      for(auto const& vec : stratumweights) {
+        for (auto const& val : vec) {
+          sumstratumweights += val;
+        }
+      }
     }
 
   public:
@@ -30,13 +53,12 @@ namespace rti { namespace ray {
       auto xdivisions = 10u;
       auto ydivisions = 10u;
       auto stratuminitweight = 1.0;
-      stratumweights.reserve(xdivisions);
-      for (size_t xidx = 0; xidx < xdivisions; ++xidx) {
-        stratumweights[xidx].reserve(ydivisions);
-        for (size_t yidx = 0; yidx < ydivisions; ++yidx) {
-          stratumweights[xidx][yidx] = stratuminitweight;
-        }
-      }
+      init_double_vector(stratumweights, xdivisions, ydivisions, stratuminitweight);
+      update_sumstratumweights_variable();
+      init_double_vector(s1res, xdivisions, ydivisions, 0.0);
+      init_double_vector(s2res, xdivisions, ydivisions, 0.0);
+      init_double_vector(cnts, xdivisions, ydivisions, (size_t) 0);
+      init_double_vector(resre, xdivisions, ydivisions, 0.0);
     }
 
   private:
@@ -58,29 +80,39 @@ namespace rti { namespace ray {
       return (mC2[1] - mC1[1]) / number_of_y_divisions();
     }
 
-  public:
-    rti::util::triple<Ty> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
-      assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Invariant on ordering of corner points");
+    rti::util::pair<size_t>
+    get_random_stratum_indices_according_to_weights(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState)
+    {
       auto r1 = pRng.get(pRngState);
-      auto r2 = (Ty) pRng.get(pRngState);
-      auto r3 = (Ty) pRng.get(pRngState);
-
-      auto numstratums = number_of_x_divisions() * number_of_y_divisions();
       auto r1scaled = scale_to_sumstratumweights(r1, pRng.min(), pRng.max());
-      auto xrsidx = 0u;
-      auto yrsidx = 0u;
-      auto weightsum = 0.0;
-      while (weightsum < r1scaled) {
-        weightsum += stratumweights[xrsidx][yrsidx];
+      auto xrsidx = 0ul;
+      auto yrsidx = 0ul;
+      auto weightsumlow = 0.0;
+      auto weightsumhigh = stratumweights[0][0];
+      while ( ! (weightsumlow < r1scaled && r1scaled <= weightsumhigh) ) {
+        weightsumlow = weightsumhigh;
+        weightsumhigh += stratumweights[xrsidx][yrsidx];
         yrsidx += 1;
         if (yrsidx >= stratumweights[xrsidx].size()) {
           xrsidx += 1;
           yrsidx = 0;
         }
-        assert(xrsidx < stratumweights.sizs() && yrsidx < stratumweights[xrsidx].size() && "Assumption");
+        assert(xrsidx < stratumweights.size() && yrsidx < stratumweights[xrsidx].size() && "Assumption");
       }
-      assert(weightsum < sumstratumweights && "Assumption");
-      assert(xrsidx < stratumweights.sizs() && yrsidx < stratumweights[xrsidx].size() && "Assumption");
+      assert(weightsumlow <= sumstratumweights && weightsumhigh <= sumstratumweights && "Assumption");
+      assert(xrsidx < stratumweights.size() && yrsidx < stratumweights[xrsidx].size() && "Assumption");
+      return {xrsidx, yrsidx};
+    }
+
+  public:
+    rti::util::triple<Ty> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
+      assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Invariant on ordering of corner points");
+      auto xIdxYidx = get_random_stratum_indices_according_to_weights(pRng, pRngState);
+      auto xrsidx = xIdxYidx[0];
+      auto yrsidx = xIdxYidx[1];
+
+      auto r2 = (Ty) pRng.get(pRngState);
+      auto r3 = (Ty) pRng.get(pRngState);
 
       std::cout
         << "[DEBUG]"
@@ -104,7 +136,7 @@ namespace rti { namespace ray {
 
   private:
     double scale_to_sumstratumweights(uint64_t random, uint64_t min, uint64_t max) {
-      auto percent = (random - min) / (max - min);
+      auto percent = (((double)random - min) / (max - min));
       return percent * sumstratumweights;
     }
 
@@ -176,21 +208,19 @@ namespace rti { namespace ray {
     rti::util::pair<Ty> mC1;
     rti::util::pair<Ty> mC2;
 
-    using doublevector = std::vector<std::vector<double> >;
-
     // Thershold for the relative error of the relative error
     double relativeerrorthreshold = 0.02;
     // A minimum for the weight of the strata
     double weightminimum = 0.05;
 
-    doublevector stratumweights;
+    doubleweightvector stratumweights;
     double sumstratumweights;
 
-    doublevector s1res; // sum of relative errors from this stratum
-    doublevector s2res; // sum of squared relative errors from this stratum
-    doublevector cnts; // number of samples from this stratum
+    doubleweightvector s1res; // sum of relative errors from this stratum
+    doubleweightvector s2res; // sum of squared relative errors from this stratum
+    std::vector<std::vector<size_t> > cnts; // number of samples from this stratum
 
-    doublevector resre; // relative errors of relative error
+    doubleweightvector resre; // relative errors of relative error
     double sumresre; // sum of relative errors of relative error
     // TODO: Do we use sumresre?
 

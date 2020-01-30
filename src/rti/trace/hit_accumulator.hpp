@@ -69,7 +69,7 @@ namespace rti { namespace trace {
       return mCnts;
     }
     
-    std::vector<Ty> get_relative_error() override final {
+    std::vector<Ty> get_relative_errors() override final {
       // Does not have this functionality
       return {};
     }

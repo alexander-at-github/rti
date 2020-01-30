@@ -166,8 +166,8 @@ namespace rti { namespace trace {
         // determine epsilon:
         // Set epsilon equal to 0.5 times the radius of the first disc which is hit by the ray.
         // the fourth element of the primitive is the radius
-        auto epsilon = 0.5 * geometry.get_prim(hitptr->primID)[3];
-        rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
+        auto delta = 0.5 * geometry.get_prim(hitptr->primID)[3];
+        rticontextptr->geoTFarMax = rayptr->tfar + delta;
         RLOG_DEBUG << "filter_fun_geometry(): geoTFarMax set to " << rticontextptr->geoTFarMax << std::endl;
         rticontextptr->geoNotIntersected = false;
       }
@@ -198,9 +198,9 @@ namespace rti { namespace trace {
       auto  validptr = args->valid;
       // Reference all the data in the context with local variables
       auto& boundaryID = rticontextptr->mBoundaryID;
-      auto& rng =        rticontextptr->mRng;
-      auto& rngState =   rticontextptr->mRngState;
-      auto& boundary =   rticontextptr->mBoundary;
+      auto& rng = rticontextptr->mRng;
+      auto& rngState = rticontextptr->mRngState;
+      auto& boundary = rticontextptr->mBoundary;
       auto& boundRayout = rticontextptr->boundRayout;
 
       assert(hitptr->geomID == boundaryID && "Assumption");
@@ -289,6 +289,8 @@ namespace rti { namespace trace {
       // Normal hit on the surface
       this->rayout = this->geoRayout;
       this->tfar = this->geoTFarMax; // we show tfarMax
+
+      auto maxHitRealtiveError = 0.0;
       // deliver energy onto the surface
       // Note if Embree uses RTC_BUILD_QUALITY_HIGH, then there might exist duplicate
       // hits in this->mGeoHitPrimIDs .
@@ -307,7 +309,12 @@ namespace rti { namespace trace {
         auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(hitprimid, valuetodrop);
         sumvaluedroped += valuetodrop;
+        auto LocalHitRelativeError = mHitAccumulator.get_relative_error_for_id(hitprimid);
+        if (maxHitRealtiveError < LocalHitRelativeError) {
+          maxHitRealtiveError = LocalHitRelativeError;
+        }
       }
+      this->lastHitRelativeError = maxHitRealtiveError;
       auto hitprimcount = set.size();
       assert(this->rayWeight >= sumvaluedroped / hitprimcount && "Assertion");
       this->rayWeight -= sumvaluedroped / hitprimcount;
@@ -361,6 +368,10 @@ namespace rti { namespace trace {
 
     void init_ray_weight() override final {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
+    }
+
+    double get_last_hit_relative_error() override final {
+      return this->lastHitRelativeError;
     }
   };
 }} // namespace

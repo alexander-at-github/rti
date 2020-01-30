@@ -112,33 +112,29 @@ namespace rti { namespace trace {
       return mCnts;
     }
 
-    std::vector<Ty> get_relative_error() override final {
+    std::vector<Ty> get_relative_errors() override final {
       auto result = std::vector<Ty>(mS1s.size(), 0); // size of vector, all initial values are equal to zero
       for (size_t idx = 0; idx < result.size(); ++idx) {
-        auto s1square = mS1s[idx] * mS1s[idx];
-        if (s1square == 0) {
-          result[idx] = std::numeric_limits<Ty>::max();
-          continue;
-        }
-        // We require at least 2 samples to compute the relative error.
-        if (mCnts[idx] <= 1) {
-          result[idx] = std::numeric_limits<Ty>::max();
-          continue;
-        }
-        assert(mCnts[idx] != 0 && "Assumption");
-        // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
-        // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
-        // page 83 and 84.
-        result[idx] = (Ty) (std::sqrt(mS2s[idx] / s1square - 1 / mCnts[idx]));
-        // Debug
-        // if (result[idx] != std::numeric_limits<Ty>::max()) {
-        //   std::cerr << "mCnts[idx] == " << mCnts[idx] << std::endl;
-        //   std::cerr << "s1square == " << s1square << std::endl;
-        //   std::cerr << "mS2ss[idx] == " << mS2s[idx] << std::endl;
-        //   std::cerr << "result[idx] == " << result[idx] << std::endl;
-        // }
+        result[idx] = (Ty) get_relative_error_for_id(idx);
       }
       return result;
+    }
+
+  public:
+    double get_relative_error_for_id(unsigned int pPrimID) override final {
+      auto s1square = mS1s[pPrimID] * mS1s[pPrimID];
+      if (s1square == 0) {
+        return std::numeric_limits<double>::max();
+      }
+      // We require at least 2 samples to compute the relative error.
+      if (mCnts[pPrimID] <= 1) {
+        return std::numeric_limits<double>::max();
+      }
+      assert(mCnts[pPrimID] != 0 && "Assumption");
+      // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
+      // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
+      // page 83 and 84.
+      return (std::sqrt(mS2s[pPrimID] / s1square - 1 / mCnts[pPrimID]));
     }
 
     std::vector<Ty> get_vov() override final { // variance of variance
@@ -195,7 +191,7 @@ namespace rti { namespace trace {
         //             << "denomroot2 == " << denomroot2 << std::endl;
         //   std::cerr << "s1square / nn == " << s1square / nn << std::endl;
         //   std::cerr << "vov == " << result[idx] << "    "
-        //             << "relative error == " << this->get_relative_error()[idx] << std::endl;
+        //             << "relative error == " << this->get_relative_errors()[idx] << std::endl;
         // }
       }
       return result;
