@@ -2,11 +2,11 @@
 
 #include <cmath>
 
-#include "rti/ray/adaptive_origin.hpp"
+#include "rti/ray/i_adaptive_origin.hpp"
 
 namespace rti { namespace ray {
   template<typename Ty>
-  class adaptive_rectangle_origin_z : public rti::ray::adaptive_origin<Ty> {
+  class adaptive_rectangle_origin_z : public rti::ray::i_adaptive_origin<Ty> {
   private:
     using numeric_type = double;
     using weightvector = std::vector<numeric_type>;
@@ -199,6 +199,7 @@ namespace rti { namespace ray {
     }
   public:
     void update_adaptive_sampling_state() override final {
+      std::cout << "[update_adaptive_sampling_state()]" << std::endl;
       update_resre();
       update_weights();
     }

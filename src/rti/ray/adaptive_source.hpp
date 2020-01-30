@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/ray/adaptive_origin.hpp"
+#include "rti/ray/i_adaptive_origin.hpp"
 #include "rti/ray/i_source.hpp"
 #include "rti/ray/source.hpp"
 
@@ -8,7 +8,7 @@ namespace rti { namespace ray {
   template<typename Ty>
   class adaptive_source : public rti::ray::i_source<Ty> {
   public:
-    adaptive_source(rti::ray::adaptive_origin<Ty>& pOrigin, rti::ray::i_direction<Ty>& pDirection) :
+    adaptive_source(rti::ray::i_adaptive_origin<Ty>& pOrigin, rti::ray::i_direction<Ty>& pDirection) :
       origin(pOrigin),
       direction(pDirection) {
       std::cout << "[adaptive_source] this class sets the Embree variable tnear to a constant" << std::endl;
@@ -36,7 +36,7 @@ namespace rti { namespace ray {
     }
 
   private:
-    rti::ray::adaptive_origin<Ty>& origin;
+    rti::ray::i_adaptive_origin<Ty>& origin;
     rti::ray::i_direction<Ty>& direction;
   };
 }}
