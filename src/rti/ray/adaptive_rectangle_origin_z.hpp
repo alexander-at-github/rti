@@ -104,6 +104,15 @@ namespace rti { namespace ray {
       return {xrsidx, yrsidx};
     }
 
+    rti::util::quadruple<Ty>
+    get_stratum_mins_and_maxs(size_t xidx, size_t yidx) {
+      auto xmin = mC1[0] + xidx * size_of_x_division();
+      auto xmax = mC1[0] + (xidx + 1) * size_of_x_division();
+      auto ymin = mC1[1] + yidx * size_of_y_division();
+      auto ymax = mC1[1] + (yidx + 1) * size_of_y_division();
+      return {xmin, xmax, ymin, ymax};
+    }
+
   public:
     rti::util::triple<Ty> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
       assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Invariant on ordering of corner points");
@@ -114,15 +123,16 @@ namespace rti { namespace ray {
       auto r2 = (Ty) pRng.get(pRngState);
       auto r3 = (Ty) pRng.get(pRngState);
 
-      std::cout
-        << "[DEBUG]"
-        << " xrsidx == " << xrsidx
-        << " yrsidx == " << yrsidx << std::endl;
+      // std::cout
+      //   << "[DEBUG]"
+      //   << " xrsidx == " << xrsidx
+      //   << " yrsidx == " << yrsidx << std::endl;
 
-      auto xStratumMin = xrsidx * size_of_x_division();
-      auto xStratumMax = (xrsidx + 1) * size_of_x_division();
-      auto yStratumMin = yrsidx * size_of_y_division();
-      auto yStratumMax = (yrsidx + 1) * size_of_y_division();
+      auto stratumMinsAndMaxs = get_stratum_mins_and_maxs(xrsidx, yrsidx);
+      auto xStratumMin = stratumMinsAndMaxs[0];
+      auto xStratumMax = stratumMinsAndMaxs[1];
+      auto yStratumMin = stratumMinsAndMaxs[2];
+      auto yStratumMax = stratumMinsAndMaxs[3];
 
       auto randRngMin = (Ty) pRng.min();
       auto randRngMax = (Ty) pRng.max();
@@ -131,6 +141,8 @@ namespace rti { namespace ray {
 
       Ty xx = xStratumMin + (xStratumMax - xStratumMin) * r2prct;
       Ty yy = yStratumMin + (yStratumMax - yStratumMin) * r3prct;
+      assert(mC1[0] <= xx && xx <= mC2[0] && "Assumption");
+      assert(mC1[1] <= yy && yy <= mC2[1] && "Assumption");
       return {xx, yy, zval};
     }
 
@@ -144,9 +156,12 @@ namespace rti { namespace ray {
       auto xx = coord[0];
       auto yy = coord[1];
       assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Condition on ordering of corner points");
-      assert(xx <= mC2[0] && yy <= mC2[1] && "Assumption");
-      auto xidx = std::floor(xx / size_of_x_division());
-      auto yidx = std::floor(yy / size_of_y_division());
+      assert(mC1[0] <= xx && xx <= mC2[0] && "Correctness Assertion");
+      assert(mC1[1] <= yy && yy <= mC2[1] && "Correctness Assertion");
+      auto xidx = std::floor((xx - mC1[0]) / size_of_x_division());
+      auto yidx = std::floor((yy - mC1[1]) / size_of_y_division());
+      assert(0 <= xidx && xidx < number_of_x_divisions() && "Correctness Assertion");
+      assert(0 <= yidx && yidx < number_of_y_divisions() && "Correctness Assertion");
       return {(size_t) xidx, (size_t) yidx};
     }
 

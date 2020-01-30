@@ -121,20 +121,23 @@ namespace rti { namespace trace {
     }
 
   public:
-    double get_relative_error_for_id(unsigned int pPrimID) override final {
+    Ty get_relative_error_for_id(unsigned int pPrimID) override final {
       auto s1square = mS1s[pPrimID] * mS1s[pPrimID];
       if (s1square == 0) {
-        return std::numeric_limits<double>::max();
+        return std::numeric_limits<Ty>::max();
       }
       // We require at least 2 samples to compute the relative error.
       if (mCnts[pPrimID] <= 1) {
-        return std::numeric_limits<double>::max();
+        return std::numeric_limits<Ty>::max();
       }
       assert(mCnts[pPrimID] != 0 && "Assumption");
       // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
       // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
       // page 83 and 84.
-      return (std::sqrt(mS2s[pPrimID] / s1square - 1 / mCnts[pPrimID]));
+      auto candidate = (std::sqrt(mS2s[pPrimID] / s1square - 1 / mCnts[pPrimID]));
+      return candidate < std::numeric_limits<Ty>::max() ?
+                         candidate :
+                         std::numeric_limits<Ty>::max();
     }
 
     std::vector<Ty> get_vov() override final { // variance of variance
@@ -169,7 +172,7 @@ namespace rti { namespace trace {
         auto denominator = denomroot * denomroot;
         auto denomroot2 = nn * s2 - s1square;
         auto denominator2 = denomroot2 * denomroot2;
-        if (denominator == 0) {
+        if (denominator2 == 0) {
           result[idx] = std::numeric_limits<Ty>::max();
           continue;
         }

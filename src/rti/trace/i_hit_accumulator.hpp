@@ -14,6 +14,6 @@ namespace rti { namespace trace {
     virtual std::vector<Ty> get_relative_errors() = 0;
     virtual std::vector<Ty> get_vov() = 0;
     virtual void print(std::ostream& pOs) const = 0;
-    virtual double get_relative_error_for_id(unsigned int pPrimID) = 0;
+    virtual Ty get_relative_error_for_id(unsigned int pPrimID) = 0;
   };
 }}

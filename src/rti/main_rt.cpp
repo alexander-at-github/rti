@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
   } catch (...) {}
 
 
-  auto adaptiveUpdateInterval = 100u;
+  auto adaptiveUpdateInterval = 200000u;
   std::cerr << "Using a very low adaptive update interval of " << adaptiveUpdateInterval << std::endl;
   auto tracer =
     rti::trace::tracer<numeric_type> {*geoFactory, boundary, adaptiveSource, numrays, adaptiveUpdateInterval};
