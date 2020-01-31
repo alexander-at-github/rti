@@ -212,9 +212,15 @@ namespace rti { namespace ray {
         }
       }
     }
+
   public:
     void update_adaptive_sampling_state() override final {
       std::cout << "[update_adaptive_sampling_state()]" << std::endl;
+      if (write_source_distribution) {
+        auto filename = "source_distribution";
+        std::cout << "[update_adaptive_sampling_state()] writing previous source distribution" << std::endl;
+        rti::io::vtp_writer<Ty>::write_source_distribution(mC1, mC2, zval, stratumweights, filename);
+      }
       update_resre();
       update_weights();
     }
@@ -240,5 +246,6 @@ namespace rti { namespace ray {
     double sumresre; // sum of relative errors of relative error
     // TODO: Do we use sumresre?
 
+    static constexpr bool write_source_distribution = true;
   };
 }}

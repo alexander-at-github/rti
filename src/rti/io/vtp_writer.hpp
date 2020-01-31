@@ -1,10 +1,17 @@
 #pragma once
 
+#include <unordered_map>
+#include <map>
+#include <unordered_set>
+#include <set>
+
 #include <vtkCellArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkLine.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include <vtkPolygon.h>
+// #include <vtkPSystemTools.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
 #include <vtkTriangle.h>
@@ -379,10 +386,107 @@ namespace rti { namespace io {
       return polydata;
     }
 
+  private:
+    static std::string get_free_filename(std::string filenameprefix)
+    {
+      size_t filenamenumber = 0;
+      auto filenamesuffix = ".vtp";
+      while (true) {
+        auto namecandidate = filenameprefix + "-" + std::to_string(filenamenumber) + filenamesuffix;
+        if (vtksys::SystemTools::FileExists(namecandidate)) {
+          filenamenumber += 1;
+          continue;
+        }
+        return namecandidate;
+      }
+    }
+
+  public:
+    template<typename T1, typename T2> static
+    void write_source_distribution(
+      rti::util::pair<T1> c0,
+      rti::util::pair<T1> c1,
+      T1 zval,
+      std::vector<std::vector<T2> > stratumweights,
+      std::string filenameprefix)
+    {
+      auto filename = get_free_filename(filenameprefix);
+
+      assert (c0[0] <= c1[0] && "Assumption");
+      assert (c0[1] <= c1[1] && "Assumption");
+      auto xmin = c0[0];
+      auto xmax = c1[0];
+      auto ymin = c0[1];
+      auto ymax = c1[1];
+      assert(xmin <= xmax && ymin <= ymax && "Assumption");
+      auto xdelta = ((double)xmax - xmin) / stratumweights.size();
+      auto ydelta = ((double)ymax - ymin) / stratumweights[0].size();
+      auto numberOfStratas = stratumweights.size() * stratumweights[0].size();
+
+      auto stratumToPointsMap = std::map<rti::util::pair<size_t>, rti::util::quadruple<size_t> > {};
+      auto pointset = std::set<rti::util::triple<double> > {};
+      for (size_t xidx = 0; xidx < stratumweights.size(); ++xidx) {
+        for (size_t yidx = 0; yidx < stratumweights[xidx].size(); ++yidx) {
+          auto xStratumMin = xmin + xidx * xdelta;
+          auto xStratumMax = xmin + (xidx + 1) * xdelta;
+          auto yStratumMin = ymin + yidx * ydelta;
+          auto yStratumMax = ymin + (yidx + 1) * ydelta;
+          auto point1 = rti::util::triple<double> {xStratumMin, yStratumMin, zval};
+          auto point2 = rti::util::triple<double> {xStratumMin, yStratumMax, zval};
+          auto point3 = rti::util::triple<double> {xStratumMax, yStratumMax, zval};
+          auto point4 = rti::util::triple<double> {xStratumMax, yStratumMin, zval};
+          auto pointsetIndices = std::vector<size_t> {};
+          for (auto& point : {point1, point2, point3, point4}) {
+            auto setIter = pointset.find(point);
+            if (setIter == pointset.end()) {
+              auto iterWithSucceedFlag = pointset.insert(point);
+              assert(iterWithSucceedFlag.second == true && "Assuming the insertion has taken place");
+              setIter = iterWithSucceedFlag.first;
+            }
+            pointsetIndices.push_back(std::distance(pointset.begin(), setIter));
+          }
+          assert(pointsetIndices.size() == 4 && "Correctness Assertion");
+          auto pointIndicesQuadruple = rti::util::quadruple<size_t>
+            {pointsetIndices[0], pointsetIndices[1], pointsetIndices[2], pointsetIndices[3]};
+          stratumToPointsMap.insert({{xidx, yidx}, pointIndicesQuadruple});
+        }
+      }
+      auto pointVector = std::vector<rti::util::triple<double> > (pointset.begin(), pointset.end());
+
+      auto vtkpoints = vtkSmartPointer<vtkPoints>::New();
+      for (auto const& point : pointVector) {
+        vtkpoints->InsertNextPoint(point[0], point[1], point[2]);
+      }
+      auto vtkPolygonsCellArray = vtkSmartPointer<vtkCellArray>::New();
+      auto vtkWeightValuesArray = vtkSmartPointer<vtkDoubleArray>::New();
+      vtkWeightValuesArray->SetNumberOfComponents(1); // 1 dimension
+      //vtkWeightValuesCellArray->SetNumberOfTuples(numberOfStratas);
+      for (auto const& stratumPointsPair : stratumToPointsMap) {
+        auto stratumIndices = stratumPointsPair.first;
+        auto stratumWeight = stratumweights[stratumIndices[0]][stratumIndices[1]];
+        auto points = stratumPointsPair.second;
+        auto vtkPoly = vtkSmartPointer<vtkPolygon>::New();
+        vtkPoly->GetPointIds()->SetNumberOfIds(4); // 4 points for a rectangle
+        vtkPoly->GetPointIds()->SetId(0, points[0]);
+        vtkPoly->GetPointIds()->SetId(1, points[1]);
+        vtkPoly->GetPointIds()->SetId(2, points[2]);
+        vtkPoly->GetPointIds()->SetId(3, points[3]);
+        vtkPolygonsCellArray->InsertNextCell(vtkPoly);
+        vtkWeightValuesArray->InsertNextTuple(&stratumWeight);
+      }
+
+      auto polydata = vtkSmartPointer<vtkPolyData>::New();
+      polydata->SetPoints(vtkpoints);
+      polydata->SetPolys(vtkPolygonsCellArray);
+      polydata->GetCellData()->AddArray(vtkWeightValuesArray);
+
+      write(polydata, filename);
+    }
+
     static constexpr char const* radiusStr = "radius";
     static constexpr char const* valueStr = "value";
     static constexpr char const* hitcntStr = "hitcnt";
     static constexpr char const* relativeErrorStr = "relative-error";
     static constexpr char const* varOfVarStr = "variance-of-variance";
   };
-}} // namespace
+}}
