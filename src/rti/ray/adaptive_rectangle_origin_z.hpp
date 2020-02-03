@@ -50,10 +50,9 @@ namespace rti { namespace ray {
 
       std::cerr << "WARNING: This class is not thread-safe." << std::endl;
 
-      auto xdivisions = 10u;
-      auto ydivisions = 10u;
-      auto stratuminitweight = 1.0;
-      init_double_vector(stratumweights, xdivisions, ydivisions, stratuminitweight);
+      auto xdivisions = 100u;
+      auto ydivisions = 100u;
+      init_double_vector(stratumweights, xdivisions, ydivisions, stratummaxweight);
       update_sumstratumweights_variable();
       init_double_vector(s1res, xdivisions, ydivisions, 0.0);
       init_double_vector(s2res, xdivisions, ydivisions, 0.0);
@@ -70,14 +69,14 @@ namespace rti { namespace ray {
       return stratumweights[0].size();
     }
 
-    Ty size_of_x_division() {
+    double size_of_x_division() {
       assert(mC1[0] <= mC2[0] && "Condition on ordering of corner points");
-      return (mC2[0] - mC1[0]) / number_of_y_divisions();
+      return ((double) mC2[0] - mC1[0]) / number_of_y_divisions();
     }
 
-    Ty size_of_y_division() {
+    double size_of_y_division() {
       assert(mC1[1] <= mC2[1] && "Condition on ordering of corner points");
-      return (mC2[1] - mC1[1]) / number_of_y_divisions();
+      return ((double) mC2[1] - mC1[1]) / number_of_y_divisions();
     }
 
     rti::util::pair<size_t>
@@ -89,14 +88,15 @@ namespace rti { namespace ray {
       auto yrsidx = 0ul;
       auto weightsumlow = 0.0;
       auto weightsumhigh = stratumweights[0][0];
-      while ( ! (weightsumlow < r1scaled && r1scaled <= weightsumhigh) ) {
-        weightsumlow = weightsumhigh;
-        weightsumhigh += stratumweights[xrsidx][yrsidx];
+      while ( ! (weightsumlow <= r1scaled && r1scaled < weightsumhigh) ) {
         yrsidx += 1;
         if (yrsidx >= stratumweights[xrsidx].size()) {
           xrsidx += 1;
           yrsidx = 0;
         }
+        weightsumlow = weightsumhigh;
+        weightsumhigh += stratumweights[xrsidx][yrsidx];
+
         assert(xrsidx < stratumweights.size() && yrsidx < stratumweights[xrsidx].size() && "Assumption");
       }
       assert(weightsumlow <= sumstratumweights && weightsumhigh <= sumstratumweights && "Assumption");
@@ -153,8 +153,8 @@ namespace rti { namespace ray {
     }
 
     rti::util::pair<size_t> get_stratum_of_coord(rti::util::triple<Ty> coord) {
-      auto xx = coord[0];
-      auto yy = coord[1];
+      auto xx = (double) coord[0];
+      auto yy = (double) coord[1];
       assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Condition on ordering of corner points");
       assert(mC1[0] <= xx && xx <= mC2[0] && "Correctness Assertion");
       assert(mC1[1] <= yy && yy <= mC2[1] && "Correctness Assertion");
@@ -205,16 +205,34 @@ namespace rti { namespace ray {
           stratumweights[xidx][yidx] =
             resre[xidx][yidx] <= relativeerrorthreshold ?
             estimate_of_relative_error_on_surface_at_location(xidx, yidx) :
-            1.0; // full weight
-          if (stratumweights[xidx][yidx] < weightminimum)
-            stratumweights[xidx][yidx] = weightminimum;
+            stratummaxweight; // full weight
+          if (stratumweights[xidx][yidx] > stratummaxweight)
+            stratumweights[xidx][yidx] = stratummaxweight;
+          if (stratumweights[xidx][yidx] < stratumminweight)
+            stratumweights[xidx][yidx] = stratumminweight;
           sumstratumweights += stratumweights[xidx][yidx];
+        }
+      }
+    }
+
+    void reset_sums() {
+      std::cout << "Resetting accumulator of adaptive source" << std::endl;
+      for(size_t xidx = 0; xidx < s1res.size(); ++xidx) {
+        for (size_t yidx = 0; yidx < s1res[xidx].size(); ++yidx) {
+          s1res[xidx][yidx] = 0;
+        }
+      }
+      for(size_t xidx = 0; xidx < s2res.size(); ++xidx) {
+        for (size_t yidx = 0; yidx < s2res[xidx].size(); ++yidx) {
+          s2res[xidx][yidx] = 0;
         }
       }
     }
 
   public:
     void update_adaptive_sampling_state() override final {
+      static size_t called = 0;
+
       std::cout << "[update_adaptive_sampling_state()]" << std::endl;
       if (write_source_distribution) {
         auto filename = "source_distribution";
@@ -223,6 +241,7 @@ namespace rti { namespace ray {
       }
       update_resre();
       update_weights();
+      reset_sums();
     }
 
   private:
@@ -231,9 +250,11 @@ namespace rti { namespace ray {
     rti::util::pair<Ty> mC2;
 
     // Thershold for the relative error of the relative error
-    double relativeerrorthreshold = 0.02;
+    constexpr static double relativeerrorthreshold = 0.10;
     // A minimum for the weight of the strata
-    double weightminimum = 0.05;
+    constexpr static double stratumminweight = 0.05;
+    constexpr static double stratummaxweight = 6000000.0;
+
 
     doubleweightvector stratumweights;
     double sumstratumweights;

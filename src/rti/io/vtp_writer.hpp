@@ -424,7 +424,7 @@ namespace rti { namespace io {
       auto numberOfStratas = stratumweights.size() * stratumweights[0].size();
 
       auto stratumToPointsMap = std::map<rti::util::pair<size_t>, rti::util::quadruple<size_t> > {};
-      auto pointset = std::set<rti::util::triple<double> > {};
+      auto pointset = std::vector<rti::util::triple<double> > {};
       for (size_t xidx = 0; xidx < stratumweights.size(); ++xidx) {
         for (size_t yidx = 0; yidx < stratumweights[xidx].size(); ++yidx) {
           auto xStratumMin = xmin + xidx * xdelta;
@@ -437,11 +437,15 @@ namespace rti { namespace io {
           auto point4 = rti::util::triple<double> {xStratumMax, yStratumMin, zval};
           auto pointsetIndices = std::vector<size_t> {};
           for (auto& point : {point1, point2, point3, point4}) {
-            auto setIter = pointset.find(point);
+            //auto setIter = pointset.find(point);
+            auto setIter = std::find(pointset.begin(), pointset.end(), point);
             if (setIter == pointset.end()) {
-              auto iterWithSucceedFlag = pointset.insert(point);
-              assert(iterWithSucceedFlag.second == true && "Assuming the insertion has taken place");
-              setIter = iterWithSucceedFlag.first;
+              // auto iterWithSucceedFlag = pointset.insert(point);
+              pointset.push_back(point);
+              // assert(iterWithSucceedFlag.second == true && "Assuming the insertion has taken place");
+              // setIter = iterWithSucceedFlag.first;
+              assert(pointset.size() > 0 && "Correctness Assertion");
+              setIter = pointset.end() - 1; // -1 for last element
             }
             pointsetIndices.push_back(std::distance(pointset.begin(), setIter));
           }
@@ -449,18 +453,24 @@ namespace rti { namespace io {
           auto pointIndicesQuadruple = rti::util::quadruple<size_t>
             {pointsetIndices[0], pointsetIndices[1], pointsetIndices[2], pointsetIndices[3]};
           stratumToPointsMap.insert({{xidx, yidx}, pointIndicesQuadruple});
+          // std::cerr << "stratum: " << xidx << " " << yidx << " point indices: ";
+          // for (const auto& elem : pointIndicesQuadruple) {
+          //   std::cerr << " " << elem;
+          // }
+          // std::cerr << std::endl;
         }
       }
-      auto pointVector = std::vector<rti::util::triple<double> > (pointset.begin(), pointset.end());
+      //auto pointVector = std::vector<rti::util::triple<double> > (pointset.begin(), pointset.end());
 
       auto vtkpoints = vtkSmartPointer<vtkPoints>::New();
-      for (auto const& point : pointVector) {
+      for (auto const& point : pointset /*pointVector*/) {
         vtkpoints->InsertNextPoint(point[0], point[1], point[2]);
       }
       auto vtkPolygonsCellArray = vtkSmartPointer<vtkCellArray>::New();
       auto vtkWeightValuesArray = vtkSmartPointer<vtkDoubleArray>::New();
       vtkWeightValuesArray->SetNumberOfComponents(1); // 1 dimension
       //vtkWeightValuesCellArray->SetNumberOfTuples(numberOfStratas);
+      vtkWeightValuesArray->SetName(sourceWeights);
       for (auto const& stratumPointsPair : stratumToPointsMap) {
         auto stratumIndices = stratumPointsPair.first;
         auto stratumWeight = stratumweights[stratumIndices[0]][stratumIndices[1]];
@@ -488,5 +498,6 @@ namespace rti { namespace io {
     static constexpr char const* hitcntStr = "hitcnt";
     static constexpr char const* relativeErrorStr = "relative-error";
     static constexpr char const* varOfVarStr = "variance-of-variance";
+    static constexpr char const* sourceWeights = "source-sampling-weights";
   };
 }}

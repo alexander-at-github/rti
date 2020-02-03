@@ -199,7 +199,7 @@ int main(int argc, char* argv[]) {
   // Compute bounding box
   auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z achsis.
-  auto epsilon = 0.1; //0.1; // -0.1;
+  auto epsilon = 0.01; //0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
     bdBox[0][2] += epsilon;
   } else {
@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
   } catch (...) {}
 
 
-  auto adaptiveUpdateInterval = 200000u;
+  auto adaptiveUpdateInterval = 1000000u;
   std::cerr << "Using a very low adaptive update interval of " << adaptiveUpdateInterval << std::endl;
   auto tracer =
     rti::trace::tracer<numeric_type> {*geoFactory, boundary, adaptiveSource, numrays, adaptiveUpdateInterval};
