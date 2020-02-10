@@ -50,8 +50,6 @@ namespace rti { namespace ray {
 
       std::cerr << "WARNING: This class is not thread-safe." << std::endl;
 
-      auto xdivisions = 100u;
-      auto ydivisions = 100u;
       init_double_vector(stratumweights, xdivisions, ydivisions, stratummaxweight);
       update_sumstratumweights_variable();
       init_double_vector(s1res, xdivisions, ydivisions, 0.0);
@@ -104,8 +102,7 @@ namespace rti { namespace ray {
       return {xrsidx, yrsidx};
     }
 
-    rti::util::quadruple<Ty>
-    get_stratum_mins_and_maxs(size_t xidx, size_t yidx) {
+    rti::util::quadruple<Ty> get_stratum_mins_and_maxs(size_t xidx, size_t yidx){
       auto xmin = mC1[0] + xidx * size_of_x_division();
       auto xmax = mC1[0] + (xidx + 1) * size_of_x_division();
       auto ymin = mC1[1] + yidx * size_of_y_division();
@@ -168,7 +165,7 @@ namespace rti { namespace ray {
   public:
     // When tracing a ray, one can pass the maximum of all relative errors
     void consider(rti::util::triple<Ty> xyz, double relativeerror) override final {
-      assert(xyz[2] == zval && "Assumption");
+      assert(xyz[2] == zval && "Correctness Assertion");
       auto indices = get_stratum_of_coord(xyz);
       auto xi = indices[0];
       auto yi = indices[1];
@@ -217,14 +214,19 @@ namespace rti { namespace ray {
 
     void reset_sums() {
       std::cout << "Resetting accumulator of adaptive source" << std::endl;
-      for(size_t xidx = 0; xidx < s1res.size(); ++xidx) {
+      for (size_t xidx = 0; xidx < s1res.size(); ++xidx) {
         for (size_t yidx = 0; yidx < s1res[xidx].size(); ++yidx) {
           s1res[xidx][yidx] = 0;
         }
       }
-      for(size_t xidx = 0; xidx < s2res.size(); ++xidx) {
+      for (size_t xidx = 0; xidx < s2res.size(); ++xidx) {
         for (size_t yidx = 0; yidx < s2res[xidx].size(); ++yidx) {
           s2res[xidx][yidx] = 0;
+        }
+      }
+      for (size_t xidx = 0; xidx < cnts.size(); ++xidx) {
+        for (size_t yidx = 0; yidx < cnts[xidx].size(); ++yidx) {
+          cnts[xidx][yidx] = 0;
         }
       }
     }
@@ -241,7 +243,10 @@ namespace rti { namespace ray {
       }
       update_resre();
       update_weights();
-      reset_sums();
+      if (called <= 2) { // magic // experimentation
+        called += 1;
+        reset_sums();
+      }
     }
 
   private:
@@ -249,12 +254,14 @@ namespace rti { namespace ray {
     rti::util::pair<Ty> mC1;
     rti::util::pair<Ty> mC2;
 
-    // Thershold for the relative error of the relative error
-    constexpr static double relativeerrorthreshold = 0.10;
-    // A minimum for the weight of the strata
-    constexpr static double stratumminweight = 0.05;
-    constexpr static double stratummaxweight = 6000000.0;
+    constexpr static size_t xdivisions = 200u;
+    constexpr static size_t ydivisions = 200u;
 
+    // Thershold for the relative error of the relative error
+    constexpr static double relativeerrorthreshold = 0.05;
+    // A minimum for the weight of the strata
+    constexpr static double stratummaxweight = std::numeric_limits<double>::max() / (xdivisions * ydivisions) / 2;
+    constexpr static double stratumminweight = 0.005 * stratummaxweight;
 
     doubleweightvector stratumweights;
     double sumstratumweights;
