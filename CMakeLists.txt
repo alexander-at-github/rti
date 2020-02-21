@@ -23,7 +23,7 @@ set(EMBREE_ISPC_SUPPORT OFF CACHE BOOL "Set whether or not you use Intel's SPMD 
 ##########################################################################################
 
 set(M_DEPENDENCIES_DIR ${CMAKE_SOURCE_DIR}/dependencies)
-set(STAGED_INSTALL_PREFIX ${M_DEPENDENCIES_DIR}/stage) # will be used in external/upstream
+set(STAGED_INSTALL_PREFIX ${M_DEPENDENCIES_DIR}/stage) # will be used in ./external/upstream/
 message(STATUS "${PROJECT_NAME} external project's staged install path: ${STAGED_INSTALL_PREFIX}")
 
 list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system" "timer" "iostreams" "filesystem")
