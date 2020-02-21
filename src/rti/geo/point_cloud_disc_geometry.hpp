@@ -17,18 +17,29 @@ namespace rti { namespace geo {
       init_this(pDevice, pGReader);
     }
 
-    std::string prim_to_string(unsigned int pPrimID) const override final {
+    point_cloud_disc_geometry(RTCDevice& device,
+                              std::vector<rti::util::quadruple<Ty> > points,
+                              std::vector<rti::util::triple<Ty> > normals,
+                              Ty stickingC) :
+      rti::geo::absc_point_cloud_geometry<Ty>(device, stickingC) {
+      init_this(device, points, normals);
+    }
+
+    std::string prim_to_string(unsigned int pPrimID) const override final
+    {
       auto strs = std::stringstream {};
       assert(false && "Not implemented");
       return "prim_to_string() not implemented";
     }
 
-    rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const override final {
+    rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const override final
+    {
       auto pnt = this->mVVBuffer[pPrimID];
       return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
+    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final
+    {
       auto nml = this->mNNBuffer[pPrimID];
       return {(Ty) nml.xx, (Ty) nml.yy, (Ty) nml.zz};
     }
@@ -54,10 +65,22 @@ namespace rti { namespace geo {
     struct normal_vec_3f_t {
       float xx, yy, zz;
     };
-    // Normals are saved in an Embree-buffer
     normal_vec_3f_t* mNNBuffer = nullptr;
 
-    void init_this(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader) {
+
+    void init_this(RTCDevice& device, rti::io::i_point_cloud_reader<Ty>& preader)
+    {
+      auto points = preader.get_points();
+      auto normals = preader.get_normals();
+      init_this(device, points, normals);
+    }
+
+    void init_this(RTCDevice& device,
+                   std::vector<rti::util::quadruple<Ty> > points,
+                   std::vector<rti::util::triple<Ty> > normals)
+    {
+      assert(rti::util::each_normalized<Ty>(normals) && "Condition: surface normals are normalized violated");
+      assert(normals.size() == points.size() && "Number of surface normals not consistent with number of points");
       // "Points with per vertex radii are supported with sphere, ray-oriented
       // discs, and normal-oriented discs geometric represetntations. Such point
       // geometries are created by passing RTC_GEOMETRY_TYPE_SPHERE_POINT,
@@ -106,11 +129,10 @@ namespace rti { namespace geo {
       // information, u and v are set to zero."
       // Source: https://www.embree.org/api.html#rtc_geometry_type_point
 
-      this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT); // using a ray facing disc
+      this->mGeometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT); // using a ray facing disc
 
-      std::vector<rti::util::quadruple<Ty> > points = pGReader.get_points();
       this->mNumPoints = points.size();
-      // Acquire memory via Embree API
+
       this->mVVBuffer = (rti::geo::point_4f_t*) // type specified in the file absc_point_cloud_geometry.hpp
         rtcSetNewGeometryBuffer(this->mGeometry,
                                 RTC_BUFFER_TYPE_VERTEX,
@@ -118,7 +140,7 @@ namespace rti { namespace geo {
                                 RTC_FORMAT_FLOAT4,
                                 sizeof(rti::geo::point_4f_t),
                                 this->mNumPoints);
-      // Write points to Embree data structure
+
       for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
         rti::util::quadruple<Ty>& qudtrpl = points[idx];
         // Here we have to cast to float because:
@@ -129,12 +151,9 @@ namespace rti { namespace geo {
         this->mVVBuffer[idx].xx = (float) qudtrpl[0];
         this->mVVBuffer[idx].yy = (float) qudtrpl[1];
         this->mVVBuffer[idx].zz = (float) qudtrpl[2];
-        this->mVVBuffer[idx].radius = (float) qudtrpl[3]; // TODO: Might need adjustment
+        this->mVVBuffer[idx].radius = (float) qudtrpl[3];
       }
-      auto normals = pGReader.get_normals();
-      assert(rti::util::each_normalized<Ty>(normals) && "Condition: surface normals are normalized violated");
-      assert(normals.size() == points.size() && "Number of surface normals not consistent with number of points");
-      this->mNNBuffer = (normal_vec_3f_t*) // local specification of type
+      this->mNNBuffer = (normal_vec_3f_t*)
         rtcSetNewGeometryBuffer(this->mGeometry,
                                 RTC_BUFFER_TYPE_NORMAL,
                                 0, // slot
@@ -148,8 +167,8 @@ namespace rti { namespace geo {
       }
 
       rtcCommitGeometry(this->mGeometry);
-      assert (RTC_ERROR_NONE == rtcGetDeviceError(pDevice) &&
+      assert (RTC_ERROR_NONE == rtcGetDeviceError(device) &&
               "Embree device error after rtcSetNewGeometryBuffer()");
     }
   };
-}} // namespace
+}}

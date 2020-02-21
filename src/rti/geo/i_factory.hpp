@@ -1,5 +1,6 @@
 #pragma once
 
+#include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_geometry.hpp"
 #include "rti/reflection/i_reflection_model.hpp"
 #include "rti/trace/absc_context.hpp"
@@ -27,4 +28,4 @@ namespace rti { namespace geo {
       std::string pOutfilename,
       std::vector<rti::util::pair<std::string> > pMetadata) = 0;
   };
-}} //namespace
+}}

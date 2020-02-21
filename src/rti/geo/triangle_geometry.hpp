@@ -8,12 +8,14 @@
 
 #include "rti/io/i_triangle_reader.hpp"
 #include "rti/geo/i_geometry.hpp"
+#include "rti/util/logger.hpp"
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty>
   class triangle_geometry : public rti::geo::i_geometry<Ty> {
   public:
+
     triangle_geometry(RTCDevice& pRTCDevice,
                       rti::io::i_triangle_reader<Ty>& pReader,
                       Ty pStickingC) :
@@ -22,6 +24,7 @@ namespace rti { namespace geo {
       mStickingC(pStickingC) {
       init_this(pRTCDevice, pReader);
     }
+
   private:
     // "RTC_GEOMETRY_TYPE_TRIANGLE: The vertex buffer contains an array of
     // single precision x, y, z floating point coordinates
@@ -38,13 +41,9 @@ namespace rti { namespace geo {
     struct triangle_t {
       uint32_t v0, v1, v2;
     };
-    // using triangle_t = rti::util::triple<uint32_t>;
 
-    // struct normal_vec_3f_t {
-    //   Ty xx, yy, zz;
-    // };
-
-    void init_this(RTCDevice& pDevice, rti::io::i_triangle_reader<Ty>& pReader) {
+    void init_this(RTCDevice& pDevice, rti::io::i_triangle_reader<Ty>& pReader)
+    {
       this->mGeometry = rtcNewGeometry(pDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
       auto vertices = pReader.get_points();
       this->mNumVertices = vertices.size();
@@ -71,11 +70,7 @@ namespace rti { namespace geo {
                                 sizeof(triangle_t),
                                 this->mNumTriangles);
 
-      // Check Embree device error
       assert (RTC_ERROR_NONE == rtcGetDeviceError(pDevice) && "Error");
-      if (RTC_ERROR_NONE != rtcGetDeviceError(pDevice)) {
-        RLOG_DEBUG << "Embree device error after rtcSetNewGeometryBuffer()" << std::endl;
-      }
 
       for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
         auto& tt = triangles[idx];
@@ -91,8 +86,11 @@ namespace rti { namespace geo {
 
       this->mNNBuffer = pReader.get_normals();
     }
+
   public:
-     void print(std::ostream& pOs) const override final {
+
+    void print(std::ostream& pOs) const override final
+    {
       pOs << "(:class " << boost::core::demangle(typeid(this).name());
       if (this->mVVBuffer != nullptr)
         for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
@@ -101,15 +99,18 @@ namespace rti { namespace geo {
       pOs << ")";
     }
 
-    RTCDevice& get_rtc_device() override final {
+    RTCDevice& get_rtc_device() override final
+    {
       return this->mRTCDevice;
     }
 
-    RTCGeometry& get_rtc_geometry() override final {
+    RTCGeometry& get_rtc_geometry() override final
+    {
       return this->mGeometry;
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
+    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final
+    {
       // auto& tri = this->mTTBuffer[pPrimID];
       // auto& v0 = this->mVVBuffer[tri.v0];
       // auto& v1 = this->mVVBuffer[tri.v1];
@@ -123,7 +124,8 @@ namespace rti { namespace geo {
       return this->mNNBuffer[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final
+    {
       //auto epsilon = 1e-12; // magic number; less than 1e-3 does definitely not work
       auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
       auto yy = pRay.org_y + pRay.dir_y * pRay.tfar;
@@ -136,22 +138,24 @@ namespace rti { namespace geo {
       return {(Ty) xx, (Ty) yy, (Ty) zz};
     }
 
-    std::string get_input_file_path() override final {
+    std::string get_input_file_path() override final
+    {
       return this->mReader.get_input_file_name();
     }
 
-    size_t get_num_primitives() const override final {
+    size_t get_num_primitives() const override final
+    {
       return this->mNumTriangles;
     }
 
-    std::string prim_to_string(unsigned int pPrimID) const override final {
+    std::string prim_to_string(unsigned int pPrimID) const override final
+    {
       assert(false && "Not implemented");
-      auto& tt = this->mTTBuffer[pPrimID];
-      std::stringstream strs;
-      return strs.str();
+      return {};
     }
 
-    rti::util::pair<rti::util::triple<Ty> > get_bounding_box() const override final {
+    rti::util::pair<rti::util::triple<Ty> > get_bounding_box() const override final
+    {
       assert(mVVBuffer != nullptr && "No data");
       if (mVVBuffer == nullptr) // no data in this instance
         return {rti::util::triple<Ty> {0,0,0}, rti::util::triple<Ty> {0,0,0}};
@@ -169,29 +173,31 @@ namespace rti { namespace geo {
       return {rti::util::triple<Ty> {xmin, ymin, zmin}, rti::util::triple<Ty> {xmax, ymax, zmax}};
     }
 
-    Ty get_sticking_coefficient() const override final {
+    Ty get_sticking_coefficient() const override final
+    {
       return this->mStickingC;
     }
 
     // Note: this function does not read the data from this->mVVBuffer (the Embree buffer).
     // Instead it reads the data from the input data structure of type
     // rti::io::i_triangle_reader<Ty>.
-    std::vector<rti::util::triple<Ty> > get_vertices() const {
+    std::vector<rti::util::triple<Ty> > get_vertices() const
+    {
       return this->mReader.get_points();
     }
 
     // Note: this function does not read the data from this->mVVBuffer (the Embree buffer).
     // Instead it reads the data from the input data structure of type
     // rti::io::i_triangle_reader<Ty>.
-    std::vector<rti::util::triple<size_t> > get_triangles() const {
+    std::vector<rti::util::triple<size_t> > get_triangles() const
+    {
       return this->mReader.get_triangles();
     }
 
-    rti::util::triple<rti::util::triple<Ty> > get_prim(unsigned int pPrimID) const {
+    rti::util::triple<rti::util::triple<Ty> > get_prim(unsigned int pPrimID) const
+    {
       auto& tt = this->mTTBuffer[pPrimID];
-      return {
-              rti::util::triple<Ty> {this->mVVBuffer}
-      };
+      return {rti::util::triple<Ty> {this->mVVBuffer}};
     }
 
   private:

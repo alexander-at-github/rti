@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 #include <boost/core/demangle.hpp>
 
 #include "rti/geo/i_geometry.hpp"
@@ -19,32 +21,28 @@ namespace rti { namespace geo {
       float xx, yy, zz, radius;
     };
 
-  // The type Ty is supposed to be a numeric type - float or double.
-  template<typename Ty>
-  class absc_point_cloud_geometry : public rti::geo::i_geometry<Ty> {
+  template<typename numeric_type>
+  class absc_point_cloud_geometry : public rti::geo::i_geometry<numeric_type> {
   public:
     // abstract class
     virtual ~absc_point_cloud_geometry() {}
     // inherits also some virtual function declarations from i_geometry
 
-    // pure virtual function
-    virtual rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const = 0;
+    virtual rti::util::quadruple<numeric_type> get_prim(unsigned int pPrimID) const = 0;
 
-    // constructor
-    absc_point_cloud_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader, Ty pStickingC) :
+    absc_point_cloud_geometry(RTCDevice& pDevice,
+                              rti::io::i_point_cloud_reader<numeric_type>& pGReader,
+                              numeric_type pStickingC) :
       mDevice(pDevice),
       mStickingC(pStickingC),
-      mInfilename(pGReader.get_input_file_name()) {
-      // one cannot call a pure virtual function in the constructor.
-      // too bad!
-      //this->init_this(pDevice, pGReader);
-    }
-    // absc_point_cloud_geometry(absc_point_cloud_geometry& pOther) = default;
-    // absc_point_cloud_geometry(absc_point_cloud_geometry&& pOther) = default;
-    // absc_point_cloud_geometry& operator= (absc_point_cloud_geometry& pOther) = default;
-    //absc_point_cloud_geometry& operator= (absc_point_cloud_geometry&& pOther) = default;
+      mInfilename(pGReader.get_input_file_name()) {}
 
-    void print(std::ostream& pOs) const override final {
+    absc_point_cloud_geometry(RTCDevice& device, numeric_type stickingC) :
+      mDevice(device),
+      mStickingC(stickingC) {}
+
+    void print(std::ostream& pOs) const override final
+    {
       pOs << "(:class " << boost::core::demangle(typeid(this).name());
       if (mVVBuffer != nullptr)
         for (size_t idx = 0; idx < this->mNumPoints; ++idx)
@@ -52,52 +50,59 @@ namespace rti { namespace geo {
       pOs << ")";
     }
 
-    RTCDevice& get_rtc_device() override final {
+    RTCDevice& get_rtc_device() override final
+    {
       return mDevice;
     }
 
-    RTCGeometry& get_rtc_geometry() override final {
+    RTCGeometry& get_rtc_geometry() override final
+    {
       return mGeometry;
     }
 
-    std::string get_input_file_path() override final {
+    std::string get_input_file_path() override final
+    {
       return mInfilename;
     }
 
-    rti::util::pair<rti::util::triple<Ty> > get_bounding_box() const override final {
+    rti::util::pair<rti::util::triple<numeric_type> > get_bounding_box() const override final
+    {
       assert(mVVBuffer != nullptr && "No data");
       if (mVVBuffer == nullptr) // no data in this instance
-        return {rti::util::triple<Ty> {0,0,0}, rti::util::triple<Ty> {0,0,0}};
-      Ty min = std::numeric_limits<Ty>::lowest();
-      Ty max = std::numeric_limits<Ty>::max();
-      Ty xmin=max, xmax=min, ymin=max, ymax=min, zmin=max, zmax=min;
+        return {rti::util::triple<numeric_type> {0,0,0}, rti::util::triple<numeric_type> {0,0,0}};
+      numeric_type min = std::numeric_limits<numeric_type>::lowest();
+      numeric_type max = std::numeric_limits<numeric_type>::max();
+      numeric_type xmin=max, xmax=min, ymin=max, ymax=min, zmin=max, zmax=min;
       for (size_t idx = 0; idx < mNumPoints; ++idx) {
-        xmin = std::min(xmin, mVVBuffer[idx].xx);
-        xmax = std::max(xmax, mVVBuffer[idx].xx);
-        ymin = std::min(ymin, mVVBuffer[idx].yy);
-        ymax = std::max(ymax, mVVBuffer[idx].yy);
-        zmin = std::min(zmin, mVVBuffer[idx].zz);
-        zmax = std::max(zmax, mVVBuffer[idx].zz);
+        xmin = std::min(xmin, (numeric_type) mVVBuffer[idx].xx);
+        xmax = std::max(xmax, (numeric_type) mVVBuffer[idx].xx);
+        ymin = std::min(ymin, (numeric_type) mVVBuffer[idx].yy);
+        ymax = std::max(ymax, (numeric_type) mVVBuffer[idx].yy);
+        zmin = std::min(zmin, (numeric_type) mVVBuffer[idx].zz);
+        zmax = std::max(zmax, (numeric_type) mVVBuffer[idx].zz);
       }
-      return {rti::util::triple<Ty> {xmin, ymin, zmin}, rti::util::triple<Ty> {xmax, ymax, zmax}};
+      return {rti::util::triple<numeric_type> {xmin, ymin, zmin},
+              rti::util::triple<numeric_type> {xmax, ymax, zmax}};
     }
 
-    size_t get_num_primitives() const override final {
+    size_t get_num_primitives() const override final
+    {
       return this->mNumPoints;
     }
 
-    Ty get_sticking_coefficient() const override final {
+    numeric_type get_sticking_coefficient() const override final
+    {
       return mStickingC;
     }
 
   protected:
     // Data members
     RTCDevice& mDevice;
-    Ty mStickingC = 1; // initialize to some value
+    numeric_type mStickingC = 1; // initialize to some value
     RTCGeometry mGeometry;
     point_4f_t* mVVBuffer = nullptr;
     size_t mNumPoints = 0;
     std::string mInfilename;
 
   };
-}} // namespace
+}}
