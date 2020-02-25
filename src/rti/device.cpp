@@ -8,6 +8,7 @@
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
 #include "rti/ray/source.hpp"
+#include "rti/trace/point_cloud_context_simplified.hpp"
 #include "rti/trace/tracer.hpp"
 #include "rti/util/utils.hpp"
 
@@ -87,18 +88,11 @@ namespace rti {
   template<typename numeric_type>
   device<numeric_type>& device<numeric_type>::operator=(device<numeric_type>&& rhs) {
     assert(false && "TODO");
-
-
-
-
   }
 
   template<typename numeric_type>
   device<numeric_type>::device() :
     pimpl(std::make_unique<rti::deviceImpl<numeric_type> > ()) {}
-
-  // template<typename numeric_type>
-  // device<numeric_type>::
 
   template<typename numeric_type>
   void device<numeric_type>::set_points(std::vector<std::array<numeric_type, 3> > points)
@@ -143,7 +137,8 @@ namespace rti {
     auto device_config = "hugepages=1";
     auto device = rtcNewDevice(device_config);
     auto pointsandradii = combine_points_with_grid_spacing(*pimpl);
-    auto geometryFactory = rti::geo::point_cloud_disc_factory<numeric_type>
+    auto geometryFactory =
+      rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context_simplified<numeric_type> >
       (device, pointsandradii, pimpl->normals, pimpl->stickingCoefficient);
     auto bdbox = geometryFactory.get_geometry().get_bounding_box();
     bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, 0.1);
@@ -163,7 +158,7 @@ namespace rti {
     return pimpl->mcestimates;
   }
 
-  // POD struct, hence we take the freedom to make everything public
+  // POD struct, hence we may make everything public
   template<typename numeric_type> struct deviceImpl
   {
   public:

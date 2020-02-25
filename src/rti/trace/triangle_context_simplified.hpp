@@ -85,7 +85,6 @@ namespace rti { namespace trace {
       // Don't do anything.
     }
 
-  private:
   public:
     void intersect1(RTCScene& pScene, RTCRayHit& pRayHit) override final {
       // In this class, triangle_context_intersect, the intersection is a straight forward
@@ -170,4 +169,4 @@ namespace rti { namespace trace {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
     }
   };
-}} // namespace
+}}
