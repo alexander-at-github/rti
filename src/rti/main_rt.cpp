@@ -162,7 +162,10 @@ int main(int argc, char* argv[]) {
   std::cout << "sticking coefficient == " << stickingC << std::endl;
   // Handle input file
   if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtk") {
-    std::cout << "Recognized \".vtk\" input file file extension. Please convert the input file to vtu (e.g., using Paraview) and rerun " << argv[0] << " with the new file." << std::endl;
+    std::cout
+      << "Recognized \".vtk\" input file file extension. "
+      << "Please convert the input file to vtu (e.g., using Paraview) and rerun "
+      << argv[0] << " with the new file." << std::endl;
     std::cout << "terminating" << std::endl;
     exit(EXIT_FAILURE);
   }

@@ -11,6 +11,7 @@
 namespace rti { namespace util {
 //
 //#define RAYLOG_ON
+//#define RAYSRCLOG_ON
 
   // vector of 3D line segments
   static auto sRayLogVec = std::vector<rti::util::pair<rti::util::triple<float> > > {};
@@ -49,7 +50,7 @@ namespace rti { namespace util {
 #endif
 
 
-#ifdef RAYLOG_ON
+#ifdef RAYSRCLOG_ON
 #define RAYSRCLOG(rh) \
   { \
   rti::util::sPointLogVec.push_back({rh.ray.org_x, rh.ray.org_y, rh.ray.org_z}); \
@@ -61,7 +62,7 @@ namespace rti { namespace util {
 #endif
 
 
-#ifdef RAYLOG_ON
+#ifdef RAYSRCLOG_ON
 #define RAYSRCLOG_GET_PTR(rh) \
   [](){return &rti::util::sPointLogVec;}()
 #else
@@ -70,5 +71,4 @@ namespace rti { namespace util {
 #endif
 
 
-
-}} // namespace
+}}

@@ -10,6 +10,9 @@
 
 #include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_geometry.hpp"
+#include "rti/io/vtp_writer.hpp"
+#include "rti/particle/i_particle.hpp"
+#include "rti/particle/i_particle_factory.hpp"
 #include "rti/ray/i_source.hpp"
 #include "rti/reflection/diffuse.hpp"
 //#include "rti/reflection/specular.hpp"
@@ -26,17 +29,20 @@
 #include "rti/util/timer.hpp"
 
 namespace rti { namespace trace {
-  template<typename Ty>
+  template<typename numeric_type>
   class tracer {
+
   public:
-    tracer(rti::geo::i_factory<Ty>& pFactory,
-           rti::geo::i_boundary<Ty>& pBoundary,
+    tracer(rti::geo::i_factory<numeric_type>& pFactory,
+           rti::geo::i_boundary<numeric_type>& pBoundary,
            rti::ray::i_source& pSource,
-           size_t pNumRays) :
+           size_t pNumRays,
+           rti::particle::i_particle_factory<numeric_type>& particlefactory) :
       mFactory(pFactory),
       mBoundary(pBoundary),
       mSource(pSource),
-      mNumRays(pNumRays) {
+      mNumRays(pNumRays),
+      particlefactory(particlefactory) {
       assert (mFactory.get_geometry().get_rtc_device() == pBoundary.get_rtc_device() &&
               "the geometry and the boundary need to refer to the same Embree (rtc) device");
       assert(rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
@@ -56,10 +62,38 @@ namespace rti { namespace trace {
       std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
     }
 
-    rti::trace::result<Ty> run()
+    void if_RLOG_PROGRESS_is_set_print_progress(size_t& raycnt) {
+      auto barlength = 60u;
+      auto barstartsymbol = '[';
+      auto fillsymbol = '#';
+      auto emptysymbol = '-';
+      auto barendsymbol = ']';
+      auto percentagestringformatlength = 3; // 3 digits
+
+      if (omp_get_thread_num() == 0) {
+        if (raycnt % (mNumRays / omp_get_num_threads() / barlength) == 0) {
+          auto filllength = (int) (raycnt / (mNumRays / omp_get_num_threads() / barlength));
+          auto percentagestring = std::to_string((filllength * 100) / barlength);
+          percentagestring =
+            std::string(percentagestringformatlength - percentagestring.length(), ' ') +
+            percentagestring + "%";
+          auto bar =
+            "Monte Carlo Progress: " + std::string(1, barstartsymbol) +
+            std::string(filllength, fillsymbol) + std::string(barlength - filllength, emptysymbol) +
+            std::string(1, barendsymbol) + " " + percentagestring ;
+          RLOG_PROGRESS << "\r" << bar;
+          if (filllength == barlength) {
+            RLOG_PROGRESS << std::endl;
+          }
+        }
+        raycnt += 1;
+      }
+    }
+
+    rti::trace::result<numeric_type> run()
     {
       // Prepare a data structure for the result.
-      auto result = rti::trace::result<Ty> {};
+      auto result = rti::trace::result<numeric_type> {};
       auto& geo = mFactory.get_geometry();
       result.inputFilePath = geo.get_input_file_path();
       result.geometryClassName = boost::core::demangle(typeid(geo).name());
@@ -96,18 +130,18 @@ namespace rti { namespace trace {
 
       result.numRays = mNumRays;
 
-      auto reflectionModel = rti::reflection::diffuse<Ty> {};
-      auto boundaryReflection = rti::reflection::specular<Ty> {};
+      auto reflectionModel = rti::reflection::diffuse<numeric_type> {};
+      auto boundaryReflection = rti::reflection::specular<numeric_type> {};
 
       auto geohitc = 0ull;
       auto nongeohitc = 0ull;
-      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<Ty> {geo.get_num_primitives()};
+      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<numeric_type> {geo.get_num_primitives()};
 
       #pragma omp declare \
         reduction(hit_accumulator_combine : \
-                  rti::trace::hit_accumulator_with_checks<Ty> : \
-                  omp_out = rti::trace::hit_accumulator_with_checks<Ty>(omp_out, omp_in)) \
-        initializer(omp_priv = rti::trace::hit_accumulator_with_checks<Ty>(omp_orig))
+                  rti::trace::hit_accumulator_with_checks<numeric_type> : \
+                  omp_out = rti::trace::hit_accumulator_with_checks<numeric_type>(omp_out, omp_in)) \
+        initializer(omp_priv = rti::trace::hit_accumulator_with_checks<numeric_type>(omp_orig))
 
       // The random number generator itself is stateless (has no members which
       // are modified). Hence, it may be shared by threads.
@@ -136,16 +170,22 @@ namespace rti { namespace trace {
         // A dummy counter for the boundary
         auto boundaryCntr = rti::trace::dummy_counter {};
 
+        // thread-local particle
+        auto particle = particlefactory.create();
+
         // We will attach our data to the memory immediately following the context as described
         // in https://www.embree.org/api.html#rtcinitintersectcontext .
         // Note: the memory layout only works with plain old data, that is, C-style structs.
         // Otherwise the compiler might change the memory layout, e.g., with the vtable.
         auto rtiContext = mFactory.get_new_context(geometryID, geo, reflectionModel,
                                                    hitAccumulator, boundaryID, mBoundary,
-                                                   boundaryReflection, *rng, *rngSeed2);
+                                                   boundaryReflection, *rng, *rngSeed2,
+                                                   *particle);
 
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext->init();
+
+        size_t raycnt = 0;
 
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
@@ -156,6 +196,7 @@ namespace rti { namespace trace {
           // There is a risk though: when setting tnear to some strictly positive value
           // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
 
+          particle->init_new();
           // prepare our custom ray tracing context
           rtiContext->init_ray_weight();
 
@@ -164,6 +205,8 @@ namespace rti { namespace trace {
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
 
           RAYSRCLOG(rayhit);
+
+          if_RLOG_PROGRESS_is_set_print_progress(raycnt);
 
           auto reflect = false;
           do {
@@ -174,7 +217,7 @@ namespace rti { namespace trace {
               << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
               << ")" << std::endl;
 
-            rayhit.ray.tfar = std::numeric_limits<Ty>::max();
+            rayhit.ray.tfar = std::numeric_limits<numeric_type>::max();
 
             // Runn the intersection
             rtiContext->intersect1(scene, rayhit);
@@ -182,7 +225,7 @@ namespace rti { namespace trace {
             RAYLOG(rayhit, rtiContext->tfar);
 
             reflect = rtiContext->reflect;
-            auto hitpoint = rti::util::triple<Ty> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
+            auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
                                                    rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
                                                    rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
             RLOG_DEBUG
@@ -198,9 +241,15 @@ namespace rti { namespace trace {
             // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
 
             reinterpret_cast<__m128&>(rayhit.ray) =
-              _mm_set_ps(tnear, (float) rtiContext->rayout[0][2], (float) rtiContext->rayout[0][1], (float) rtiContext->rayout[0][0]);
+              _mm_set_ps(tnear,
+                         (float) rtiContext->rayout[0][2],
+                         (float) rtiContext->rayout[0][1],
+                         (float) rtiContext->rayout[0][0]);
             reinterpret_cast<__m128&>(rayhit.ray.dir_x) =
-              _mm_set_ps(time, (float) rtiContext->rayout[1][2], (float) rtiContext->rayout[1][1], (float) rtiContext->rayout[1][0]);
+              _mm_set_ps(time,
+                         (float) rtiContext->rayout[1][2],
+                         (float) rtiContext->rayout[1][1],
+                         (float) rtiContext->rayout[1][0]);
 
             // if (rayhit.hit.geomID == boundaryID) {
             //   // Ray hit the boundary
@@ -216,19 +265,33 @@ namespace rti { namespace trace {
       }
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
-      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<Ty> >(hitAccumulator);
+      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<numeric_type> >(hitAccumulator);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
 
       rtcReleaseGeometry(geometry);
       rtcReleaseGeometry(boundary);
 
+      auto raylog = RAYLOG_GET_PTR();
+      if (raylog != nullptr) {
+        auto raylogfilename = "raylog.vtp";
+        std::cout << "Writing ray log to " << raylogfilename << std::endl;
+        rti::io::vtp_writer<float>::write(raylog, raylogfilename);
+      }
+      auto raysrclog = RAYSRCLOG_GET_PTR();
+      if (raysrclog != nullptr) {
+        auto raysrclogfilename = "raysrclog.vtp";
+        std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
+        rti::io::vtp_writer<float>::write(raysrclog, raysrclogfilename);
+      }
+
       return result;
     }
   private:
-    rti::geo::i_factory<Ty>& mFactory;
-    rti::geo::i_boundary<Ty>& mBoundary;
+    rti::geo::i_factory<numeric_type>& mFactory;
+    rti::geo::i_boundary<numeric_type>& mBoundary;
     rti::ray::i_source& mSource;
     size_t mNumRays;
+    rti::particle::i_particle_factory<numeric_type>& particlefactory;
   };
 }}

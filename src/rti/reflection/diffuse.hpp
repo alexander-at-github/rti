@@ -11,8 +11,8 @@ namespace rti { namespace reflection {
   class diffuse : public rti::reflection::i_reflection_model<Ty> {
   public:
     rti::util::pair<rti::util::triple<Ty> >
-    use(RTCRay& pRayIn, RTCHit& pHitIn, const rti::geo::i_abs_geometry<Ty>& pGeometry,
-        rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+    use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::i_abs_geometry<Ty>& pGeometry,
+        rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
 
       //Ty epsilon = 1e-6;
 

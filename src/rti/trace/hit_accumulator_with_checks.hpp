@@ -5,11 +5,15 @@
 namespace rti { namespace trace {
   template<typename Ty>
   class hit_accumulator_with_checks : public i_hit_accumulator<Ty> {
+
+    using internal_numeric_type = double;
+
   public:
     // Constructors
     hit_accumulator_with_checks(size_t pSize) :
       mAcc(pSize, 0), // pSize number of elements initialized to 0.
       mCnts(pSize, 0),
+      mTotalCnts(0),
       mS1s(pSize, 0),
       mS2s(pSize, 0),
       mS3s(pSize,0),
@@ -18,6 +22,7 @@ namespace rti { namespace trace {
     hit_accumulator_with_checks(hit_accumulator_with_checks<Ty> const& pA) :
       mAcc(pA.mAcc), // copy construct the vector member
       mCnts(pA.mCnts),
+      mTotalCnts(pA.mTotalCnts),
       mS1s(pA.mS1s),
       mS2s(pA.mS2s),
       mS3s(pA.mS3s),
@@ -26,6 +31,7 @@ namespace rti { namespace trace {
     hit_accumulator_with_checks(hit_accumulator_with_checks<Ty> const&& pA) :
       mAcc(std::move(pA.mAcc)), // move the vector member
       mCnts(std::move(pA.mCnts)),
+      mTotalCnts(std::move(pA.mTotalCnts)),
       mS1s(std::move(pA.mS1s)),
       mS2s(std::move(pA.mS2s)),
       mS3s(std::move(pA.mS3s)),
@@ -51,6 +57,7 @@ namespace rti { namespace trace {
         mS3s[idx] += pA2.mS3s[idx];
         mS4s[idx] += pA2.mS4s[idx];
       }
+      mTotalCnts = pA2.mTotalCnts;
     }
 
     // Assignment operators corresponding to the constructors
@@ -61,6 +68,7 @@ namespace rti { namespace trace {
         mAcc = pOther.mAcc;
         mCnts.clear();
         mCnts = pOther.mCnts;
+        mTotalCnts = pOther.mTotalCnts;
         mS1s.clear();
         mS1s = pOther.mS1s;
         mS2s.clear();
@@ -80,6 +88,7 @@ namespace rti { namespace trace {
         mAcc = std::move(pOther.mAcc);
         mCnts.clear();
         mCnts = std::move(pOther.mCnts);
+        mTotalCnts = pOther.mTotalCnts;
         mS1s.clear();
         mS1s = std::move(pOther.mS1s);
         mS2s.clear();
@@ -95,16 +104,17 @@ namespace rti { namespace trace {
     // Member Functions
     void use(unsigned int pPrimID, Ty value) override final {
       assert(pPrimID < mAcc.size() && "primitive ID is out of bounds");
-      mAcc[pPrimID] += value;
+      mAcc[pPrimID] += (internal_numeric_type) value;
       mCnts[pPrimID] += 1;
+      mTotalCnts += 1;
 
-      mS1s[pPrimID] += value;
-      mS2s[pPrimID] += value * value;
-      mS3s[pPrimID] += value * value * value;
-      mS4s[pPrimID] += value * value * value * value;
+      mS1s[pPrimID] += (internal_numeric_type) value;
+      mS2s[pPrimID] += (internal_numeric_type) value * value;
+      mS3s[pPrimID] += (internal_numeric_type) value * value * value;
+      mS4s[pPrimID] += (internal_numeric_type) value * value * value * value;
     }
 
-    std::vector<Ty> get_values() override final {
+    std::vector<internal_numeric_type> get_values() override final {
       return mAcc;
     }
 
@@ -112,26 +122,31 @@ namespace rti { namespace trace {
       return mCnts;
     }
 
-    std::vector<Ty> get_relative_error() override final {
-      auto result = std::vector<Ty>(mS1s.size(), 0); // size of vector, all initial values are equal to zero
+    size_t get_cnts_sum() override final {
+      return mTotalCnts;
+    }
+
+    std::vector<internal_numeric_type> get_relative_error() override final {
+      std::cerr << "### Fix!" << std::endl;
+      auto result = std::vector<internal_numeric_type>(mS1s.size(), 0); // size, initial values
       for (size_t idx = 0; idx < result.size(); ++idx) {
         auto s1square = mS1s[idx] * mS1s[idx];
         if (s1square == 0) {
-          result[idx] = std::numeric_limits<Ty>::max();
+          result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
         // We require at least 2 samples to compute the relative error.
         if (mCnts[idx] <= 1) {
-          result[idx] = std::numeric_limits<Ty>::max();
+          result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
         assert(mCnts[idx] != 0 && "Assumption");
         // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
         // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
         // page 83 and 84.
-        result[idx] = (Ty) (std::sqrt(mS2s[idx] / s1square - 1 / mCnts[idx]));
+        result[idx] = (internal_numeric_type) (std::sqrt(mS2s[idx] / s1square - 1 / mCnts[idx]));
         // Debug
-        // if (result[idx] != std::numeric_limits<Ty>::max()) {
+        // if (result[idx] != std::numeric_limits<internal_numeric_type>::max()) {
         //   std::cerr << "mCnts[idx] == " << mCnts[idx] << std::endl;
         //   std::cerr << "s1square == " << s1square << std::endl;
         //   std::cerr << "mS2ss[idx] == " << mS2s[idx] << std::endl;
@@ -141,18 +156,19 @@ namespace rti { namespace trace {
       return result;
     }
 
-    std::vector<Ty> get_vov() override final { // variance of variance
-      auto result = std::vector<Ty>(mS1s.size(), 0); // size of vectore, all initial values are equal to zero
+    std::vector<internal_numeric_type> get_vov() override final { // variance of variance
+      std::cerr << "### Fix!" << std::endl;
+      auto result = std::vector<internal_numeric_type>(mS1s.size(), 0); // size, initial values
       for (size_t idx = 0; idx < result.size(); ++idx) {
         if (mCnts[idx] == 0) {
-          result[idx] = std::numeric_limits<Ty>::max();
+          result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
         // We require a minimum number of samples.
         // This also prevents numericals errors in the computation of the variance of the variance.
         // magic number
         if (mCnts[idx] <= 8) {
-          result[idx] = std::numeric_limits<Ty>::max();
+          result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
         auto s1 = mS1s[idx];
@@ -174,11 +190,11 @@ namespace rti { namespace trace {
         auto denomroot2 = nn * s2 - s1square;
         auto denominator2 = denomroot2 * denomroot2;
         if (denominator == 0) {
-          result[idx] = std::numeric_limits<Ty>::max();
+          result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
-        //result[idx] = (Ty) (numerator / denominator);
-        result[idx] = (Ty) (numerator / denominator2 * nn * nn);
+        //result[idx] = (internal_numeric_type) (numerator / denominator);
+        result[idx] = (internal_numeric_type) (numerator / denominator2 * nn * nn);
         // Debug
         // if (result [idx] >= 100000) {
         //   std::cerr << std::setprecision(10);
@@ -212,19 +228,20 @@ namespace rti { namespace trace {
       pOs << ")" << std::endl;
     }
   private:
-    std::vector<Ty> mAcc;
+    std::vector<internal_numeric_type> mAcc;
     std::vector<size_t> mCnts;
+    size_t mTotalCnts;
 
     // actuall - for now - mAcc und mS1s do the same thing!
     // We might want to remove one of them later.
 
     // S1 denotes the sum of sample values
-    std::vector<double> mS1s;
+    std::vector<internal_numeric_type> mS1s;
     // S2 denotes the sum of squared sample values
-    std::vector<double> mS2s;
+    std::vector<internal_numeric_type> mS2s;
     // S3 denotes the sum of cubed sample values
-    std::vector<double> mS3s;
+    std::vector<internal_numeric_type> mS3s;
     // S4 denotes the sum of the 4th-power of the sample values
-    std::vector<double> mS4s;
+    std::vector<internal_numeric_type> mS4s;
   };
 }}

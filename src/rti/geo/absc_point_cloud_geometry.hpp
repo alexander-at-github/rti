@@ -28,20 +28,17 @@ namespace rti { namespace geo {
     virtual ~absc_point_cloud_geometry() {}
     // inherits also some virtual function declarations from i_geometry
 
-    virtual rti::util::quadruple<numeric_type> get_prim(unsigned int pPrimID) const = 0;
+    virtual rti::util::quadruple<numeric_type> get_prim(unsigned int pPrimID) = 0;
 
     absc_point_cloud_geometry(RTCDevice& pDevice,
-                              rti::io::i_point_cloud_reader<numeric_type>& pGReader,
-                              numeric_type pStickingC) :
+                              rti::io::i_point_cloud_reader<numeric_type>& pGReader) :
       mDevice(pDevice),
-      mStickingC(pStickingC),
       mInfilename(pGReader.get_input_file_name()) {}
 
-    absc_point_cloud_geometry(RTCDevice& device, numeric_type stickingC) :
-      mDevice(device),
-      mStickingC(stickingC) {}
+    absc_point_cloud_geometry(RTCDevice& device) :
+      mDevice(device) {}
 
-    void print(std::ostream& pOs) const override final
+    void print(std::ostream& pOs) override final
     {
       pOs << "(:class " << boost::core::demangle(typeid(this).name());
       if (mVVBuffer != nullptr)
@@ -65,7 +62,7 @@ namespace rti { namespace geo {
       return mInfilename;
     }
 
-    rti::util::pair<rti::util::triple<numeric_type> > get_bounding_box() const override final
+    rti::util::pair<rti::util::triple<numeric_type> > get_bounding_box() override final
     {
       assert(mVVBuffer != nullptr && "No data");
       if (mVVBuffer == nullptr) // no data in this instance
@@ -85,20 +82,20 @@ namespace rti { namespace geo {
               rti::util::triple<numeric_type> {xmax, ymax, zmax}};
     }
 
-    size_t get_num_primitives() const override final
+    size_t get_num_primitives() override final
     {
       return this->mNumPoints;
     }
 
-    numeric_type get_sticking_coefficient() const override final
+    numeric_type get_sticking_coefficient() override final
     {
-      return mStickingC;
+      assert (false && "Sticking has been removed from this class. It should also be removed from the base class!");
+      return 0.5;
     }
 
   protected:
     // Data members
     RTCDevice& mDevice;
-    numeric_type mStickingC = 1; // initialize to some value
     RTCGeometry mGeometry;
     point_4f_t* mVVBuffer = nullptr;
     size_t mNumPoints = 0;

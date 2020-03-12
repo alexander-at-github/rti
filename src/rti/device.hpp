@@ -4,24 +4,18 @@
 #include <memory>
 #include <vector>
 
-namespace rti {
-  // An interface for particles. The user of rtilib has to provide an implementation.
-  template<typename numeric_type>
-  class i_particle
-  {
-  public:
-    virtual ~i_particle() {};
-    virtual numeric_type process_hit(size_t primID) = 0;
-  };
+#include "particle/i_particle.hpp"
+#include "particle/i_particle_factory.hpp"
 
+namespace rti {
   // forward declaration of implementation specific class
   template<typename numeric_type>
   class deviceImpl;
 
   // The main interface of rtilib
   template<typename numeric_type>
-  class device final
-  {
+  class device final {
+
   public:
     device();
     // Because if the Pimpl idiom we need explicite destructor, move constructor, and move assignment.
@@ -33,18 +27,20 @@ namespace rti {
     void set_points(std::vector<std::array<numeric_type, 3> >);
     void set_normals(std::vector<std::array<numeric_type, 3> >);
     void set_grid_spacing(std::vector<numeric_type>);
-    void set_sticking_coefficient(numeric_type);
+    //void set_sticking_coefficient(numeric_type);
     void set_number_of_rays(size_t);
-    // The set_particle() function takes ownership of the particle.
+    // The register_particle_factory() function takes ownership of the particle.
     // That is, you cannot use the unique_ptr after passing it into this function.
     // Call this function in one of two ways:
-    //   (a) auto particle = std::make_unique<concrete::particle_class> (\*constructor-arguments*\)
-    //       instance.set_particel(std::move(particle))
-    //   (b) instance.set_particle(std::unique_ptr<rti::i_particle>
-    //         (new concrete::particle_class(\*constructor-arguments*\)))
-    void set_particle(std::unique_ptr<rti::i_particle<numeric_type> >);
+    //   (a) auto factory = std::make_unique<concrete::factory_class> (\*constructor-arguments*\)
+    //       instance.register_particel_factory(std::move(factory))
+    //   (b) instance.register_particle_factory(std::unique_ptr<rti::particle::i_particle_factory>
+    //         (new concrete::factory_class(\*constructor-arguments*\)))
+    void register_particle_factory(std::unique_ptr<rti::particle::i_particle_factory<numeric_type> >);
     void run();
     std::vector<numeric_type> get_mc_estimates();
+
+    std::vector<size_t> get_hit_cnts();
 
     // non-exposed implementation details
   private:

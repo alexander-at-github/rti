@@ -157,4 +157,13 @@ namespace rti { namespace util {
     auto pT2Size = pT2.size(); // copy the size once into a separate memory location.
     return foldl_aux<T1,T2>(pF, pT1, pT2.data(), pT2Size);
   }
+
+  template<typename TT>
+  static void swap(TT& e1, TT& e2)
+  {
+    TT tmp = e2;
+    e2 = e1;
+    e1 = tmp;
+  }
+
 }}

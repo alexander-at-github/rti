@@ -11,11 +11,12 @@
 TEST(cosine_direction_double, plot_w_cstdlib_rng) {
   using numeric_type = double;
 
-  auto basis = rti::util::triple<rti::util::triple<numeric_type> >
-    {rti::util::triple<numeric_type> {0, 0, 1},
-     rti::util::triple<numeric_type> {1, 0, 0},
-     rti::util::triple<numeric_type> {0, 1, 0}}; // TODO: one may wants to change that
-  auto cdir = rti::ray::cosine_direction<numeric_type> {basis};
+  // auto basis = rti::util::triple<rti::util::triple<numeric_type> >
+  //   {rti::util::triple<numeric_type> {0, 0, 1},
+  //    rti::util::triple<numeric_type> {1, 0, 0},
+  //    rti::util::triple<numeric_type> {0, 1, 0}}; // TODO: one may wants to change that
+  // auto cdir = rti::ray::cosine_direction<numeric_type> {basis};
+  auto cdir = rti::ray::cosine_direction<numeric_type>::construct_in_opposite_direction_of_z_axis();
   auto rng = rti::rng::cstdlib_rng {};
   auto rngstate = rti::rng::cstdlib_rng::state {1234567890};
 

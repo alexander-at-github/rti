@@ -42,10 +42,6 @@ set (
 add_library (
   librtidevice STATIC "rti/device.cpp"
   )
-set_target_properties (
-  librtidevice
-  PROPERTIES PUBLIC_HEADER "rti/device.hpp"
-  )
 target_include_directories (
   librtidevice
   PRIVATE
@@ -69,6 +65,10 @@ target_link_libraries (
   ${VTK_LIBRARIES}
   )
 
+###### TMP
+#SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pg")
+#SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pg")
+
 ### Export the library
 include(GNUInstallDirs)
 # GNUInstallDirs provides CMAKE_INSTALL_<dir> variables
@@ -77,13 +77,20 @@ install (
   EXPORT librtidevice-export
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rti
   )
 install (
   EXPORT librtidevice-export
   FILE librtideviceTargets.cmake
   NAMESPACE librtidevice::
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/librtidevice
+  )
+install (
+  FILES "rti/device.hpp"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rti
+  )
+install (
+  FILES "rti/particle/i_particle.hpp" "rti/particle/i_particle_factory.hpp"
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rti/particle
   )
 
 ### Create a Config file for the library for other CMake projects to use find_package()

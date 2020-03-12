@@ -46,20 +46,20 @@ namespace rti { namespace geo {
       return mGeometry;
     }
 
-    void print(std::ostream&pOs) const override final {
+    void print(std::ostream&pOs) override final {
       assert(false && "Not implemented");
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final {
+    rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final {
       return mNormals[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) override final {
       assert(false && "Not implemented");
       return {(Ty) 0, (Ty) 0, (Ty) 0};
     }
 
-    std::vector<rti::util::triple<Ty> > get_vertices() const override final {
+    std::vector<rti::util::triple<Ty> > get_vertices() override final {
       auto result = std::vector<rti::util::triple<Ty> > {mNumVertices};
       //std::cerr << "Debug: get_vertices() result.size() == " << result.size() << std::endl;
       for (size_t idx = 0; idx < mNumVertices; ++idx) {
@@ -69,7 +69,7 @@ namespace rti { namespace geo {
       return result;
     }
 
-    std::vector<rti::util::triple<size_t> > get_triangles() const override final {
+    std::vector<rti::util::triple<size_t> > get_triangles() override final {
       auto result = std::vector<rti::util::triple<size_t> > {mNumTriangles};
       //std::cerr << "Debug: get_triangles() result.size() == " << result.size() << std::endl;
       for (size_t idx = 0; idx < mNumTriangles; ++idx) {
@@ -78,7 +78,7 @@ namespace rti { namespace geo {
       return result;
     }
 
-    std::vector<rti::util::triple<Ty> > get_triangle_normals() const override final {
+    std::vector<rti::util::triple<Ty> > get_triangle_normals() override final {
       return mNormals;
     }
 
@@ -184,14 +184,14 @@ namespace rti { namespace geo {
               "Embree device error after rtcSetNewGeometryBuffer()");
     }
 
-    rti::util::triple<rti::util::triple<Ty> > get_triangle_with_coords(size_t idx) const {
+    rti::util::triple<rti::util::triple<Ty> > get_triangle_with_coords(size_t idx) {
       auto tt = mTriBuff[idx];
       return {mVertBuff[tt.v0].xx, mVertBuff[tt.v0].yy, mVertBuff[tt.v0].zz,
               mVertBuff[tt.v1].xx, mVertBuff[tt.v1].yy, mVertBuff[tt.v1].zz,
               mVertBuff[tt.v2].xx, mVertBuff[tt.v2].yy, mVertBuff[tt.v2].zz};
     }
 
-    rti::util::triple<size_t> get_triangle(size_t idx) const {
+    rti::util::triple<size_t> get_triangle(size_t idx) {
       auto tt = mTriBuff[idx];
       return {tt.v0, tt.v1, tt.v2};
     }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rti/ray/i_origin.hpp"
+#include "rti/util/utils.hpp"
 
 namespace rti { namespace ray {
 
@@ -14,8 +15,8 @@ namespace rti { namespace ray {
       mC2(pC2) {
       // Rearrange corners if needed such that each value in the pair mC1
       // is smaller or equal to the corresponding value in mC2.
-      if (mC1[0] > mC2[0]) this->swap(mC1[0], mC2[0]);
-      if (mC1[1] > mC2[1]) this->swap(mC1[1], mC2[1]);
+      if (mC1[0] > mC2[0]) rti::util::swap(mC1[0], mC2[0]);
+      if (mC1[1] > mC2[1]) rti::util::swap(mC1[1], mC2[1]);
       assert(mC1[0] <= mC2[0] && mC1[1] <= mC2[1] && "Condition on ordering of corner points");
     }
 
@@ -41,11 +42,5 @@ namespace rti { namespace ray {
     Ty mZval;
     rti::util::pair<Ty> mC1;
     rti::util::pair<Ty> mC2;
-
-    void swap(Ty& e1, Ty& e2) const {
-      Ty tmp = e2;
-      e2 = e1;
-      e1 = tmp;
-    }
   };
-}} // namespace
+}}

@@ -15,11 +15,6 @@
 #include "rti/io/i_point_cloud_reader.hpp"
 #include "rti/util/utils.hpp"
 
-// There is an example at https://vtk.org/doc/nightly/html/classvtkCellIterator.html
-//
-// Good example at https://vtk.org/gitweb?p=VTK.git;a=blob;f=Examples/IO/Cxx/DumpXMLFile.cxx
-
-
 namespace rti { namespace io {
   // The parameter Ty is intended to be instantiated as a numeric type.
   template<typename Ty>

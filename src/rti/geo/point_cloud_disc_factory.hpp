@@ -18,16 +18,21 @@ namespace rti { namespace geo {
                             "Precondition");
 
   public:
-    point_cloud_disc_factory(RTCDevice& device,
-                             rti::io::i_point_cloud_reader<numeric_type>& reader,
-                             numeric_type stickingC) :
-      mGeometry(device, reader, stickingC) {}
+    // point_cloud_disc_factory(RTCDevice& device,
+    //                          rti::io::i_point_cloud_reader<numeric_type>& reader,
+    //                          numeric_type stickingC) :
+    //   mGeometry(device, reader, stickingC) {}
+
+    // point_cloud_disc_factory(RTCDevice& device,
+    //                          std::vector<rti::util::quadruple<numeric_type> > points,
+    //                          std::vector<rti::util::triple<numeric_type> > normals,
+    //                          numeric_type stickingC) :
+    //   mGeometry(device, points, normals, stickingC) {}
 
     point_cloud_disc_factory(RTCDevice& device,
                              std::vector<rti::util::quadruple<numeric_type> > points,
-                             std::vector<rti::util::triple<numeric_type> > normals,
-                             numeric_type stickingC) :
-      mGeometry(device, points, normals, stickingC) {}
+                             std::vector<rti::util::triple<numeric_type> > normals) :
+      mGeometry(device, points, normals) {}
 
     rti::geo::i_geometry<numeric_type>& get_geometry() override final
     {
@@ -36,7 +41,7 @@ namespace rti { namespace geo {
 
     void register_intersect_filter_funs(rti::geo::i_boundary<numeric_type>& pBoundary)
     {
-      rti::trace::point_cloud_context<numeric_type>::register_intersect_filter_funs(mGeometry, pBoundary);
+      context_type::register_intersect_filter_funs(mGeometry, pBoundary);
     }
 
     std::unique_ptr<rti::trace::absc_context<numeric_type> >
@@ -49,15 +54,16 @@ namespace rti { namespace geo {
       rti::geo::i_boundary<numeric_type>& pBoundary,
       rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
-      rti::rng::i_rng::i_state& pRngState) override final
+      rti::rng::i_rng::i_state& pRngState,
+      rti::particle::i_particle<numeric_type>& particle) override final
     {
-      auto cntxt = std::make_unique<rti::trace::point_cloud_context<numeric_type> >
+      auto cntxt = std::make_unique<context_type>
         (pGeometryID,
          // the cast characterizes a precondition to this function
          *dynamic_cast<rti::geo::absc_point_cloud_geometry<numeric_type>*>(&pGeometry),
          pReflectionModel,
          pHitAccumulator, pBoundaryID, pBoundary,
-         pBoundaryReflectionModel, pRng, pRngState);
+         pBoundaryReflectionModel, pRng, pRngState, particle);
       return cntxt;
     }
 

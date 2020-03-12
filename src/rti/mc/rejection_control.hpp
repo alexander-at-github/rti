@@ -22,15 +22,15 @@ namespace rti { namespace mc {
       // If the weight of the ray is above a certain threshold, we always reflect.
       // If the weight of the ray is below the threshold, we randomly decide to either kill the
       // ray or increase its weight (in an unbiased way).
-      context->reflect = true;
-      if (context->rayWeight < weightlow) {
+      context.reflect = true;
+      if (context.rayWeight < weightlow) {
         RLOG_DEBUG << "in rti::mc::rejection_control (rayWeight < weightlow) holds" << std::endl;
         // We want to set the weight of (the reflection of) the ray to RAY_NEW_WEIGHT.
         // In order to stay  unbiased we kill the reflection with a probability of
-        // (1 - rticontextptr->rayWeight / renewweight).
+        // (1 - current.rayWeight / renewweight).
         auto rndm = this->rng.get(this->rngstate);
-        assert(context->rayWeight <= renewweight && "Assumption");
-        auto killProbability = 1.0f - context->rayWeight / renewweight;
+        assert(context.rayWeight <= renewweight && "Assumption");
+        auto killProbability = 1.0f - context.rayWeight / renewweight;
         if (rndm < (killProbability * this->rng.max())) {
           kill_the_ray(context);
         } else {
@@ -43,13 +43,15 @@ namespace rti { namespace mc {
   private:
     void kill_the_ray(rti::trace::absc_context<numeric_type>& context)
     {
-      context->reflect = false;
+      context.reflect = false;
+      RLOG_TRACE << "K";
     }
 
     template<typename numeric_type_o>
     void set_ray_weight_to_new_weight(rti::trace::absc_context<numeric_type>& context, numeric_type_o renewweight)
     {
-      context->rayWeight = renewweight;
+      context.rayWeight = renewweight;
+      RLOG_TRACE << "S";
     }
 
     rti::rng::i_rng& rng;

@@ -12,39 +12,38 @@ namespace rti { namespace geo {
   class point_cloud_disc_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
   public:
 
-    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader, Ty pStickingC) :
-      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader, pStickingC) {
+    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader) :
+      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader) {
       init_this(pDevice, pGReader);
     }
 
     point_cloud_disc_geometry(RTCDevice& device,
                               std::vector<rti::util::quadruple<Ty> > points,
-                              std::vector<rti::util::triple<Ty> > normals,
-                              Ty stickingC) :
-      rti::geo::absc_point_cloud_geometry<Ty>(device, stickingC) {
+                              std::vector<rti::util::triple<Ty> > normals) :
+      rti::geo::absc_point_cloud_geometry<Ty>(device) {
       init_this(device, points, normals);
     }
 
-    std::string prim_to_string(unsigned int pPrimID) const override final
+    std::string prim_to_string(unsigned int pPrimID) override final
     {
       auto strs = std::stringstream {};
       assert(false && "Not implemented");
       return "prim_to_string() not implemented";
     }
 
-    rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) const override final
+    rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) override final
     {
       auto pnt = this->mVVBuffer[pPrimID];
       return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final
+    rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final
     {
       auto nml = this->mNNBuffer[pPrimID];
       return {(Ty) nml.xx, (Ty) nml.yy, (Ty) nml.zz};
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int pPrimID) const override final {
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int pPrimID) override final {
       //auto epsilon = 1e-12; // magic number; less than 1e-3 does definitely not work
       auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
       auto yy = pRay.org_y + pRay.dir_y * pRay.tfar;

@@ -56,9 +56,9 @@ namespace rti { namespace trace {
     virtual void init_ray_weight() = 0;
 
     // Public data members
-    float rayWeight; // initialize to some value
+    double rayWeight; // initialize to some value
     bool reflect; // initialize to some value
     rti::util::pair<rti::util::triple<Ty> >& rayout;
     Ty tfar; // initialize to some value
   };
-}} // namespace
+}}
