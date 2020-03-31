@@ -5,7 +5,7 @@
 
 namespace rti { namespace trace {
   template<typename Ty>
-  class cylinder_bucket_counter_z : public i_hit_accumulator<Ty> {
+  class cylinder_bucket_counter_z : public rti::trace::i_hit_accumulator<Ty> {
   public:
     // Constructors
     cylinder_bucket_counter_z(size_t pNumBuckets, int pZmin, int pZmax, size_t pHitAccumulatorSize) :

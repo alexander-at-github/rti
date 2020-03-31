@@ -7,17 +7,16 @@
 #include "rti/geo/triangle_geometry.hpp"
 #include "rti/io/i_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
-#include "rti/trace/triangle_context.hpp"
-#include "rti/trace/triangle_context_simplified.hpp"
+// #include "rti/trace/triangle_context.hpp"
+// #include "rti/trace/triangle_context_simplified.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty, typename ContextType>
   class triangle_factory : public rti::geo::i_factory<Ty> {
   public:
     triangle_factory(RTCDevice& pDevice,
-                     rti::io::i_triangle_reader<Ty>& pReader,
-                     Ty pStickingC) :
-      mGeometry(pDevice, pReader, pStickingC) {}
+                     rti::io::i_triangle_reader<Ty>& pReader) :
+      mGeometry(pDevice, pReader) {}
 
     rti::geo::i_geometry<Ty>& get_geometry() override final {
       return mGeometry;
@@ -36,14 +35,15 @@ namespace rti { namespace geo {
       rti::geo::i_boundary<Ty>& pBoundary,
       rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
-      rti::rng::i_rng::i_state& pRngState) override final {
+      rti::rng::i_rng::i_state& pRngState,
+      rti::particle::i_particle<Ty>& particle) override final {
       auto cntxt = std::make_unique<ContextType>
         (pGeometryID,
          // the cast characterizes a precondition to this function
          *dynamic_cast<rti::geo::triangle_geometry<Ty>*>(&pGeometry),
          pReflectionModel,
          pHitAccumulator, pBoundaryID, pBoundary,
-         pBoundaryReflectionModel, pRng, pRngState);
+         pBoundaryReflectionModel, pRng, pRngState, particle);
       // We have to move the unique_ptr out
       return cntxt;
     }

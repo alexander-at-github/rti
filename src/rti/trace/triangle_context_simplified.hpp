@@ -5,6 +5,8 @@
 
 #include <embree3/rtcore.h>
 
+//#include "rti/mc/rejection_control.hpp"
+#include "rti/particle/i_particle.hpp"
 #include "rti/reflection/i_reflection_model.hpp"
 #include "rti/reflection/specular.hpp"
 #include "rti/trace/dummy_counter.hpp"
@@ -14,8 +16,8 @@
 // This class needs to be used according to a protocol! See base class rti::trace::absc_context
 
 namespace rti { namespace trace {
-  template<typename Ty> // intended to be a numeric type
-  class triangle_context_simplified : public rti::trace::absc_context<Ty> {
+  template<typename numeric_type> // intended to be a numeric type
+  class triangle_context_simplified : public rti::trace::absc_context<numeric_type> {
   private:
     // managment for ray weights
     static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
@@ -26,21 +28,24 @@ namespace rti { namespace trace {
     static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
   private:
     // geometry related data
-    rti::util::pair<rti::util::triple<Ty> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    rti::util::pair<rti::util::triple<numeric_type> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // boundary related data
-    rti::util::pair<rti::util::triple<Ty> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    rti::util::pair<rti::util::triple<numeric_type> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // other data
   private:
     unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
-    rti::geo::triangle_geometry<Ty>& mGeometry;
-    rti::reflection::i_reflection_model<Ty>& mReflectionModel;
-    rti::trace::i_hit_accumulator<Ty>& mHitAccumulator;
+    rti::geo::triangle_geometry<numeric_type>& mGeometry;
+    rti::reflection::i_reflection_model<numeric_type>& mReflectionModel;
+    rti::trace::i_hit_accumulator<numeric_type>& mHitAccumulator;
     unsigned int mBoundaryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
-    rti::geo::i_boundary<Ty>& mBoundary;
-    rti::reflection::i_reflection_model<Ty>& mBoundaryReflectionModel;
+    rti::geo::i_boundary<numeric_type>& mBoundary;
+    rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
 
     rti::rng::i_rng& mRng;
     rti::rng::i_rng::i_state& mRngState;
+
+    //rti::mc::rejection_control<numeric_type> rejectioncontrol;
+    rti::particle::i_particle<numeric_type>& particle;
 
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
@@ -51,16 +56,17 @@ namespace rti { namespace trace {
     // Constructor
   public:
     triangle_context_simplified(unsigned int pGeometryID,
-            rti::geo::triangle_geometry<Ty>& pGeometry,
-            rti::reflection::i_reflection_model<Ty>& pReflectionModel,
-            rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
+            rti::geo::triangle_geometry<numeric_type>& pGeometry,
+            rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
+            rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,
             unsigned int pBoundaryID,
-            rti::geo::i_boundary<Ty>& pBoundary,
-            rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
+            rti::geo::i_boundary<numeric_type>& pBoundary,
+            rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
-            rti::rng::i_rng::i_state& pRngState) :
+            rti::rng::i_rng::i_state& pRngState,
+            rti::particle::i_particle<numeric_type>& particle) :
       // initialize members of virtual base class
-      rti::trace::absc_context<Ty>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
+      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -69,17 +75,19 @@ namespace rti { namespace trace {
       mBoundary(pBoundary),
       mBoundaryReflectionModel(pBoundaryReflectionModel),
       mRng(pRng),
-      mRngState(pRngState) {
+      mRngState(pRngState),
+      particle(particle) {
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
+      std::cerr << "####### ERR FIX rejection control!" << std::endl;
     }
 
   public:
     static
-    void register_intersect_filter_funs(rti::geo::i_geometry<Ty>& pGeometry,
-                                        rti::geo::i_boundary<Ty>& pBoundary) {
+    void register_intersect_filter_funs(rti::geo::i_geometry<numeric_type>& pGeometry,
+                                        rti::geo::i_boundary<numeric_type>& pBoundary) {
       // The following cast characterizes a precondition to this function
-      auto pPCGeoPointer = dynamic_cast<rti::geo::triangle_geometry<Ty>*> (&pGeometry);
+      auto pPCGeoPointer = dynamic_cast<rti::geo::triangle_geometry<numeric_type>*> (&pGeometry);
       auto& pPCGeo = *pPCGeoPointer;
       RLOG_DEBUG << "register_intersect_filter_funs()" << std::endl;
       // Don't do anything.
@@ -117,8 +125,10 @@ namespace rti { namespace trace {
         // ray hit the geometry
         this->geoRayout = this->mReflectionModel.use(
           pRayHit.ray, pRayHit.hit, this->mGeometry, this->mRng, this->mRngState);
+
+        auto sticking = particle.process_hit(pRayHit.hit.primID);
         this->rayout = this->geoRayout;
-        auto valuetodrop = this->rayWeight * this->mGeometry.get_sticking_coefficient();
+        auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
         this->rayWeight -= valuetodrop;
       } else {
@@ -167,6 +177,11 @@ namespace rti { namespace trace {
 
     void init_ray_weight() override final {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
+    }
+
+    bool compute_exposed_areas_by_sampling() override final
+    {
+      return true;
     }
   };
 }}

@@ -56,6 +56,12 @@ namespace rti { namespace geo {
       return {(Ty) xx, (Ty) yy, (Ty) zz};
     }
 
+    Ty get_area(unsigned int primID)
+    {
+      auto radius = this->mVVBuffer[primID].radius;
+      return radius * radius * rti::util::pi;
+    }
+
   private:
     // "RTC_GEOMETRY_TYPE_POINT:
     // [...] the normal buffer stores a single precision normal per control
@@ -65,7 +71,6 @@ namespace rti { namespace geo {
       float xx, yy, zz;
     };
     normal_vec_3f_t* mNNBuffer = nullptr;
-
 
     void init_this(RTCDevice& device, rti::io::i_point_cloud_reader<Ty>& preader)
     {

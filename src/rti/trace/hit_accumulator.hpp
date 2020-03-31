@@ -4,7 +4,7 @@
 
 namespace rti { namespace trace {
   template<typename Ty>
-  class hit_accumulator : public i_hit_accumulator<Ty> {
+  class hit_accumulator : public rti::trace::i_hit_accumulator<Ty> {
   public:
     // Constructors
     hit_accumulator(size_t pSize) :
@@ -72,6 +72,16 @@ namespace rti { namespace trace {
     std::vector<Ty> get_relative_error() override final {
       // Does not have this functionality
       return {};
+    }
+
+    void set_exposed_areas(std::vector<Ty>& areas) override final
+    {
+      assert(false && "not implemented");
+    }
+
+    std::vector<Ty> get_exposed_areas() override final
+    {
+      assert(false && "not implemented");
     }
 
     void print(std::ostream& pOs) const override final {

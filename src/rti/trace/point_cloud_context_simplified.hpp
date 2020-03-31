@@ -181,6 +181,10 @@ namespace rti { namespace trace {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
       RLOG_TRACE << "I";
     }
-  };
 
+    bool compute_exposed_areas_by_sampling() override final
+    {
+      return true;
+    }
+  };
 }}

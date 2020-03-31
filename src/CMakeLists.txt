@@ -13,7 +13,7 @@ set (
   )
 
 find_package (
-  Boost REQUIRED COMPONENTS system # "${BOOST_COMPONENTS_REQUIRED}"
+  Boost REQUIRED COMPONENTS system filesystem # "${BOOST_COMPONENTS_REQUIRED}"
   PATHS ${BOOST_ROOT}
   NO_DEFAULT_PATH
   )
@@ -103,6 +103,37 @@ configure_package_config_file (
 install (
   FILES ${CMAKE_BINARY_DIR}/cmake/librtideviceConfig.cmake
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/librtidevice
+  )
+
+### Dev Executable
+add_executable (
+  rti "rti/main_rt.cpp"
+  )
+target_include_directories (
+  rti
+  PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}
+  ${EMBREE_INCLUDE_DIRS}
+  ${VTK_INCLUDE_DIRS}
+  )
+target_compile_features (
+  rti
+  PRIVATE
+  cxx_std_11
+  )
+target_link_libraries (
+  rti
+  PRIVATE
+  OpenMP::OpenMP_CXX
+  Boost::system
+  Boost::filesystem
+  ${EMBREE_LIBRARIES}
+  ${VTK_LIBRARIES}
+  )
+install (
+  TARGETS rti
+  RUNTIME
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 
 ### Create DSV reader executable

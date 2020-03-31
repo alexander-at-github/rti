@@ -62,6 +62,7 @@ namespace rti { namespace trace {
       std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
     }
 
+  private:
     void if_RLOG_PROGRESS_is_set_print_progress(size_t& raycnt) {
       auto barlength = 60u;
       auto barstartsymbol = '[';
@@ -90,6 +91,25 @@ namespace rti { namespace trace {
       }
     }
 
+    void compute_exposed_areas_by_sampling()
+    {
+      assert(false && "not implmented");
+    }
+
+    void use_entire_areas_of_primitives_as_exposed(rti::geo::i_geometry<numeric_type>& geo, rti::trace::i_hit_accumulator<numeric_type>& hitacc)
+    {
+      // Precondition: We are in an OpenMP parallel block
+      auto numofprimitives = geo.get_num_primitives();
+      auto areas = std::vector<double> (numofprimitives, 0);
+      #pragma omp for
+      for (size_t idx = 0; idx < numofprimitives; ++idx) {
+        areas[idx] = geo.get_area(idx);
+      }
+      // Note: effectively in each thread only some of the area-values have been set. Also each thread holds its own hit-accumulator.
+      hitacc.set_exposed_areas(areas);
+    }
+
+  public:
     rti::trace::result<numeric_type> run()
     {
       // Prepare a data structure for the result.
@@ -262,7 +282,13 @@ namespace rti { namespace trace {
             // }
           } while (reflect);
         }
+        if (rtiContext->compute_exposed_areas_by_sampling()) {
+          compute_exposed_areas_by_sampling();
+        } else {
+          use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
+        }
       }
+      // Assertion: hitAccumulator is reduced to one instance by openmp reduction
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
       result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<numeric_type> >(hitAccumulator);

@@ -7,15 +7,15 @@
 
 #include "rti/reflection/i_reflection_model.hpp"
 #include "rti/reflection/specular.hpp"
-#include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/absc_context.hpp"
+#include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/i_hit_accumulator.hpp"
 
 // This class needs to be used according to a protocol! See base class rti::trace::absc_context
 
 namespace rti { namespace trace {
-  template<typename numeric_type> // intended to be a numeric type
-  class point_cloud_context : public absc_context<numeric_type> {
+  template<typename numeric_type>
+  class point_cloud_context : public rti::trace::absc_context<numeric_type> {
 
   public:
     // managment for ray weights
@@ -49,6 +49,9 @@ namespace rti { namespace trace {
     rti::rng::i_rng& mRng;
     rti::rng::i_rng::i_state& mRngState;
 
+    //rti::mc::rejection_control<numeric_type> rejectioncontrol;
+    rti::particle::i_particle<numeric_type>& particle;
+
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
     // Initialize to some reasonable size. The vector may grow, if needed.
@@ -65,7 +68,8 @@ namespace rti { namespace trace {
             rti::geo::i_boundary<numeric_type>& pBoundary,
             rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
-            rti::rng::i_rng::i_state& pRngState) :
+            rti::rng::i_rng::i_state& pRngState,
+            rti::particle::i_particle<numeric_type>& particle) :
       rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
@@ -75,9 +79,11 @@ namespace rti { namespace trace {
       mBoundary(pBoundary),
       mBoundaryReflectionModel(pBoundaryReflectionModel),
       mRng(pRng),
-      mRngState(pRngState) {
+      mRngState(pRngState),
+      particle(particle) {
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
+      std::cerr << "TODO: add unified rejection control" << std::endl;
     }
 
   public:
@@ -277,7 +283,7 @@ namespace rti { namespace trace {
           continue;
         }
         set.insert(hitprimid);
-        auto sticking = mGeometry.get_sticking_coefficient();
+        auto sticking = particle.process_hit(pRayHit.hit.primID);
         assert(0 <= sticking && sticking <= 1 && "Assumption");
         auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(hitprimid, valuetodrop);
@@ -337,6 +343,11 @@ namespace rti { namespace trace {
     void init_ray_weight() override final
     {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
+    }
+
+    bool compute_exposed_areas_by_sampling() override final
+    {
+      return false;
     }
   };
 }}

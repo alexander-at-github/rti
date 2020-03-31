@@ -9,6 +9,9 @@
 
 namespace rti { namespace util {
 
+  //constexpr double pi() { return std::atan(1)*4; }
+  constexpr auto pi = std::acos(-1);
+
   template<typename Ty>
   using pair = std::array<Ty, 2>;
 
@@ -132,6 +135,22 @@ namespace rti { namespace util {
     auto p2 = pPnts[0][1] - pPnts[1][1];
     auto p3 = pPnts[0][2] - pPnts[1][2];
     return std::sqrt(p1*p1 + p2*p2 + p3*p3);
+  }
+
+  template<typename Ty>
+  static Ty length_of_vec(rti::util::triple<Ty> vec)
+  {
+    return distance<Ty>({vec, {0,0,0}});
+  }
+
+  template<typename Ty>
+  static Ty area_of_triangle(rti::util::triple<rti::util::triple<Ty> > tri)
+  {
+    auto ab = diff(tri[1], tri[0]);
+    auto ac = diff(tri[2], tri[0]);
+    auto crossp = cross_product(ab, ac);
+    auto length = length_of_vec(crossp);
+    return 0.5 * length;
   }
 
   // A c-style-array foldl as generic auxiliary implementation.

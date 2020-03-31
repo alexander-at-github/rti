@@ -9,7 +9,7 @@
 #include <assert.h>
 
 #include <embree3/rtcore.h>
-#include <gmsh.h>
+//#include <gmsh.h>
 //#include <xmmintrin.h> // SSE
 #include <immintrin.h> // AVX
 #include <pmmintrin.h> // SSE3
@@ -20,14 +20,14 @@
 //#include <x86intrin.h>
 
 #include "rti/geo/boundary_x_y.hpp"
-#include "rti/geo/disc_geometry_from_gmsh.hpp"
-#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
+//#include "rti/geo/disc_geometry_from_gmsh.hpp"
+//#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/geo/point_cloud_disc_factory.hpp"
 #include "rti/geo/point_cloud_disc_geometry.hpp"
 #include "rti/geo/point_cloud_sphere_geometry.hpp"
-#include "rti/geo/sphere_geometry_from_gmsh.hpp"
+//#include "rti/geo/sphere_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_factory.hpp"
-#include "rti/geo/triangle_geometry_from_gmsh.hpp"
+//#include "rti/geo/triangle_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_geometry.hpp"
 #include "rti/io/vtp_point_cloud_reader.hpp"
 #include "rti/io/christoph/vtu_point_cloud_reader.hpp"
@@ -35,6 +35,8 @@
 #include "rti/io/vtp_triangle_reader.hpp"
 #include "rti/io/vtp_writer.hpp"
 #include "rti/io/xaver/vtu_point_cloud_reader.hpp"
+#include "rti/particle/i_particle.hpp"
+#include "rti/particle/i_particle_factory.hpp"
 #include "rti/ray/constant_origin.hpp"
 #include "rti/ray/cosine_direction.hpp"
 #include "rti/ray/disc_origin_x.hpp"
@@ -43,7 +45,9 @@
 #include "rti/ray/source.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
 #include "rti/test_and_benchmark/test_result.hpp"
+#include "rti/trace/point_cloud_context_simplified.hpp"
 #include "rti/trace/tracer.hpp"
+#include "rti/trace/triangle_context_simplified.hpp"
 #include "rti/trace/result.hpp"
 #include "rti/util/clo.hpp"
 #include "rti/util/logger.hpp"
@@ -71,6 +75,8 @@ namespace rti {
         {"DISCS", {"--discs"}, "sets discs as surface primitives"});
       optMan->addCmlParam(rti::util::clo::string_option
         {"STICKING_COEFFICIENT", {"--sticking-coefficient", "--sticking-c", "--sticking", "-s"}, "specifies the sticking coefficient of the surface", false});
+      optMan->addCmlParam(rti::util::clo::bool_option
+        {"SINGLE_HIT", {"--single-hit", "--single"}, "sets single-hit intersections for the ray tracer"});
       bool succ = optMan->parse_args(argc, argv);
       if (!succ) {
         std::cout << optMan->get_usage_msg();
@@ -176,11 +182,11 @@ int main(int argc, char* argv[]) {
     if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtp") {
       RLOG_DEBUG << "recognized .vtp file" << std::endl;
       auto reader = rti::io::vtp_triangle_reader<numeric_type> {infilename};
-      geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader, stickingC);
+      geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader);
     } else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
       RLOG_DEBUG << "recognized .vtu file" << std::endl;
       auto reader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-      geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader, stickingC);
+      geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader);
     }
   } else { // Default
   //} else if (optMan->get_bool_option_value("DISCS")) {
@@ -188,11 +194,17 @@ int main(int argc, char* argv[]) {
     if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtp") {
       RLOG_DEBUG << "recognized .vtp file" << std::endl;
       auto reader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
-      geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type> > (device, reader, stickingC);
+      if (optMan->get_bool_option_value("SINGLE_HIT")) {
+        RLOG_INFO << "Using single-hit" << std::endl;
+        geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context_simplified<numeric_type> > > (device, reader);
+      } else {
+        RLOG_INFO << "Using multi-hit" << std::endl;
+        geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context<numeric_type> > > (device, reader);
+      }
     } else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
       RLOG_DEBUG << "recognized .vtu file" << std::endl;
       auto reader = rti::io::xaver::vtu_point_cloud_reader<numeric_type> {infilename};
-      geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type> > (device, reader, stickingC);
+      geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context_simplified<numeric_type> > > (device, reader);
     }
   }
 
@@ -247,8 +259,24 @@ int main(int argc, char* argv[]) {
     numrays = std::stoull(numraysstr);
   } catch (...) {}
 
+  // Create particle and particle factory
+  class particle_t : public rti::particle::i_particle<numeric_type> {
+    numeric_type sticking;
+    public:
+    particle_t(numeric_type sticking) : sticking(sticking) {}
+    numeric_type process_hit(size_t primID) override final { return sticking; }
+    void init_new() override final { return; }
+  };
+  class particle_factory : public rti::particle::i_particle_factory<numeric_type> {
+    numeric_type sticking;
+    public:
+    particle_factory(numeric_type sticking) : sticking(sticking) {}
+    std::unique_ptr<rti::particle::i_particle<numeric_type> > create() override final { return std::make_unique<particle_t> (sticking); }
+  };
+  auto particlefactory = particle_factory ((numeric_type) stickingC);
+  //auto particlefactory = nullptr;
 
-  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays};
+  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays, particlefactory};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;

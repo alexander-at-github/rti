@@ -15,6 +15,8 @@ namespace rti { namespace trace {
     virtual size_t get_cnts_sum() = 0;
     virtual std::vector<internal_numeric_type> get_relative_error() = 0;
     virtual std::vector<internal_numeric_type> get_vov() = 0;
+    virtual void set_exposed_areas(std::vector<internal_numeric_type>&) = 0;
+    virtual std::vector<internal_numeric_type> get_exposed_areas() = 0;
     virtual void print(std::ostream& pOs) const = 0;
   };
 }}

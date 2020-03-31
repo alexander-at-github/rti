@@ -18,10 +18,9 @@ namespace rti { namespace geo {
                             "Precondition");
 
   public:
-    // point_cloud_disc_factory(RTCDevice& device,
-    //                          rti::io::i_point_cloud_reader<numeric_type>& reader,
-    //                          numeric_type stickingC) :
-    //   mGeometry(device, reader, stickingC) {}
+    point_cloud_disc_factory(RTCDevice& device,
+                             rti::io::i_point_cloud_reader<numeric_type>& reader) :
+      mGeometry(device, reader) {}
 
     // point_cloud_disc_factory(RTCDevice& device,
     //                          std::vector<rti::util::quadruple<numeric_type> > points,

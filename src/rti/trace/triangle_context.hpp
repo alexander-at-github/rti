@@ -14,8 +14,8 @@
 // This class needs to be used according to a protocol! See base class rti::trace::absc_context
 
 namespace rti { namespace trace {
-  template<typename Ty> // intended to be a numeric type
-  class triangle_context : public rti::trace::absc_context<Ty> {
+  template<typename numeric_type> // intended to be a numeric type
+  class triangle_context : public rti::trace::absc_context<numeric_type> {
   private:
     // managment for ray weights
     static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
@@ -27,22 +27,22 @@ namespace rti { namespace trace {
   private:
     // geometry related data
     bool geoNotIntersected = true;
-    Ty geoFirstHitTFar = 0; // the type will probably be float since Embree uses float for its RTCRay.tfar
-    Ty geoTFarMax = 0;
-    rti::util::pair<rti::util::triple<Ty> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    numeric_type geoFirstHitTFar = 0; // the type will probably be float since Embree uses float for its RTCRay.tfar
+    numeric_type geoTFarMax = 0;
+    rti::util::pair<rti::util::triple<numeric_type> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // boundary related data
     bool boundNotIntersected = true;
-    Ty boundFirstHitTFar = 0;
-    rti::util::pair<rti::util::triple<Ty> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    numeric_type boundFirstHitTFar = 0;
+    rti::util::pair<rti::util::triple<numeric_type> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     // other data
   private:
     unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
-    rti::geo::triangle_geometry<Ty>& mGeometry;
-    rti::reflection::i_reflection_model<Ty>& mReflectionModel;
-    rti::trace::i_hit_accumulator<Ty>& mHitAccumulator;
+    rti::geo::triangle_geometry<numeric_type>& mGeometry;
+    rti::reflection::i_reflection_model<numeric_type>& mReflectionModel;
+    rti::trace::i_hit_accumulator<numeric_type>& mHitAccumulator;
     unsigned int mBoundaryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
-    rti::geo::i_boundary<Ty>& mBoundary;
-    rti::reflection::i_reflection_model<Ty>& mBoundaryReflectionModel;
+    rti::geo::i_boundary<numeric_type>& mBoundary;
+    rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
 
     rti::rng::i_rng& mRng;
     rti::rng::i_rng::i_state& mRngState;
@@ -56,16 +56,16 @@ namespace rti { namespace trace {
     // Constructor
   public:
     triangle_context(unsigned int pGeometryID,
-            rti::geo::triangle_geometry<Ty>& pGeometry,
-            rti::reflection::i_reflection_model<Ty>& pReflectionModel,
-            rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
+            rti::geo::triangle_geometry<numeric_type>& pGeometry,
+            rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
+            rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,
             unsigned int pBoundaryID,
-            rti::geo::i_boundary<Ty>& pBoundary,
-            rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
+            rti::geo::i_boundary<numeric_type>& pBoundary,
+            rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState) :
       // initialize members of virtual base class
-      rti::trace::absc_context<Ty>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
+      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -81,10 +81,10 @@ namespace rti { namespace trace {
 
   public:
     static
-    void register_intersect_filter_funs(rti::geo::i_geometry<Ty>& pGeometry,
-                                        rti::geo::i_boundary<Ty>& pBoundary) {
+    void register_intersect_filter_funs(rti::geo::i_geometry<numeric_type>& pGeometry,
+                                        rti::geo::i_boundary<numeric_type>& pBoundary) {
       // The following cast characterizes a precondition to this function
-      auto pPCGeoPointer = dynamic_cast<rti::geo::triangle_geometry<Ty>*> (&pGeometry);
+      auto pPCGeoPointer = dynamic_cast<rti::geo::triangle_geometry<numeric_type>*> (&pGeometry);
       auto& pPCGeo = *pPCGeoPointer;
       RLOG_DEBUG << "register_intersect_filter_funs()" << std::endl;
       rtcSetGeometryIntersectFilterFunction(pPCGeo.get_rtc_geometry(), &filter_fun_geometry);
@@ -106,8 +106,8 @@ namespace rti { namespace trace {
 
       //std::cerr << "filter_fun_geometry(): the address of the rtc context: " << cc << std::endl;
       auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
-      auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
-      auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<Ty>*> (rtiabscontextptr);
+      auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<numeric_type>::context_c_wrapper*> (ccnonconst)->mAbscContext;
+      auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<numeric_type>*> (rtiabscontextptr);
       //std::cerr << "filter_fun_geometry(): address of the rti context: " << rticontextptr << std::endl;
 
       // The rticontextptr now serves an equal function as the this pointer in a conventional
@@ -150,8 +150,8 @@ namespace rti { namespace trace {
 
       //std::cerr << "filter_fun_boundary(): the address of the rtc context: " << cc << std::endl;
       auto ccnonconst = const_cast<RTCIntersectContext*>(cc);
-      auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<Ty>::context_c_wrapper*> (ccnonconst)->mAbscContext;
-      auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<Ty>*> (rtiabscontextptr);
+      auto rtiabscontextptr = &reinterpret_cast<typename rti::trace::absc_context<numeric_type>::context_c_wrapper*> (ccnonconst)->mAbscContext;
+      auto rticontextptr = reinterpret_cast<rti::trace::triangle_context<numeric_type>*> (rtiabscontextptr);
       //std::cerr << "filter_fun_boundary(): address of the rti context: " << rticontextptr << std::endl;
 
       // The rticontextptr now serves an equal function as the this pointer in a conventional
@@ -281,6 +281,11 @@ namespace rti { namespace trace {
 
     void init_ray_weight() override final {
       this->rayWeight = this->INITIAL_RAY_WEIGHT;
+    }
+
+    bool compute_exposed_areas_by_sampling() override final
+    {
+      return false;
     }
   };
 }} // namespace

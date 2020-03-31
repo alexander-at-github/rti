@@ -87,12 +87,6 @@ namespace rti { namespace geo {
       return this->mNumPoints;
     }
 
-    numeric_type get_sticking_coefficient() override final
-    {
-      assert (false && "Sticking has been removed from this class. It should also be removed from the base class!");
-      return 0.5;
-    }
-
   protected:
     // Data members
     RTCDevice& mDevice;

@@ -4,7 +4,7 @@
 
 namespace rti { namespace trace {
   template<typename Ty>
-  class hit_accumulator_with_checks : public i_hit_accumulator<Ty> {
+  class hit_accumulator_with_checks : public rti::trace::i_hit_accumulator<Ty> {
 
     using internal_numeric_type = double;
 
@@ -14,6 +14,7 @@ namespace rti { namespace trace {
       mAcc(pSize, 0), // pSize number of elements initialized to 0.
       mCnts(pSize, 0),
       mTotalCnts(0),
+      exposedareas(pSize, 0),
       mS1s(pSize, 0),
       mS2s(pSize, 0),
       mS3s(pSize,0),
@@ -23,6 +24,7 @@ namespace rti { namespace trace {
       mAcc(pA.mAcc), // copy construct the vector member
       mCnts(pA.mCnts),
       mTotalCnts(pA.mTotalCnts),
+      exposedareas(pA.exposedareas),
       mS1s(pA.mS1s),
       mS2s(pA.mS2s),
       mS3s(pA.mS3s),
@@ -32,6 +34,7 @@ namespace rti { namespace trace {
       mAcc(std::move(pA.mAcc)), // move the vector member
       mCnts(std::move(pA.mCnts)),
       mTotalCnts(std::move(pA.mTotalCnts)),
+      exposedareas(std::move(exposedareas)),
       mS1s(std::move(pA.mS1s)),
       mS2s(std::move(pA.mS2s)),
       mS3s(std::move(pA.mS3s)),
@@ -57,7 +60,20 @@ namespace rti { namespace trace {
         mS3s[idx] += pA2.mS3s[idx];
         mS4s[idx] += pA2.mS4s[idx];
       }
-      mTotalCnts = pA2.mTotalCnts;
+      mTotalCnts = pA1.mTotalCnts + pA2.mTotalCnts;
+      /* Assertions about the exposed areas saved in the input instances */
+      assert(pA1.exposedareas.size() == pA2.exposedareas.size());
+      assert(exposedareas.size() == pA1.exposedareas.size());
+      for (size_t idx = 0; idx < pA1.exposedareas.size(); ++idx) {
+        assert(
+          ( pA1.exposedareas[idx] == 0 ||
+            pA2.exposedareas[idx] == 0 ||
+            pA1.exposedareas[idx] == pA2.exposedareas[idx] )
+          && "Correctness Assumption");
+        exposedareas[idx] =
+          pA1.exposedareas[idx] > pA2.exposedareas[idx] ?
+          pA1.exposedareas[idx] : pA2.exposedareas[idx];
+      }
     }
 
     // Assignment operators corresponding to the constructors
@@ -69,6 +85,8 @@ namespace rti { namespace trace {
         mCnts.clear();
         mCnts = pOther.mCnts;
         mTotalCnts = pOther.mTotalCnts;
+        exposedareas.clear();
+        exposedareas = pOther.exposedareas;
         mS1s.clear();
         mS1s = pOther.mS1s;
         mS2s.clear();
@@ -89,6 +107,8 @@ namespace rti { namespace trace {
         mCnts.clear();
         mCnts = std::move(pOther.mCnts);
         mTotalCnts = pOther.mTotalCnts;
+        exposedareas.clear();
+        exposedareas = std::move(pOther.exposedareas);
         mS1s.clear();
         mS1s = std::move(pOther.mS1s);
         mS2s.clear();
@@ -127,7 +147,7 @@ namespace rti { namespace trace {
     }
 
     std::vector<internal_numeric_type> get_relative_error() override final {
-      std::cerr << "### Fix!" << std::endl;
+      std::cerr << "### Fix! relative error" << std::endl;
       auto result = std::vector<internal_numeric_type>(mS1s.size(), 0); // size, initial values
       for (size_t idx = 0; idx < result.size(); ++idx) {
         auto s1square = mS1s[idx] * mS1s[idx];
@@ -157,7 +177,7 @@ namespace rti { namespace trace {
     }
 
     std::vector<internal_numeric_type> get_vov() override final { // variance of variance
-      std::cerr << "### Fix!" << std::endl;
+      std::cerr << "### Fix! vov" << std::endl;
       auto result = std::vector<internal_numeric_type>(mS1s.size(), 0); // size, initial values
       for (size_t idx = 0; idx < result.size(); ++idx) {
         if (mCnts[idx] == 0) {
@@ -217,6 +237,16 @@ namespace rti { namespace trace {
       return result;
     }
 
+    void set_exposed_areas(std::vector<internal_numeric_type>& areas) override final
+    {
+      exposedareas = areas;
+    }
+
+    std::vector<internal_numeric_type> get_exposed_areas() override final
+    {
+      return exposedareas;
+    }
+
     void print(std::ostream& pOs) const override final {
       pOs << "(";
       auto const* separator = " ";
@@ -231,6 +261,7 @@ namespace rti { namespace trace {
     std::vector<internal_numeric_type> mAcc;
     std::vector<size_t> mCnts;
     size_t mTotalCnts;
+    std::vector<internal_numeric_type> exposedareas;
 
     // actuall - for now - mAcc und mS1s do the same thing!
     // We might want to remove one of them later.

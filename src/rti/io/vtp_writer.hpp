@@ -32,6 +32,7 @@ namespace rti { namespace io {
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
       add_hit_values_to_points(polydata, pHA);
+      add_exposed_area(polydata, pHA);
       try_add_hit_counts_to_points(polydata, pHA);
       //try_add_statistical_data_to_points(polydata, pHA);
       try_add_statistical_data(polydata, pHA);
@@ -49,6 +50,7 @@ namespace rti { namespace io {
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
       add_hit_values_to_triangles(polydata, pHA);
+      add_exposed_area(polydata, pHA);
       try_add_hit_counts_to_triangles(polydata, pHA);
       //try_add_statistical_data_to_triangles(polydata, pHA);
       try_add_statistical_data(polydata, pHA);
@@ -166,6 +168,24 @@ namespace rti { namespace io {
       }
       hitCnts->SetName(hitcntStr);
       pPolydata->GetCellData()->AddArray(hitCnts);
+    }
+
+    static
+    void add_exposed_area(vtkSmartPointer<vtkPolyData> polydata, rti::trace::i_hit_accumulator<Ty>& ac)
+    {
+      auto inareas = ac.get_exposed_areas();
+      assert (polydata->GetNumberOfCells() == inareas.size() &&
+              "number of cells in polydata does not fit the number of exposec-area values");
+      if (inareas.size() == 0)
+        return;
+      auto areas = vtkSmartPointer<vtkDoubleArray>::New();
+      areas->SetNumberOfComponents(1); // 1 dimension
+      areas->SetNumberOfTuples(inareas.size());
+      for (size_t idx = 0; idx < inareas.size(); ++idx){
+        areas->InsertValue(idx, inareas[idx]);
+      }
+      areas->SetName(exposedAreaStr);
+      polydata->GetCellData()->AddArray(areas);
     }
 
     // static
@@ -380,6 +400,7 @@ namespace rti { namespace io {
     }
 
     static constexpr char const* radiusStr = "radius";
+    static constexpr char const* exposedAreaStr = "exposed-area";
     static constexpr char const* valueStr = "value";
     static constexpr char const* hitcntStr = "hitcnt";
     static constexpr char const* relativeErrorStr = "relative-error";

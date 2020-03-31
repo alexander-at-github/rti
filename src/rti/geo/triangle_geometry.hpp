@@ -17,12 +17,25 @@ namespace rti { namespace geo {
   public:
 
     triangle_geometry(RTCDevice& pRTCDevice,
-                      rti::io::i_triangle_reader<Ty>& pReader,
-                      Ty pStickingC) :
+                      rti::io::i_triangle_reader<Ty>& pReader) :
       mRTCDevice(pRTCDevice),
-      mReader(pReader),
-      mStickingC(pStickingC) {
+      mReader(pReader) {
       init_this(pRTCDevice, pReader);
+    }
+
+    Ty get_area(unsigned int primID)
+    {
+      auto tri = mTTBuffer[primID];
+      auto v0 = mVVBuffer[tri.v0];
+      auto v1 = mVVBuffer[tri.v1];
+      auto v2 = mVVBuffer[tri.v2];
+      auto triangle = rti::util::triple<rti::util::triple<Ty> >
+        {v0.xx, v0.yy, v0.zz,
+         v1.xx, v1.yy, v1.zz,
+         v2.xx, v2.yy, v2.zz};
+      return rti::util::area_of_triangle(triangle);
+      // assert(false && "not implemented");
+      // return 0;
     }
 
   private:
@@ -89,7 +102,7 @@ namespace rti { namespace geo {
 
   public:
 
-    void print(std::ostream& pOs) const override final
+    void print(std::ostream& pOs) override final
     {
       pOs << "(:class " << boost::core::demangle(typeid(this).name());
       if (this->mVVBuffer != nullptr)
@@ -109,7 +122,7 @@ namespace rti { namespace geo {
       return this->mGeometry;
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) const override final
+    rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final
     {
       // auto& tri = this->mTTBuffer[pPrimID];
       // auto& v0 = this->mVVBuffer[tri.v0];
@@ -124,7 +137,7 @@ namespace rti { namespace geo {
       return this->mNNBuffer[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) const override final
+    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) override final
     {
       //auto epsilon = 1e-12; // magic number; less than 1e-3 does definitely not work
       auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
@@ -143,18 +156,18 @@ namespace rti { namespace geo {
       return this->mReader.get_input_file_name();
     }
 
-    size_t get_num_primitives() const override final
+    size_t get_num_primitives() override final
     {
       return this->mNumTriangles;
     }
 
-    std::string prim_to_string(unsigned int pPrimID) const override final
+    std::string prim_to_string(unsigned int pPrimID) override final
     {
       assert(false && "Not implemented");
       return {};
     }
 
-    rti::util::pair<rti::util::triple<Ty> > get_bounding_box() const override final
+    rti::util::pair<rti::util::triple<Ty> > get_bounding_box() override final
     {
       assert(mVVBuffer != nullptr && "No data");
       if (mVVBuffer == nullptr) // no data in this instance
@@ -171,11 +184,6 @@ namespace rti { namespace geo {
         zmax = std::max(zmax, mVVBuffer[idx].zz);
       }
       return {rti::util::triple<Ty> {xmin, ymin, zmin}, rti::util::triple<Ty> {xmax, ymax, zmax}};
-    }
-
-    Ty get_sticking_coefficient() const override final
-    {
-      return this->mStickingC;
     }
 
     // Note: this function does not read the data from this->mVVBuffer (the Embree buffer).
@@ -203,7 +211,6 @@ namespace rti { namespace geo {
   private:
     RTCDevice& mRTCDevice;
     rti::io::i_triangle_reader<Ty> mReader;
-    Ty mStickingC = 1; // initialize to some value
 
     RTCGeometry mGeometry;
     vertex_f3_t* mVVBuffer = nullptr;
