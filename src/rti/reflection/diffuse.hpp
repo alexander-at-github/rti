@@ -60,61 +60,10 @@ namespace rti { namespace reflection {
 
       auto normal = pGeometry.get_normal(primID);
       /* Compute lambertian reflection with respect to surface normal */
-      auto orthonormalBasis = get_orthonormal_basis(normal);
+      auto orthonormalBasis = rti::util::get_orthonormal_basis(normal);
       auto direction = rti::ray::cos_hemi::get<Ty>(orthonormalBasis, pRng, pRngState);
 
       return {newOrigin, direction};
     }
-
-  private:
-    // Returns some orthonormal basis containing a the input vector pVector
-    // (possibly scaled) as the first element of the return value.
-    // This function is deterministic, i.e., for one input it will return always
-    // the same result.
-    rti::util::triple<rti::util::triple<Ty> > get_orthonormal_basis(const rti::util::triple<Ty> pVector) const {
-      rti::util::triple<rti::util::triple<Ty> > rr;
-      rr[0] = pVector;
-      // rr[0][0] = pVector[0];
-      // rr[0][1] = pVector[1];
-      // rr[0][2] = pVector[2];
-
-      // Calculate a vector (rr[1]) which is perpendicular to rr[0]
-      // https://math.stackexchange.com/questions/137362/how-to-find-perpendicular-vector-to-another-vector#answer-211195
-      rti::util::triple<Ty> candidate0 {rr[0][2], rr[0][2], -(rr[0][0] + rr[0][1])};
-      rti::util::triple<Ty> candidate1 {rr[0][1], -(rr[0][0] + rr[0][2]), rr[0][1]};
-      rti::util::triple<Ty> candidate2 {-(rr[0][1] + rr[0][2]), rr[0][0], rr[0][0]};
-      // We choose the candidate which maximizes the sum of its components, because we want to avoid
-      // numeric errors and that the result is (0, 0, 0).
-      std::array<rti::util::triple<Ty>, 3> cc = {candidate0, candidate1, candidate2};
-      auto sumFun = [](rti::util::triple<Ty> oo){return oo[0] + oo[1] + oo[2];};
-      int maxIdx = 0;
-      for (size_t idx = 1; idx < cc.size(); ++idx) {
-        if (sumFun(cc[idx]) > sumFun(cc[maxIdx])) {
-          maxIdx = idx;
-        }
-      }
-      assert (maxIdx < 3 && "Error in computation of perpenticular vector");
-      rr[1] = cc[maxIdx];
-
-      // Calculat cross product of rr[0] and rr[1] to form orthogonal basis
-      // rr[2][0] = rr[0][1] * rr[1][2] - rr[0][2] * rr[1][1];
-      // rr[2][1] = rr[0][2] * rr[1][0] - rr[0][0] * rr[1][2];
-      // rr[2][2] = rr[0][0] * rr[1][1] - rr[0][1] * rr[1][0];
-      rr[2] = rti::util::cross_product(rr[0], rr[1]);
-
-      // Normalize the length of these vectors.
-      rti::util::normalize(rr[0]);
-      rti::util::normalize(rr[1]);
-      rti::util::normalize(rr[2]);
-
-      // Sanity check
-      Ty epsilon = 1e-6;
-      assert(std::abs(rti::util::dot_product(rr[0], rr[1])) < epsilon && "Error in orthonormal basis computation");
-      assert(std::abs(rti::util::dot_product(rr[1], rr[2])) < epsilon && "Error in orthonormal basis computation");
-      assert(std::abs(rti::util::dot_product(rr[2], rr[0])) < epsilon && "Error in orthonormal basis computation");
-
-      return rr;
-    }
-
   };
 }} // namespace

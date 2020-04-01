@@ -8,11 +8,14 @@
 
 #include <embree3/rtcore.h>
 
+#include "rti/geo/absc_point_cloud_geometry.hpp"
 #include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_geometry.hpp"
 #include "rti/io/vtp_writer.hpp"
 #include "rti/particle/i_particle.hpp"
 #include "rti/particle/i_particle_factory.hpp"
+#include "rti/ray/constant_direction.hpp"
+#include "rti/ray/disc_origin.hpp"
 #include "rti/ray/i_source.hpp"
 #include "rti/reflection/diffuse.hpp"
 //#include "rti/reflection/specular.hpp"
@@ -91,12 +94,76 @@ namespace rti { namespace trace {
       }
     }
 
-    void compute_exposed_areas_by_sampling()
+    void
+    compute_exposed_areas_by_sampling
+    (rti::geo::i_geometry<numeric_type>& geo,
+     RTCScene& scene,
+     rti::trace::i_hit_accumulator<numeric_type>& hitacc,
+     unsigned int geometryID,
+     rti::rng::i_rng& rng,
+     rti::rng::i_rng::i_state& rngstate
+     )
     {
-      assert(false && "not implmented");
+      // Precondition: Embree has been set up properly
+      //   (e.g., the geometry has been built)
+      // Precondition: We are in an OpenMP parallel block
+      // Precondition: the following cast characterizes a precondition:
+      auto pcgeo =
+        dynamic_cast<rti::geo::absc_point_cloud_geometry<numeric_type>*> (&geo);
+
+      std::cerr << "### FIX: This function does not consider that areas of "
+                << "discs may be located outside of the boundary" << std::endl;
+
+      auto numofprimitives = pcgeo->get_num_primitives();
+      auto areas = std::vector<double> (numofprimitives, 0);
+      #pragma omp for
+      for (size_t primidx = 0; primidx < numofprimitives; ++primidx) {
+        auto pointradius = pcgeo->get_prim(primidx);
+        auto normal = pcgeo->get_normal(primidx);
+        auto point = rti::util::triple<numeric_type>
+          {pointradius[0], pointradius[1], pointradius[2]};
+        auto radius = pointradius[3];
+        auto origincenter = rti::util::sum(point, rti::util::scale(radius, normal));
+        auto invnormal = rti::util::inv(normal);
+        auto origin = rti::ray::disc_origin<numeric_type>
+          {origincenter, invnormal, radius};
+        auto direction = rti::ray::constant_direction<numeric_type> {invnormal};
+        auto source = rti::ray::source<numeric_type> {origin, direction};
+        
+        // We use a new RTC context object.
+        auto context = RTCIntersectContext {};
+        rtcInitIntersectContext(&context);
+        auto numOfSamples = 256u;
+        
+        alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+        auto hits = 0u;
+        for (size_t sidx = 0; sidx < numOfSamples; ++sidx) {
+          rayhit.ray.tnear = 0;
+          rayhit.ray.time = 0;
+          rayhit.ray.tfar = std::numeric_limits<float>::max();
+          rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+          rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+          source.fill_ray(rayhit.ray, rng, rngstate);
+
+          RAYSRCLOG(rayhit);
+          
+          rtcIntersect1(scene, &context, &rayhit);
+          if (rayhit.hit.geomID != geometryID) 
+            continue;
+          if (rayhit.hit.primID != primidx)
+            continue;
+          hits += 1;
+        }
+        assert (0 <= hits && hits <= numOfSamples && "Correctness assertion");
+        areas[primidx] = pcgeo->get_area(primidx) * (double) hits / numOfSamples;
+      }
+      hitacc.set_exposed_areas(areas);
     }
 
-    void use_entire_areas_of_primitives_as_exposed(rti::geo::i_geometry<numeric_type>& geo, rti::trace::i_hit_accumulator<numeric_type>& hitacc)
+    void
+    use_entire_areas_of_primitives_as_exposed
+    (rti::geo::i_geometry<numeric_type>& geo,
+     rti::trace::i_hit_accumulator<numeric_type>& hitacc)
     {
       // Precondition: We are in an OpenMP parallel block
       auto numofprimitives = geo.get_num_primitives();
@@ -105,7 +172,8 @@ namespace rti { namespace trace {
       for (size_t idx = 0; idx < numofprimitives; ++idx) {
         areas[idx] = geo.get_area(idx);
       }
-      // Note: effectively in each thread only some of the area-values have been set. Also each thread holds its own hit-accumulator.
+      // Note: effectively in each thread only some of the area-values have
+      // been set. Also each thread holds its own hit-accumulator.
       hitacc.set_exposed_areas(areas);
     }
 
@@ -283,7 +351,12 @@ namespace rti { namespace trace {
           } while (reflect);
         }
         if (rtiContext->compute_exposed_areas_by_sampling()) {
-          compute_exposed_areas_by_sampling();
+          // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
+          rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
+          rtcSetGeometryIntersectFilterFunction(boundary, nullptr);
+          rtcCommitGeometry(geometry);
+          rtcCommitGeometry(boundary);
+          compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
         } else {
           use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
         }

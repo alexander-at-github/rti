@@ -224,7 +224,7 @@ namespace rti {
       (device, pointsandradii, pimpl->normals);
     auto bdbox = geometryFactory.get_geometry().get_bounding_box();
     bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, 1);
-    bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 8);
+    //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 8);
     auto origin = create_rectangular_source_from_bounding_box(bdbox);
     // auto origin = create_circular_source_from_bounding_box(bdbox);
     //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 0.5);
