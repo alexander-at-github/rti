@@ -9,58 +9,56 @@
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace io {
-  class gmsh_reader {
+  template<typename numeric_type>
+  class gmsh_reader : public rti::io::i_triangle_reader<numeric_type> {
     // This is a singleton class
   public:
-    static gmsh_reader& getInstance(std::string& pFilePath) {
-      // the static keyword ensures that there is only one instance.
-      // (per translation unit).
-      static gmsh_reader instance (pFilePath);
-      return instance;
-    }
+    // static gmsh_reader& get_instance(std::string& pFilePath) {
+    //   // the static keyword ensures that there is only one instance.
+    //   // (per translation unit).
+    //   static gmsh_reader instance (pFilePath);
+    //   return instance;
+    // }
 
-    // Delete copy constructor, and copy assignment operator
-    gmsh_reader(gmsh_reader const&) = delete;
-    gmsh_reader& operator=(gmsh_reader const&) = delete;
+    // // Delete copy constructor, and copy assignment operator
+    // gmsh_reader(gmsh_reader const&) = delete;
+    // gmsh_reader& operator=(gmsh_reader const&) = delete;
 
-  private:
+    //private:
     // Declare constructor private
-    gmsh_reader(std::string& pFilePath) {
+    gmsh_reader(std::string& pFilePath) :
+      rti::io::i_triangle_reader<numeric_type>(pFilePath) {
       gmsh::initialize();
       gmsh::option::setNumber("General.Terminal", 1);
       RLOG_DEBUG << "Reading input file " << pFilePath << std::endl;
       gmsh::open(pFilePath);
       // RLOG_DEBUG << "Will read vertices" << std::endl;
-      mVertices = read_vertices();
+      this->mPoints = read_vertices();
       // RLOG_DEBUG << "Will read triangles" << std::endl;
-      mTriangles = read_triangles();
-    }
-
-    // Destructor calls gmsh::finalize(); RAII
-    ~gmsh_reader() {
+      this->mTriangles = read_triangles();
       gmsh::finalize();
     }
 
     // Code which is not related to the singleton behaviour.
   public:
-    std::vector<rti::util::triple<double> > get_vertices() {
-      return this->mVertices;
-    }
+    // std::vector<rti::util::triple<double> > get_vertices() {
+    //   return this->mVertices;
+    // }
 
-    std::vector<rti::util::triple<std::size_t> > get_triangles() {
-      return this->mTriangles;
-    }
+    // std::vector<rti::util::triple<std::size_t> > get_triangles() {
+    //   return this->mTriangles;
+    // }
 
-    std::string get_mesh_file_path() {
-      return this->mMshFilePath;
-    }
+    // std::string get_mesh_file_path() {
+    //   return this->mMshFilePath;
+    // }
   private:
     ///////////////
     // Data Members
     ///////////////
-    std::string mMshFilePath;
-    std::vector<rti::util::triple<double> > mVertices;
-    std::vector<rti::util::triple<std::size_t> > mTriangles;
+    //std::string mMshFilePath;
+    //std::vector<rti::util::triple<numeric_type> > mVertices;
+    //std::vector<rti::util::triple<std::size_t> > mTriangles;
     ////////////
     // Functions
     ////////////
@@ -84,7 +82,7 @@ namespace rti { namespace io {
     //   return std::string();
     // }
 
-    std::vector<rti::util::triple<double> > read_vertices() {
+    std::vector<rti::util::triple<numeric_type> > read_vertices() {
       std::vector<std::size_t> vvtags;
       std::vector<double> vvxyz;
       std::vector<double> vvuvw;
@@ -104,7 +102,7 @@ namespace rti { namespace io {
              && "Vertex tag assumption not met");
 
       //std::vector<double> result(vvxyz.size());
-      std::vector<rti::util::triple<double> > result(vvtags.size());
+      std::vector<rti::util::triple<numeric_type> > result(vvtags.size());
       // RLOG_DEBUG
       //   << "result vector created" << std::endl;
       for (size_t idx = 0; idx < vvtags.size(); ++idx) {
@@ -114,7 +112,10 @@ namespace rti { namespace io {
         size_t vvtag = vvtags[idx];
         //assert(std::is_unsigned<decltype(vvtag)>::value); // not necessary; unsigned type
         assert(vvtag < vvtags.size() && "Error in tag/index computation");
-        rti::util::triple<double> rr {vvxyz[xyzidx], vvxyz[xyzidx+1], vvxyz[xyzidx+2]};
+        rti::util::triple<numeric_type> rr
+          {(numeric_type)vvxyz[xyzidx],
+           (numeric_type)vvxyz[xyzidx+1],
+           (numeric_type)vvxyz[xyzidx+2]};
         // Would this statement use move semantics without explicit call to std::move()?
         result[vvtag] = std::move(rr);
       }
@@ -150,9 +151,9 @@ namespace rti { namespace io {
       // Some sanity checks
       // Not needed because of unsigned type
       //assert(*std::min_element(selected.begin(), selected.end()) >= 0 && "Vertex tag assumption not met");
-      if (this->mVertices.size() > 0) {
-        // We can verify this property only if the vertices are set in mVertices.
-        assert(*std::max_element(selected.begin(), selected.end()) < mVertices.size() &&
+      if (this->mPoints.size() > 0) {
+        // We can verify this property only if the vertices are set in mPoints.
+        assert(*std::max_element(selected.begin(), selected.end()) < this->mPoints.size() &&
                "Vertex tag assumption not met");
       }
 
