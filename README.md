@@ -1,6 +1,6 @@
-# Project rti
+# rti &ndash; Flux Calculation Library
 
-### Installing
+### Build Instructions
 
 Create a build directory:
 ````
@@ -24,7 +24,7 @@ cmake --build . --target rti
 The library and CMake files will be saved in directories under `build/lib`.
 The API is declared in the header file `build/include/rti/device.hpp`.
 
-In order to use the rti library in CMake use `find_package(librtidevice)` in your CMakeLists.txt to obtain the target `librtidevice::librtidevice`, for example:
+In order to use the rti library use `find_package(librtidevice)` in your CMakeLists.txt to obtain the target `librtidevice::librtidevice`, for example:
 
 ````
 find_package (
