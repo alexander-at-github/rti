@@ -114,6 +114,11 @@ namespace rti { namespace trace {
       std::cerr << "### FIX: This function does not consider that areas of "
                 << "discs may be located outside of the boundary" << std::endl;
 
+      // We use a new RTC context object.
+      auto context = RTCIntersectContext {};
+      rtcInitIntersectContext(&context);
+      auto numOfSamples = 1024u;
+
       auto numofprimitives = pcgeo->get_num_primitives();
       auto areas = std::vector<double> (numofprimitives, 0);
       #pragma omp for
@@ -123,18 +128,13 @@ namespace rti { namespace trace {
         auto point = rti::util::triple<numeric_type>
           {pointradius[0], pointradius[1], pointradius[2]};
         auto radius = pointradius[3];
-        auto origincenter = rti::util::sum(point, rti::util::scale(radius, normal));
+        auto origincenter = rti::util::sum(point, rti::util::scale(2*radius, normal));
         auto invnormal = rti::util::inv(normal);
         auto origin = rti::ray::disc_origin<numeric_type>
           {origincenter, invnormal, radius};
         auto direction = rti::ray::constant_direction<numeric_type> {invnormal};
         auto source = rti::ray::source<numeric_type> {origin, direction};
-        
-        // We use a new RTC context object.
-        auto context = RTCIntersectContext {};
-        rtcInitIntersectContext(&context);
-        auto numOfSamples = 256u;
-        
+
         alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
         auto hits = 0u;
         for (size_t sidx = 0; sidx < numOfSamples; ++sidx) {
@@ -146,15 +146,19 @@ namespace rti { namespace trace {
           source.fill_ray(rayhit.ray, rng, rngstate);
 
           RAYSRCLOG(rayhit);
-          
+
           rtcIntersect1(scene, &context, &rayhit);
-          if (rayhit.hit.geomID != geometryID) 
+
+          RAYLOG(rayhit, rayhit.ray.tfar);
+
+          if (rayhit.hit.geomID != geometryID)
             continue;
           if (rayhit.hit.primID != primidx)
             continue;
           hits += 1;
         }
         assert (0 <= hits && hits <= numOfSamples && "Correctness assertion");
+        //std::cerr << " " << (double) hits / numOfSamples;
         areas[primidx] = pcgeo->get_area(primidx) * (double) hits / numOfSamples;
       }
       hitacc.set_exposed_areas(areas);
@@ -350,6 +354,7 @@ namespace rti { namespace trace {
             // }
           } while (reflect);
         }
+        std::cout << "before area calc" << std::endl << std::flush;
         if (rtiContext->compute_exposed_areas_by_sampling()) {
           // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
           rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
@@ -360,6 +365,7 @@ namespace rti { namespace trace {
         } else {
           use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
         }
+        std::cout << "after area calc" << std::endl << std::flush;
       }
       // Assertion: hitAccumulator is reduced to one instance by openmp reduction
 
