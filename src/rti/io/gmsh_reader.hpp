@@ -8,24 +8,14 @@
 #include "rti/util/logger.hpp"
 #include "rti/util/utils.hpp"
 
+/*
+ * DEPRECATED
+ */
+
 namespace rti { namespace io {
   template<typename numeric_type>
   class gmsh_reader : public rti::io::i_triangle_reader<numeric_type> {
-    // This is a singleton class
   public:
-    // static gmsh_reader& get_instance(std::string& pFilePath) {
-    //   // the static keyword ensures that there is only one instance.
-    //   // (per translation unit).
-    //   static gmsh_reader instance (pFilePath);
-    //   return instance;
-    // }
-
-    // // Delete copy constructor, and copy assignment operator
-    // gmsh_reader(gmsh_reader const&) = delete;
-    // gmsh_reader& operator=(gmsh_reader const&) = delete;
-
-    //private:
-    // Declare constructor private
     gmsh_reader(std::string& pFilePath) :
       rti::io::i_triangle_reader<numeric_type>(pFilePath) {
       gmsh::initialize();
@@ -39,7 +29,6 @@ namespace rti { namespace io {
       gmsh::finalize();
     }
 
-    // Code which is not related to the singleton behaviour.
   public:
     // std::vector<rti::util::triple<double> > get_vertices() {
     //   return this->mVertices;

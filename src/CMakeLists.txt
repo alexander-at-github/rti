@@ -137,30 +137,3 @@ install (
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
-
-### Create DSV reader executable
-include(${VTK_USE_FILE}) # Necessary in CMake for VTK version < 8.90.0
-add_executable (
-  dsvread "rti/dsv_reader.cpp"
-  )
-target_include_directories (
-  dsvread
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${VTK_INCLUDE_DIRS}
-  )
-target_compile_features (
-  dsvread
-  PRIVATE
-  cxx_std_11
-  )
-target_link_libraries (
-  dsvread
-  PRIVATE
-  ${VTK_LIBRARIES}
-  )
-install (
-  TARGETS dsvread
-  RUNTIME
-  DESTINATION ${CMAKE_INSTALL_BINDIR}
-  )
