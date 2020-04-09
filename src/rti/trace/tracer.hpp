@@ -356,12 +356,16 @@ namespace rti { namespace trace {
         }
         std::cout << "before area calc" << std::endl << std::flush;
         if (rtiContext->compute_exposed_areas_by_sampling()) {
-          // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
-          rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
-          rtcSetGeometryIntersectFilterFunction(boundary, nullptr);
-          rtcCommitGeometry(geometry);
-          rtcCommitGeometry(boundary);
-          compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
+          std::cerr
+            << "###############"
+            << "### WARNING ### Computing exposed area by sampling does not work"
+            << "###############" << std::endl;
+          // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
+          // rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
+          // rtcSetGeometryIntersectFilterFunction(boundary, nullptr);
+          // rtcCommitGeometry(geometry);
+          // rtcCommitGeometry(boundary);
+          // compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
         } else {
           use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
         }
