@@ -105,7 +105,9 @@ install (
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/librtidevice
   )
 
+##################
 ### Dev Executable
+##################
 add_executable (
   rti "rti/main_rt.cpp"
   )
@@ -137,7 +139,7 @@ install (
   )
 
 ### Create DSV reader executable
-include(${VTK_USE_FILE}) # Necessary in CMake version < 8.90.0
+include(${VTK_USE_FILE}) # Necessary in CMake for VTK version < 8.90.0
 add_executable (
   dsvread "rti/dsv_reader.cpp"
   )

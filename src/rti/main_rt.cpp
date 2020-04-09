@@ -1,3 +1,4 @@
+
 #include <boost/filesystem.hpp>
 
 #include <algorithm>
@@ -9,7 +10,6 @@
 #include <assert.h>
 
 #include <embree3/rtcore.h>
-//#include <gmsh.h>
 //#include <xmmintrin.h> // SSE
 #include <immintrin.h> // AVX
 #include <pmmintrin.h> // SSE3
@@ -20,14 +20,10 @@
 //#include <x86intrin.h>
 
 #include "rti/geo/boundary_x_y.hpp"
-//#include "rti/geo/disc_geometry_from_gmsh.hpp"
-//#include "rti/geo/oriented_disc_geometry_from_gmsh.hpp"
 #include "rti/geo/point_cloud_disc_factory.hpp"
 #include "rti/geo/point_cloud_disc_geometry.hpp"
 #include "rti/geo/point_cloud_sphere_geometry.hpp"
-//#include "rti/geo/sphere_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_factory.hpp"
-//#include "rti/geo/triangle_geometry_from_gmsh.hpp"
 #include "rti/geo/triangle_geometry.hpp"
 #include "rti/io/vtp_point_cloud_reader.hpp"
 #include "rti/io/christoph/vtu_point_cloud_reader.hpp"
@@ -211,12 +207,19 @@ int main(int argc, char* argv[]) {
   // Compute bounding box
   auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z axis.
-  auto epsilon = 0.1; //0.1; // -0.1;
+  auto epsilon = 1; //0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
     bdBox[0][2] += epsilon;
   } else {
     bdBox[1][2] += epsilon;
   }
+  std::cerr << "ALTERING BOUNDING BOX" << std::endl;
+  assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
+  epsilon = 5;
+  bdBox[0][0] -= epsilon;
+  bdBox[1][0] += epsilon;
+  bdBox[0][1] -= epsilon;
+  bdBox[1][1] += epsilon;
   // std::cerr << "[main] bdBox: ";
   // for (auto const& bb : bdBox)
   //   for (auto const& cc : bb)
@@ -281,6 +284,8 @@ int main(int argc, char* argv[]) {
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
 
+  std::cout << "after tracer" << std::endl << std::flush;
+
   if ( ! outfilename.empty()) {
     // Write output to file
     if (vtksys::SystemTools::GetFilenameLastExtension(outfilename) != ".vtp") {
@@ -295,7 +300,7 @@ int main(int argc, char* argv[]) {
       bbfilename = (bfs::path{bbpath} / bfs::path{bbfilename}).string();
     }
 
-    std::cout << "Writing output to " << outfilename << std::endl;
+    std::cout << "Writing output to " << outfilename << std::endl << std::flush;
     auto cmdstr = rti::util::foldl<std::string, std::string>
       ([](auto p1, auto const p2){return (p1+=" ")+=p2;}, "", std::vector<std::string> (argv, argv+argc));
     std::cerr << "cmdstr == " << cmdstr << std::endl;

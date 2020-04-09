@@ -1,7 +1,5 @@
 #pragma once
 
-//#include <boost/core/demangle.hpp>
-
 #include <array>
 #include <cmath>
 #include <functional>
