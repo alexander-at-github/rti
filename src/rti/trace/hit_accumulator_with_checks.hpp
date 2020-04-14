@@ -209,7 +209,7 @@ namespace rti { namespace trace {
         auto denominator = denomroot * denomroot;
         auto denomroot2 = nn * s2 - s1square;
         auto denominator2 = denomroot2 * denomroot2;
-        if (denominator == 0) {
+        if (denominator2 == 0) {
           result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
