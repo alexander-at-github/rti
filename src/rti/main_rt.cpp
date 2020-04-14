@@ -213,18 +213,13 @@ int main(int argc, char* argv[]) {
   } else {
     bdBox[1][2] += epsilon;
   }
-  std::cerr << "ALTERING BOUNDING BOX" << std::endl;
-  assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
-  epsilon = 5;
-  bdBox[0][0] -= epsilon;
-  bdBox[1][0] += epsilon;
-  bdBox[0][1] -= epsilon;
-  bdBox[1][1] += epsilon;
-  // std::cerr << "[main] bdBox: ";
-  // for (auto const& bb : bdBox)
-  //   for (auto const& cc : bb)
-  //     std::cerr << cc << " ";
-  // std::cerr << std::endl;
+  // std::cerr << "ALTERING BOUNDING BOX" << std::endl;
+  // assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
+  // epsilon = 5;
+  // bdBox[0][0] -= epsilon;
+  // bdBox[1][0] += epsilon;
+  // bdBox[0][1] -= epsilon;
+  // bdBox[1][1] += epsilon;
 
   // Prepare boundary
   auto bdBoxAltered = bdBox;
@@ -284,7 +279,7 @@ int main(int argc, char* argv[]) {
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
 
-  std::cout << "after tracer" << std::endl << std::flush;
+  // std::cout << "after tracer" << std::endl << std::flush;
 
   if ( ! outfilename.empty()) {
     // Write output to file

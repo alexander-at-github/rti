@@ -5,7 +5,7 @@
 
 #include <embree3/rtcore.h>
 
-//#include "rti/mc/rejection_control.hpp"
+#include "rti/mc/rejection_control.hpp"
 #include "rti/particle/i_particle.hpp"
 #include "rti/reflection/i_reflection_model.hpp"
 #include "rti/reflection/specular.hpp"
@@ -44,7 +44,7 @@ namespace rti { namespace trace {
     rti::rng::i_rng& mRng;
     rti::rng::i_rng::i_state& mRngState;
 
-    //rti::mc::rejection_control<numeric_type> rejectioncontrol;
+    rti::mc::rejection_control<numeric_type> rejectioncontrol;
     rti::particle::i_particle<numeric_type>& particle;
 
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
@@ -76,10 +76,10 @@ namespace rti { namespace trace {
       mBoundaryReflectionModel(pBoundaryReflectionModel),
       mRng(pRng),
       mRngState(pRngState),
+      rejectioncontrol(mRng, mRngState),
       particle(particle) {
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
-      std::cerr << "####### ERR FIX rejection control!" << std::endl;
     }
 
   public:
@@ -136,10 +136,12 @@ namespace rti { namespace trace {
         assert(false && "Assumption");
       }
 
-      weight_check_reweight_kill();
+      rejectioncontrol.check_weight_reweight_or_kill
+        (*this, this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
     }
   private:
     void weight_check_reweight_kill() {
+      std::cerr << "### weight_check_reweight_kill() DEPRECATED" << std::endl;
       // We do what is sometimes called Roulette in MC literatur.
       // Jun Liu calls it "rejection controll" in his book.
       // If the weight of the ray is above a certain threshold, we always reflect.
@@ -182,7 +184,7 @@ namespace rti { namespace trace {
 
     bool compute_exposed_areas_by_sampling() override final
     {
-      return true;
+      return false;
     }
   };
 }}

@@ -148,7 +148,7 @@ namespace rti { namespace util {
     auto ac = diff(tri[2], tri[0]);
     auto crossp = cross_product(ab, ac);
     auto length = length_of_vec(crossp);
-    return 0.5 * length;
+    return ((Ty) 0.5) * length;
   }
 
   // A c-style-array foldl as generic auxiliary implementation.
