@@ -40,6 +40,7 @@ namespace rti { namespace geo {
       auto cntxt = std::make_unique<ContextType>
         (pGeometryID,
          // the cast characterizes a precondition to this function
+         // TODO: move this cast into the constructor of the context. Can we then unify all the factory classes?
          *dynamic_cast<rti::geo::triangle_geometry<Ty>*>(&pGeometry),
          pReflectionModel,
          pHitAccumulator, pBoundaryID, pBoundary,

@@ -101,6 +101,8 @@ namespace rti { namespace trace {
       pRayHit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
       pRayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
 
+      valueoflastintersectcall = 0; // default
+
       // Embree intersect
       // performing ray queries in a scene is thread-safe
       rtcIntersect1(pScene, &this->mContextCWrapper.mRtcContext, &pRayHit);
@@ -132,6 +134,7 @@ namespace rti { namespace trace {
         auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
         this->rayWeight -= valuetodrop;
+        valueoflastintersectcall = valuetodrop;
       } else {
         assert(false && "Assumption");
       }
@@ -139,7 +142,17 @@ namespace rti { namespace trace {
       rejectioncontrol.check_weight_reweight_or_kill
         (*this, this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
     }
+
   private:
+    numeric_type valueoflastintersectcall = 0;
+  public:
+    numeric_type get_value_of_last_intersect_call()
+    {
+      return valueoflastintersectcall;
+    }
+
+  private:
+    // TODO delete weight_check_reweight_kill()
     void weight_check_reweight_kill() {
       std::cerr << "### weight_check_reweight_kill() DEPRECATED" << std::endl;
       // We do what is sometimes called Roulette in MC literatur.

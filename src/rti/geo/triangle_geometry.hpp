@@ -167,6 +167,13 @@ namespace rti { namespace geo {
       return {};
     }
 
+    bool get_relevance(unsigned int primID) override final
+    {
+      auto zcoord = this->mVVBuffer[primID].zz;
+      // In this test setup all vertices which have a z-coordinate lower than 25 are considered relevant.
+      return zcoord < 25;
+    }
+
     rti::util::pair<rti::util::triple<Ty> > get_bounding_box() override final
     {
       assert(mVVBuffer != nullptr && "No data");

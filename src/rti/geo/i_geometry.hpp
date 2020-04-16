@@ -21,5 +21,8 @@ namespace rti { namespace geo {
     //virtual rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) = 0;
     // get_primitive returns the values from the underlying Embree primitive (a disc, a sphere, or something else)
     virtual Ty get_area(unsigned int primID) = 0;
+
+    // function for the adaptive sampling test setup
+    virtual bool get_relevance(unsigned int primID) = 0;
   };
 }} // namespace

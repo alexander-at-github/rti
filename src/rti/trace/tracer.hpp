@@ -27,6 +27,7 @@
 #include "rti/trace/hit_accumulator_with_checks.hpp"
 #include "rti/trace/point_cloud_context.hpp"
 #include "rti/trace/result.hpp"
+#include "rti/trace/triangle_context_simplified.hpp"
 #include "rti/util/logger.hpp"
 #include "rti/util/ray_logger.hpp"
 #include "rti/util/timer.hpp"
@@ -278,8 +279,97 @@ namespace rti { namespace trace {
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext->init();
 
-        size_t raycnt = 0;
 
+        // vector of pairs of source sample points and "energy" delivered to the surface.
+        auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+        {
+          // Estimate the distribution
+          size_t raycnt = 0;
+          size_t numprerays = 1024 * 1024;
+          #pragma omp for
+          for (size_t idx = 0; idx < (unsigned long long int) numprerays; ++idx) {
+
+            // Note: Embrees backface culling does not solve our problem of intersections
+            // when starting a new ray very close to or a tiny bit below the surface.
+            // For that reason we set tnear to some value.
+            // There is a risk though: when setting tnear to some strictly positive value
+            // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
+
+            particle->init_new();
+            // prepare our custom ray tracing context
+            rtiContext->init_ray_weight();
+
+            RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
+            // TODO: FIX: tnear set to a constant
+            mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
+            auto rayOriginCopy = rti::util::triple<float>
+              {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
+
+            RAYSRCLOG(rayhit);
+
+            if_RLOG_PROGRESS_is_set_print_progress(raycnt);
+
+            auto reflect = false;
+            auto sumOfRelevantValuesDroped = 0.0;
+            do {
+              RLOG_DEBUG
+                << "preparing ray == ("
+                << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+                << ") ("
+                << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+                << ")" << std::endl;
+
+              rayhit.ray.tfar = std::numeric_limits<numeric_type>::max();
+
+              // Runn the intersection
+              rtiContext->intersect1(scene, rayhit);
+
+              if (rayhit.hit.geomID == geometryID &&  geo.get_relevance(rayhit.hit.primID)) {
+                sumOfRelevantValuesDroped +=
+                  dynamic_cast<rti::trace::triangle_context_simplified<numeric_type>*>
+                  (rtiContext.get())->get_value_of_last_intersect_call();
+              }
+
+              RAYLOG(rayhit, rtiContext->tfar);
+
+              reflect = rtiContext->reflect;
+              auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
+                                                               rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
+                                                               rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
+              RLOG_DEBUG
+                << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
+                << " reflect == " << (reflect ? "true" : "false")  << std::endl;
+
+              // ATTENTION tnear is set in another function, too! When the ray starts from the source, then
+              // the source class also sets tnear!
+              auto tnear = 1e-4f; // float
+              // Same holds for time
+              auto time = 0.0f; // float
+              // reinterpret_cast<__m128&>(rayhit.ray) = _mm_load_ps(vara);
+              // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
+
+              reinterpret_cast<__m128&>(rayhit.ray) =
+                _mm_set_ps(tnear,
+                           (float) rtiContext->rayout[0][2],
+                           (float) rtiContext->rayout[0][1],
+                           (float) rtiContext->rayout[0][0]);
+              reinterpret_cast<__m128&>(rayhit.ray.dir_x) =
+                _mm_set_ps(time,
+                           (float) rtiContext->rayout[1][2],
+                           (float) rtiContext->rayout[1][1],
+                           (float) rtiContext->rayout[1][0]);
+            } while (reflect);
+            assert(sumOfRelevantValuesDroped >= 0 && "Correctness Assumption");
+            if (sumOfRelevantValuesDroped > 0) {
+              relevantSourceSamples.push_back({rayOriginCopy, sumOfRelevantValuesDroped});
+            }
+          }
+          // if_RLOG_PROGRESS_is_set_print_progress(raycnt);
+          // std::cout << std::endl; // for the progress bar
+        }
+
+
+        size_t raycnt = 0;
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
 

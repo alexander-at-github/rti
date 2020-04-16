@@ -87,6 +87,12 @@ namespace rti { namespace geo {
       return this->mNumPoints;
     }
 
+    bool get_relevance(unsigned int primID) override final
+    {
+      assert(false && "Not implemented");
+      return false;
+    }
+
   protected:
     // Data members
     RTCDevice& mDevice;
