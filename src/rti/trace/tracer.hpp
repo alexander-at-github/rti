@@ -368,6 +368,43 @@ namespace rti { namespace trace {
           // std::cout << std::endl; // for the progress bar
         }
 
+        // The Cross Entropy Method for Optimization, Botev, Krose, Rubinstein, L'Ecuyer
+        // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
+        // page 17
+        // "The generation of a random vector X=(X1, . . . , Xn) ∈ R^n in Step 2 of
+        // Algorithm 2.2 is most easily performed by drawing then coordinates independently
+        // from some 2-parameter distribution. In most applications a normal (Gaussian)
+        // distribution is employed for each component. Thus, the sampling density f(·;v)
+        // of X is characterized by a vector of means μ and a vector of variances σ^2 (and
+        // we may write v=(μ,σ2)). The choice of the normal distribution is motivated by
+        // the availability of fast normal random number generators on modern statistical
+        // software and the fact that the maximum likelihood maximization (or cross-entropy
+        // minimization) in (9) yields a very simple solution — at each iteration of the CE
+        // algorithm the parameter vectors μ and σ^2 are the vectors of sample means and
+        // sample variance of the elements of the set of N^e best performing vectors
+        // (that is, the elite set); see, for example, Kroese et al. (2006). In summary,
+        // the CE method for continuous optimization with a Gaussian sampling density is as
+        // follows."
+        auto CEDimensions = 2;
+        auto meanVector = std::vector<double> (CEDimensions);
+        auto varianceVector = std::vector<double> (CEDimensions);
+        meanVector = compute_means(relevantSourceSamples);
+        varianceVector = compute_variances(relevantSourceSamples, meanVector);
+
+        // The Cross Entropy Method for Optimization, Botev, Kroese, Rubinstein, L'Ecuyer
+        // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
+        // page 18
+        // "For constrained continuous optimization problems, where the samples are
+        // restricted to a subset X⊂R^n, it is often possible to replace the normal
+        // sampling with sampling from a truncated normal distribution while retaining
+        // the updating formulas (19)–(20). An alternative is to use a beta
+        // distribution. Smoothing, as in Step 4, is often crucial to prevent premature
+        // shrinking of the sampling distribution. Another approach is toinjectextra variance into thesampling distribution, for example by increasing the components ofσ2, oncethe distribution has degenerated; see the examples below and Botev and Kroese(2004)"
+
+
+        // Continue by using https://github.com/kthohr/stats.git for multivariate normal distribution
+        // Also the following paper contains very relevant information for the application of the CE method.
+        // The Cross-Entropy Method for Continiuous Multi-extremal Optimization, Kroese, Porotsky, Rubinstein
 
         size_t raycnt = 0;
         #pragma omp for
