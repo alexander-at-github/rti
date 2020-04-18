@@ -16,3 +16,6 @@ add_subdirectory(gbench)
 add_subdirectory(gnuplot-iostream)
 
 add_subdirectory(abseil)
+
+add_subdirectory(gcem)
+add_subdirectory(statslib)
