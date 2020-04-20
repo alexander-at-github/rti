@@ -13,7 +13,8 @@ set (
   )
 
 find_package (
-  Boost REQUIRED COMPONENTS system filesystem # "${BOOST_COMPONENTS_REQUIRED}"
+  Boost REQUIRED
+  COMPONENTS system filesystem # "${BOOST_COMPONENTS_REQUIRED}"
   PATHS ${BOOST_ROOT}
   NO_DEFAULT_PATH
   )
@@ -27,6 +28,23 @@ find_package (
   PATHS ${VTK_DIR}
   NO_DEFAULT_PATH
   )
+find_package (
+  gcem 1.12 REQUIRED
+  PATHS ${GCEM_DIR}
+  NO_DEFAULT_PATH
+  )
+# message(STATUS "GCEM_INCLUDE_DIRS == ${GCEM_INCLUDE_DIRS}")
+# message(STATUS "GCEM_INCLUDE_DIR == ${GCEM_INCLUDE_DIR}")
+# message(STATUS "gcem_INCLUDE_DIRS == ${gcem_INCLUDE_DIRS}")
+# message(STATUS "gcem_INCLUDE_DIR == ${gcem_INCLUDE_DIR}")
+# ==> gcem sets gcem_INCLUDE_DIRS
+find_path ( # header only; does not provide cmake config file
+  STATSLIB_INCLUDE_DIRS
+  NAMES stats.hpp
+  PATHS "${STATSLIB_DIR}/include"
+  NO_DEFAULT_PATH
+  )
+# message(STATUS "STATSLIB_INCLUDE_DIRS == ${STATSLIB_INCLUDE_DIRS}")
 find_package (
   OpenMP REQUIRED
   )
@@ -49,6 +67,8 @@ target_include_directories (
   PUBLIC
   ${EMBREE_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
+  ${gcem_INCLUDE_DIRS}
+  ${STATSLIB_INCLUDE_DIRS}
   $<INSTALL_INTERFACE:include>
   )
 target_compile_features (
@@ -117,6 +137,8 @@ target_include_directories (
   ${CMAKE_CURRENT_LIST_DIR}
   ${EMBREE_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
+  ${gcem_INCLUDE_DIRS}
+  ${STATSLIB_INCLUDE_DIRS}
   )
 target_compile_features (
   rti

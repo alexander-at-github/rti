@@ -7,6 +7,7 @@
 #include <omp.h>
 
 #include <embree3/rtcore.h>
+#include <stats.hpp>
 
 #include "rti/geo/absc_point_cloud_geometry.hpp"
 #include "rti/geo/i_boundary.hpp"
@@ -182,6 +183,23 @@ namespace rti { namespace trace {
       // been set. Also each thread holds its own hit-accumulator.
       hitacc.set_exposed_areas(areas);
     }
+
+    std::vector<double>
+    compute_means
+    (std::vector<std::pair<rti::util::triple<float>, double> >)
+    {
+      return {};
+    }
+
+    std::vector<double>
+    compute_variances
+    (std::vector<std::pair<rti::util::triple<float>, double> >,
+     std::vector<double>)
+    {
+      return {};
+    }
+
+
 
   public:
     rti::trace::result<numeric_type> run()

@@ -17,3 +17,11 @@ externalproject_add (
   USES_TERMINAL_UPDATE 1
   GIT_PROGRESS 1
   )
+
+externalproject_get_property(gcem-external INSTALL_DIR BINARY_DIR)
+
+set(
+  GCEM_DIR "${INSTALL_DIR}"
+  CACHE PATH "Path to GCEM installation"
+  FORCE
+  )

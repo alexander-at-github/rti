@@ -21,3 +21,13 @@ externalproject_add (
   BUILD_COMMAND ""
   INSTALL_COMMAND ""
   )
+
+externalproject_get_property (
+  statslib-external
+  SOURCE_DIR
+  )
+set (
+  STATSLIB_DIR "${SOURCE_DIR}"
+  CACHE PATH "Path to Gmsh installation"
+  FORCE
+  )
