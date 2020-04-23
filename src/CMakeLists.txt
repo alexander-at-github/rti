@@ -28,6 +28,15 @@ find_package (
   PATHS ${VTK_DIR}
   NO_DEFAULT_PATH
   )
+# find_package (
+#   BLAS REQUIRED
+#   )
+find_package (
+  LAPACK REQUIRED
+  )
+find_package (
+  Armadillo REQUIRED # using system installation
+  )
 find_package (
   gcem 1.12 REQUIRED
   PATHS ${GCEM_DIR}
@@ -67,6 +76,7 @@ target_include_directories (
   PUBLIC
   ${EMBREE_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
+  ${ARMADILLO_INCLUDE_DIRS}
   ${gcem_INCLUDE_DIRS}
   ${STATSLIB_INCLUDE_DIRS}
   $<INSTALL_INTERFACE:include>
@@ -83,6 +93,9 @@ target_link_libraries (
   Boost::system
   ${EMBREE_LIBRARIES}
   ${VTK_LIBRARIES}
+  ${ARMADILLO_LIBRARIES}
+  # ${BLAS_LIBRARIES}
+  ${LAPACK_LIBRARIES}
   )
 
 ###### TMP
@@ -137,6 +150,7 @@ target_include_directories (
   ${CMAKE_CURRENT_LIST_DIR}
   ${EMBREE_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
+  ${ARMADILLO_INCLUDE_DIRS}
   ${gcem_INCLUDE_DIRS}
   ${STATSLIB_INCLUDE_DIRS}
   )
@@ -153,9 +167,15 @@ target_link_libraries (
   Boost::filesystem
   ${EMBREE_LIBRARIES}
   ${VTK_LIBRARIES}
+  ${ARMADILLO_LIBRARIES}
+  # ${BLAS_LIBRARIES}
+  ${LAPACK_LIBRARIES}
   )
 install (
   TARGETS rti
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
+
+# message(STATUS "ARMADILLO_LIBRARIES == ${ARMADILLO_LIBRARIES}")
+# message(STATUS "ARMADILLO_INCLUDE_DIRS == ${ARMADILLO_INCLUDE_DIRS}")
