@@ -66,7 +66,10 @@ namespace rti { namespace trace {
     }
 
   private:
-    void if_RLOG_PROGRESS_is_set_print_progress(size_t& raycnt) {
+    void if_RLOG_PROGRESS_is_set_print_progress(size_t& raycnt, size_t totalnumrays) {
+      if (omp_get_thread_num() != 0) {
+        return;
+      }
       auto barlength = 60u;
       auto barstartsymbol = '[';
       auto fillsymbol = '#';
@@ -74,24 +77,22 @@ namespace rti { namespace trace {
       auto barendsymbol = ']';
       auto percentagestringformatlength = 3; // 3 digits
 
-      if (omp_get_thread_num() == 0) {
-        if (raycnt % (mNumRays / omp_get_num_threads() / barlength) == 0) {
-          auto filllength = (int) (raycnt / (mNumRays / omp_get_num_threads() / barlength));
-          auto percentagestring = std::to_string((filllength * 100) / barlength);
-          percentagestring =
-            std::string(percentagestringformatlength - percentagestring.length(), ' ') +
-            percentagestring + "%";
-          auto bar =
-            "Monte Carlo Progress: " + std::string(1, barstartsymbol) +
-            std::string(filllength, fillsymbol) + std::string(barlength - filllength, emptysymbol) +
-            std::string(1, barendsymbol) + " " + percentagestring ;
-          RLOG_PROGRESS << "\r" << bar;
-          if (filllength == barlength) {
-            RLOG_PROGRESS << std::endl;
-          }
+      if (raycnt % (totalnumrays / omp_get_num_threads() / barlength) == 0) {
+        auto filllength = (int) (raycnt / (totalnumrays / omp_get_num_threads() / barlength));
+        auto percentagestring = std::to_string((filllength * 100) / barlength);
+        percentagestring =
+          std::string(percentagestringformatlength - percentagestring.length(), ' ') +
+          percentagestring + "%";
+        auto bar =
+          "Monte Carlo Progress: " + std::string(1, barstartsymbol) +
+          std::string(filllength, fillsymbol) + std::string(std::max(0, (int) barlength - (int) filllength), emptysymbol) +
+          std::string(1, barendsymbol) + " " + percentagestring ;
+        RLOG_PROGRESS << "\r" << bar;
+        if (filllength >= barlength) {
+          RLOG_PROGRESS << std::endl;
         }
-        raycnt += 1;
       }
+      raycnt += 1;
     }
 
     void
@@ -298,7 +299,7 @@ namespace rti { namespace trace {
 
           RAYSRCLOG(rayhit);
 
-          if_RLOG_PROGRESS_is_set_print_progress(raycnt);
+          if_RLOG_PROGRESS_is_set_print_progress(raycnt, mNumRays);
 
           auto reflect = false;
           do {
