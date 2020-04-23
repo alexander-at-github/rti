@@ -14,10 +14,15 @@ namespace rti { namespace rng {
     public:
       state(std::mt19937_64 pMT) : mMT(pMT) {}
     public:
-      std::unique_ptr<rti::rng::i_rng::i_state> clone() const override final {
+      std::unique_ptr<rti::rng::i_rng::i_state> clone() const override final
+      {
         // I am not sure what state the new MT-rand-generator will have
         return std::make_unique<state> (mMT); // works without "new" keyword, works only with public constructor
         //return std::unique_ptr<state> (new state (mMT)); // works with private constructor, works only with "new" keyword
+      }
+      std::mt19937_64* get_mt19937_64_ptr()
+      {
+        return &mMT;
       }
       std::mt19937_64 mMT;
     };

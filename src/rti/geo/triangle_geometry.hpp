@@ -169,9 +169,19 @@ namespace rti { namespace geo {
 
     bool get_relevance(unsigned int primID) override final
     {
-      auto zcoord = this->mVVBuffer[primID].zz;
-      // In this test setup all vertices which have a z-coordinate lower than 25 are considered relevant.
-      return zcoord < 25;
+      auto tri = this->mTTBuffer[primID];
+      auto bb = this->mVVBuffer;
+      //   // Semantic: all vertices of the triangle need to have a z-value below 25.
+      return bb[tri.v0].zz < 25 && bb[tri.v1].zz < 25 && bb[tri.v2].zz < 25;
+
+      // for (auto const& vertexid : rti::util::triple<uint32_t> {triangle.v0, triangle.v1, triangle.v2}) {
+      //   auto vertex = this->mVVBuffer[vertexid];
+      //   // Semantic: all vertices of the triangle need to have a z-value
+      //   // below 25.
+      //   if ( ! (vertex.zz < 25))
+      //     return false;
+      // }
+      // return true;
     }
 
     rti::util::pair<rti::util::triple<Ty> > get_bounding_box() override final
@@ -212,7 +222,7 @@ namespace rti { namespace geo {
     rti::util::triple<rti::util::triple<Ty> > get_prim(unsigned int pPrimID) const
     {
       auto& tt = this->mTTBuffer[pPrimID];
-      return {rti::util::triple<Ty> {this->mVVBuffer}};
+      return {rti::util::triple<Ty> {this->mVVBuffer[tt]}};
     }
 
   private:

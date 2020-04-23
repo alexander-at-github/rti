@@ -38,6 +38,17 @@ namespace rti { namespace ray {
       return {xx, yy, mZval};
     }
 
+    Ty get_z_val()
+    {
+      return mZval;
+    }
+
+    rti::util::pair<rti::util::pair<Ty> >
+    get_x_y_delimiters()
+    {
+      return {mC1, mC2};
+    }
+
   private:
     Ty mZval;
     rti::util::pair<Ty> mC1;

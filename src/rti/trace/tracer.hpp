@@ -1,5 +1,11 @@
 #pragma once
 
+//#define STATS_ENABLE_MATRIX_FEATURES
+//#define STATS_ENABLE_STDVEC_WRAPPERS
+#define STATS_ENABLE_ARMA_WRAPPERS
+#define STATS_GO_INLINE
+//#define STATS_USE_OPENMP
+
 #include <boost/core/demangle.hpp>
 
 #include <cmath>
@@ -184,25 +190,62 @@ namespace rti { namespace trace {
       hitacc.set_exposed_areas(areas);
     }
 
-    std::vector<double>
-    compute_means
-    (std::vector<std::pair<rti::util::triple<float>, double> >)
+    rti::util::pair<double>
+    compute_mean_coord
+    (std::vector<std::pair<rti::util::triple<float>, double> > coordvaluepairs)
     {
-      return {};
+      { // hack
+        static auto firstexecution = true;
+        if (firstexecution)
+          std::cout
+            << ">>> Warning: This code assumes a source perpendicular to the z-achsis!" << std::endl;
+        firstexecution = false;
+      }
+      auto acc = rti::util::pair<double> {0, 0}; // x and y
+      for (auto const& cv : coordvaluepairs) {
+        acc[0] += cv.first[0];
+        acc[1] += cv.first[1];
+      }
+      auto num = coordvaluepairs.size();
+      return {acc[0]/num, acc[1]/num};
     }
 
-    std::vector<double>
-    compute_variances
-    (std::vector<std::pair<rti::util::triple<float>, double> >,
-     std::vector<double>)
+    rti::util::pair<double>
+    compute_variance_of_coords
+    (std::vector<std::pair<rti::util::triple<float>, double> > coordvaluepairs,
+     rti::util::triple<double> meancoord)
     {
-      return {};
+      { // hack
+        static auto firstexecution = true;
+        if (firstexecution)
+          std::cout
+            << ">>> Warning: This code assumes a source perpendicular to the z-achsis!" << std::endl;
+        firstexecution = false;
+      }
+      auto acc = rti::util::pair<double> {0, 0};
+      for (auto const& cv : coordvaluepairs) {
+        auto tmp0 = (cv.first[0] - meancoord[0]);
+        acc[0] += tmp0 * tmp0;
+        auto tmp1 = (cv.first[1] - meancoord[1]);
+        acc[1] += tmp1 * tmp1;
+      }
+      auto num = coordvaluepairs.size();
+      return {acc[0]/num, acc[1]/num};
     }
-
-
 
   public:
+
     rti::trace::result<numeric_type> run()
+    {
+      try {
+        return run_aux();
+      } catch (std::bad_alloc& ex) {
+        std::cerr << ">>> bad_alloc: " << ex.what() << std::endl;
+      }
+      return {};
+    }
+
+    rti::trace::result<numeric_type> run_aux()
     {
       // Prepare a data structure for the result.
       auto result = rti::trace::result<numeric_type> {};
@@ -300,6 +343,7 @@ namespace rti { namespace trace {
 
         // vector of pairs of source sample points and "energy" delivered to the surface.
         auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+
         {
           // Estimate the distribution
           size_t raycnt = 0;
@@ -325,7 +369,7 @@ namespace rti { namespace trace {
 
             RAYSRCLOG(rayhit);
 
-            if_RLOG_PROGRESS_is_set_print_progress(raycnt);
+            // if_RLOG_PROGRESS_is_set_print_progress(raycnt);
 
             auto reflect = false;
             auto sumOfRelevantValuesDroped = 0.0;
@@ -342,7 +386,7 @@ namespace rti { namespace trace {
               // Runn the intersection
               rtiContext->intersect1(scene, rayhit);
 
-              if (rayhit.hit.geomID == geometryID &&  geo.get_relevance(rayhit.hit.primID)) {
+              if (rayhit.hit.geomID == geometryID && geo.get_relevance(rayhit.hit.primID)) {
                 sumOfRelevantValuesDroped +=
                   dynamic_cast<rti::trace::triangle_context_simplified<numeric_type>*>
                   (rtiContext.get())->get_value_of_last_intersect_call();
@@ -380,11 +424,16 @@ namespace rti { namespace trace {
             assert(sumOfRelevantValuesDroped >= 0 && "Correctness Assumption");
             if (sumOfRelevantValuesDroped > 0) {
               relevantSourceSamples.push_back({rayOriginCopy, sumOfRelevantValuesDroped});
+              // std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
             }
           }
           // if_RLOG_PROGRESS_is_set_print_progress(raycnt);
           // std::cout << std::endl; // for the progress bar
         }
+        std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
+        std::cerr << "HERE" << std::endl << std::flush;
+
+
 
         // The Cross Entropy Method for Optimization, Botev, Krose, Rubinstein, L'Ecuyer
         // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
@@ -403,11 +452,10 @@ namespace rti { namespace trace {
         // (that is, the elite set); see, for example, Kroese et al. (2006). In summary,
         // the CE method for continuous optimization with a Gaussian sampling density is as
         // follows."
+
         auto CEDimensions = 2;
-        auto meanVector = std::vector<double> (CEDimensions);
-        auto varianceVector = std::vector<double> (CEDimensions);
-        meanVector = compute_means(relevantSourceSamples);
-        varianceVector = compute_variances(relevantSourceSamples, meanVector);
+        auto coordmean = compute_mean_coord(relevantSourceSamples);
+        auto coordvariance = compute_variance_of_coords(relevantSourceSamples, {coordmean[0], coordmean[1], 0.0});
 
         // The Cross Entropy Method for Optimization, Botev, Kroese, Rubinstein, L'Ecuyer
         // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
@@ -417,14 +465,55 @@ namespace rti { namespace trace {
         // sampling with sampling from a truncated normal distribution while retaining
         // the updating formulas (19)–(20). An alternative is to use a beta
         // distribution. Smoothing, as in Step 4, is often crucial to prevent premature
-        // shrinking of the sampling distribution. Another approach is toinjectextra variance into thesampling distribution, for example by increasing the components ofσ2, oncethe distribution has degenerated; see the examples below and Botev and Kroese(2004)"
+        // shrinking of the sampling distribution. Another approach is toinjectextra
+        // variance into thesampling distribution, for example by increasing the components
+        // ofσ2, oncethe distribution has degenerated; see the examples below and Botev and
+        // Kroese(2004)"
 
-
-        // Continue by using https://github.com/kthohr/stats.git for multivariate normal distribution
         // Also the following paper contains very relevant information for the application of the CE method.
         // The Cross-Entropy Method for Continiuous Multi-extremal Optimization, Kroese, Porotsky, Rubinstein
 
+        // // vector draw
+        // template<typename T>
+        // statslib_inline
+        // T rmvnorm(const T& mu_par, const T& Sigma_par, const bool pre_chol = false);
+        //auto onesample = stats::rmvnorm<std::array<double, 2> >(coordmean, coordvariance);
+
+        // auto means = arma::zeros(2,1);
+        auto means = arma::mat {2,1};
+        means << coordmean[0] << arma::endr
+              << coordmean[1] << arma::endr;
+        auto covmat = arma::mat {2,2};
+        covmat << coordvariance[0] << 0.0 << arma::endr
+               << 0.0 << coordvariance[1] << arma::endr;
+        // auto onesample = stats::rmvnorm (means, covmat);
+        auto csrcp = dynamic_cast<rti::ray::source<numeric_type>*>(&mSource);
+        auto recorgp = dynamic_cast<rti::ray::rectangle_origin_z<numeric_type>*>(&csrcp->get_origin());
+        auto zval = recorgp->get_z_val();
+        auto orgdel = recorgp->get_x_y_delimiters();
+        auto c1 = orgdel[0];
+        auto c2 = orgdel[1];
+        assert(c1[0] <= c2[0] && c1[1] <= c2[1] && "Assumption");
+
+        { // Debug
+          int tid = omp_get_thread_num();
+          #pragma omp barrier
+          if (tid == 0) {
+            std::cerr << "relevantSourceSamples.size() == " << relevantSourceSamples.size() << std::endl;
+            std::cerr << "means == {" << means(0) << ", " << means(1) << "}" << std::endl;
+            std::cerr << "variances == {" << covmat(0,0) << ", " << covmat(1,1) << "}" << std::endl;
+            std::cerr << "zval == " << zval
+                      << " c1 == {" << c1[0] << ", " << c1[1] << "}"
+                      << " c2 == {" << c2[0] << ", " << c2[1] << "}"
+                      << std::endl << std::flush;
+          }
+          #pragma omp barrier
+        }
+
+        std::cerr << "Finished computation of sampling distribution" << std::endl << std::flush;
+
         size_t raycnt = 0;
+        auto cnt = 0u;
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
 
@@ -441,6 +530,46 @@ namespace rti { namespace trace {
           RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
           // TODO: FIX: tnear set to a constant
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
+
+          { // Adaptive sampling
+            auto rng = dynamic_cast<rti::rng::mt64_rng::state*>(rngSeed1.get())->get_mt19937_64_ptr();
+            // TODO: There does not seem to be a way to use your own RNG for
+            // MVN distributions.
+            do {
+              auto sample = stats::rmvnorm (means, covmat);
+              // uses arma::randn()
+              // To change the RNG seed, use arma_rng::set_seed(value)
+
+              // std::cout << "sample.n_elem == " << sample.n_elem << std::endl;
+              // std::cout << "sample.n_cols == " << sample.n_cols << std::endl;
+              // std::cout << "sample.n_rows == " << sample.n_rows << std::endl;
+              auto sx = sample(0);
+              auto sy = sample(1);
+              { // Debug
+                int tid = omp_get_thread_num();
+                if (tid == 0) {
+                  if (cnt < 128) {
+                    cnt += 1;
+                    std::cerr << "sample == {" << sx << ", " << sy << "}";
+                    if ( !(c1[0] <= sx && sx <= c2[0] && c1[1] <= sy && sy <= c2[1])) {
+                      std::cerr << " rejected";
+                    }
+                    std::cerr << std::endl << std::flush;
+                  }
+                }
+              }
+              if (c1[0] <= sx && sx <= c2[0] &&
+                  c1[1] <= sy && sy <= c2[1]) {
+                rayhit.ray.org_x = sx;
+                rayhit.ray.org_y = sy;
+                rayhit.ray.org_z = zval;
+                //std::cerr << "just before break" << std::endl;
+                break;
+              }
+            } while (true);
+            //std::cerr << "after do while loop" << std::endl;
+          }
+
 
           RAYSRCLOG(rayhit);
 
