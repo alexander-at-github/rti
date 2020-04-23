@@ -347,7 +347,7 @@ namespace rti { namespace trace {
         {
           // Estimate the distribution
           size_t raycnt = 0;
-          size_t numprerays = 1024 * 1024;
+          size_t numprerays = 256 * 1024;
           #pragma omp for
           for (size_t idx = 0; idx < (unsigned long long int) numprerays; ++idx) {
 
@@ -367,9 +367,9 @@ namespace rti { namespace trace {
             auto rayOriginCopy = rti::util::triple<float>
               {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
 
-            RAYSRCLOG(rayhit);
+            //RAYSRCLOG(rayhit);
 
-            // if_RLOG_PROGRESS_is_set_print_progress(raycnt);
+            if_RLOG_PROGRESS_is_set_print_progress(raycnt, numprerays);
 
             auto reflect = false;
             auto sumOfRelevantValuesDroped = 0.0;
@@ -392,7 +392,7 @@ namespace rti { namespace trace {
                   (rtiContext.get())->get_value_of_last_intersect_call();
               }
 
-              RAYLOG(rayhit, rtiContext->tfar);
+              //RAYLOG(rayhit, rtiContext->tfar);
 
               reflect = rtiContext->reflect;
               auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
@@ -427,7 +427,6 @@ namespace rti { namespace trace {
               // std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
             }
           }
-          // if_RLOG_PROGRESS_is_set_print_progress(raycnt);
           // std::cout << std::endl; // for the progress bar
         }
         std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
