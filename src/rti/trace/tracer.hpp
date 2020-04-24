@@ -511,7 +511,8 @@ namespace rti { namespace trace {
 
         std::cerr << "Finished computation of sampling distribution" << std::endl << std::flush;
 
-        size_t raycnt = 0;
+        auto raycnt = (size_t) 0;
+        auto rejectedsamples = (size_t) 0;
         auto cnt = 0u;
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
@@ -557,14 +558,29 @@ namespace rti { namespace trace {
                   }
                 }
               }
-              if (c1[0] <= sx && sx <= c2[0] &&
-                  c1[1] <= sy && sy <= c2[1]) {
-                rayhit.ray.org_x = sx;
-                rayhit.ray.org_y = sy;
-                rayhit.ray.org_z = zval;
-                //std::cerr << "just before break" << std::endl;
-                break;
+              if ( ! (c1[0] <= sx && sx <= c2[0] &&
+                      c1[1] <= sy && sy <= c2[1])) {
+                rejectedsamples += 1;
+                continue;
               }
+              // else; sample accepted
+              rayhit.ray.org_x = sx;
+              rayhit.ray.org_y = sy;
+              rayhit.ray.org_z = zval;
+              //std::cerr << "just before break" << std::endl;
+
+              // Compute weight for unbiasing
+              auto dmvNorm = stats::dmvnorm(sample, means, covmat);
+              auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
+              rtiContext->rayWeight = dmvUniv / dmvNorm;
+              // std::cerr
+              //   << "dmvNorm == " << dmvNorm << std::endl
+              //   << "dmvUniv == " << dmvUniv << std::endl
+              //   << "rayWeight (ratio U/N) == " << rtiContext->rayWeight << std::endl;
+              // We need to fix the weight / bias LATER for the truncation of the truncated
+              // multivariate normal distribution.
+              break;
+
             } while (true);
             //std::cerr << "after do while loop" << std::endl;
           }
