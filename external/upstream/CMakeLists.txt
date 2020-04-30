@@ -17,5 +17,7 @@ add_subdirectory(gnuplot-iostream)
 
 add_subdirectory(abseil)
 
+add_subdirectory(armadillo)
+
 add_subdirectory(gcem)
 add_subdirectory(statslib)
