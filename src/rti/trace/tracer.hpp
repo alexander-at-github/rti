@@ -573,16 +573,16 @@ namespace rti { namespace trace {
               auto dmvNorm = stats::dmvnorm(sample, means, covmat);
               auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
               rtiContext->rayWeight = dmvUniv / dmvNorm;
+              // We need to fix the weight / bias LATER for the truncation of the truncated
+              // multivariate normal distribution. (dmvNorm is too small).
+
               // std::cerr
               //   << "dmvNorm == " << dmvNorm << std::endl
               //   << "dmvUniv == " << dmvUniv << std::endl
               //   << "rayWeight (ratio U/N) == " << rtiContext->rayWeight << std::endl;
-              // We need to fix the weight / bias LATER for the truncation of the truncated
-              // multivariate normal distribution.
               break;
 
             } while (true);
-            //std::cerr << "after do while loop" << std::endl;
           }
 
 

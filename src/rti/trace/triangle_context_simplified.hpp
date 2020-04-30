@@ -132,7 +132,10 @@ namespace rti { namespace trace {
         auto sticking = particle.process_hit(pRayHit.hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
         this->rayout = this->geoRayout;
         auto valuetodrop = this->rayWeight * sticking;
-        this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
+        if (mGeometry.get_relevance(pRayHit.hit.primID)) {
+          // deliver energy only if surface element is flaged as relevant
+          this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
+        }
         this->rayWeight -= valuetodrop;
         valueoflastintersectcall = valuetodrop;
       } else {

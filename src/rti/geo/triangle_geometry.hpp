@@ -171,8 +171,9 @@ namespace rti { namespace geo {
     {
       auto tri = this->mTTBuffer[primID];
       auto bb = this->mVVBuffer;
-      //   // Semantic: all vertices of the triangle need to have a z-value below 25.
-      return bb[tri.v0].zz < 25 && bb[tri.v1].zz < 25 && bb[tri.v2].zz < 25;
+      // Semantic: all vertices of the triangle need to have a z-value below <zlimit>.
+      auto zlimit = 50;
+      return bb[tri.v0].zz < zlimit && bb[tri.v1].zz < zlimit && bb[tri.v2].zz < zlimit;
 
       // for (auto const& vertexid : rti::util::triple<uint32_t> {triangle.v0, triangle.v1, triangle.v2}) {
       //   auto vertex = this->mVVBuffer[vertexid];
