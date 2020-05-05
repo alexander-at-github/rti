@@ -12,6 +12,7 @@
 #include "rti/ray/disc_origin_z.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
 #include "rti/ray/source.hpp"
+#include "rti/trace/point_cloud_context.hpp"
 #include "rti/trace/point_cloud_context_simplified.hpp"
 #include "rti/trace/tracer.hpp"
 #include "rti/util/utils.hpp"
@@ -76,10 +77,10 @@ namespace rti {
   rti::ray::rectangle_origin_z<numeric_type>
   create_rectangular_source_from_bounding_box(rti::util::pair<rti::util::triple<numeric_type> > bdbox)
   {
-    std::cout
-      << "################################" << std::endl
-      << "### Using rectangular source ###" << std::endl
-      << "################################" << std::endl;
+    // std::cout
+    //   << "################################" << std::endl
+    //   << "### Using rectangular source ###" << std::endl
+    //   << "################################" << std::endl;
     auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
     auto originC1 = rti::util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};
     auto originC2 = rti::util::pair<numeric_type> {bdbox[1][0], bdbox[1][1]};
@@ -93,10 +94,10 @@ namespace rti {
   rti::ray::disc_origin_z<numeric_type>
   create_circular_source_from_bounding_box(rti::util::pair<rti::util::triple<numeric_type> > bdbox)
   {
-    std::cout
-      << "#############################" << std::endl
-      << "### Using circular source ###" << std::endl
-      << "#############################" << std::endl;
+    // std::cout
+    //   << "#############################" << std::endl
+    //   << "### Using circular source ###" << std::endl
+    //   << "#############################" << std::endl;
     auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
     auto originC1 = rti::util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};
     auto originC2 = rti::util::pair<numeric_type> {bdbox[1][0], bdbox[1][1]};
@@ -220,7 +221,7 @@ namespace rti {
     auto device = rtcNewDevice(device_config);
     auto pointsandradii = combine_points_with_grid_spacing(*pimpl);
     auto geometryFactory =
-      rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context_simplified<numeric_type> >
+      rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context<numeric_type> >
       (device, pointsandradii, pimpl->normals);
     auto bdbox = geometryFactory.get_geometry().get_bounding_box();
     bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, 1);
