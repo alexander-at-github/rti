@@ -40,7 +40,7 @@ set (
 
 ### Create library
 add_library (
-  librtidevice STATIC "rti/device.cpp"
+  librtidevice "rti/device.cpp"
   )
 target_include_directories (
   librtidevice
