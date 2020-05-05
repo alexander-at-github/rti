@@ -77,8 +77,8 @@ namespace rti { namespace trace {
       auto barendsymbol = ']';
       auto percentagestringformatlength = 3; // 3 digits
 
-      if (raycnt % (totalnumrays / omp_get_num_threads() / barlength) == 0) {
-        auto filllength = (int) (raycnt / (totalnumrays / omp_get_num_threads() / barlength));
+      if (raycnt % (int) std::ceil((float) totalnumrays / omp_get_num_threads() / barlength) == 0) {
+        auto filllength = (int) std::ceil(raycnt / ((float)totalnumrays / omp_get_num_threads() / barlength));
         auto percentagestring = std::to_string((filllength * 100) / barlength);
         percentagestring =
           std::string(percentagestringformatlength - percentagestring.length(), ' ') +
