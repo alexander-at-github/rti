@@ -13,7 +13,7 @@ namespace rti { namespace ray {
     }
 
     rti::util::triple<numeric_type>
-    get(rti::rng::i_rng&, rti::rng::i_rng::i_state&) const
+    get(rti::rng::i_rng&, rti::rng::i_rng::i_state&) override final
     {
       return direction;
     }

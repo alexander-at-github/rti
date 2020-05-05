@@ -26,13 +26,39 @@ namespace rti { namespace ray {
          rti::util::triple<numeric_type> {1.f, 0.f,  0.f}}};
     }
 
-    rti::util::triple<numeric_type>
-    get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final
+    using random_num_type = double;
+  private:
+    void draw_r1_r2(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState)
     {
-      return rti::ray::cos_hemi::get(mBasis, pRng, pRngState);
+      r1 = ((random_num_type) pRng.get(pRngState)) / pRng.max();
+      r2 = ((random_num_type) pRng.get(pRngState)) / pRng.max();
+      assert (0 <= r1 && r1 <= 1 && "Error in computing random number in the interval [0, 1]");
+      assert (0 <= r2 && r2 <= 1 && "Error in computing random number in the interval [0, 1]");
+    }
+
+  public:
+    rti::util::triple<numeric_type>
+    get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final
+    {
+      draw_r1_r2(pRng, pRngState);
+      return rti::ray::cos_hemi::get(mBasis, r1, r2);
+    }
+
+    rti::util::pair<random_num_type>
+    get_last_random_pair()
+    {
+      return {r1, r2};
+    }
+
+    rti::util::triple<rti::util::triple<numeric_type> >
+    get_basis()
+    {
+      return mBasis;
     }
 
   private:
     rti::util::triple<rti::util::triple<numeric_type> > mBasis;
+    random_num_type r1 = 0;
+    random_num_type r2 = 0;
   };
 }}

@@ -8,30 +8,26 @@
 namespace rti { namespace ray {
   class cos_hemi {
   public:
-    template<typename Ty>
-    static rti::util::triple<Ty> get(const rti::util::triple<rti::util::triple<Ty> >& pBasis,
-                              rti::rng::i_rng& pRng,
-                              rti::rng::i_rng::i_state& pRngState) {
+    template<typename numeric_type, typename random_num_type>
+    static rti::util::triple<numeric_type> get(const rti::util::triple<rti::util::triple<numeric_type> >& pBasis,
+                                     random_num_type& r1,
+                                     random_num_type& r2) {
+      assert (0 <= r1 && r1 <= 1 && "Precondition: random number must be in the interval [0, 1]");
+      assert (0 <= r2 && r2 <= 1 && "Precondition: random number must be in the interval [0, 1]");
       // Precondition: pBasis is normalized
-      Ty epsilon = 1e-6;
+      numeric_type epsilon = 1e-6;
       for (auto vec : pBasis) {
-        Ty length = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+        numeric_type length = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
         if ( ! (1 - epsilon <= length && length <= 1 + epsilon) ) {
-          std::cerr << "Assertion error is about to happen with length == " << length << std::endl;
+          // std::cerr << "Assertion error is about to happen with length == " << length << std::endl;
         }
         assert(1 - epsilon <= length && length <= 1 + epsilon && "Precondition: pBasis is normal");
       }
 
-      // TODO: Is there anything oto fix here?
-      Ty r1 = ((Ty) pRng.get(pRngState)) / pRng.max();
-      Ty r2 = ((Ty) pRng.get(pRngState)) / pRng.max();
-      assert (0 <= r1 && r1 <= 1 && "Error in computing random number in the interval [0, 1]");
-      assert (0 <= r2 && r2 <= 1 && "Error in computing random number in the interval [0, 1]");
-
-      const Ty two_pi = boost::math::constants::two_pi<Ty>();
-      Ty cc1 = sqrt(r2);
-      Ty cc2 = cos(two_pi * r1) * sqrt(1 - r2);
-      Ty cc3 = sin(two_pi * r1) * sqrt(1 - r2);
+      const numeric_type two_pi = boost::math::constants::two_pi<numeric_type>();
+      numeric_type cc1 = sqrt(r2);
+      numeric_type cc2 = cos(two_pi * r1) * sqrt(1 - r2);
+      numeric_type cc3 = sin(two_pi * r1) * sqrt(1 - r2);
 
       auto tt1 = pBasis[0];
       rti::util::scale(cc1, tt1);

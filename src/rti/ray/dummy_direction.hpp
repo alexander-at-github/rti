@@ -9,7 +9,7 @@ namespace rti { namespace ray {
 
     dummy_direction() {}
 
-    rti::util::triple<float> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+    rti::util::triple<float> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
       uint64_t rr = pRng.get(pRngState);
       uint64_t mXYidx = pRng.get(pRngState) % mXYs.size();
       float xx = ((float)rr) * 4e-7; // magic number; seems a good value for testing

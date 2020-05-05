@@ -190,9 +190,9 @@ namespace rti { namespace trace {
       hitacc.set_exposed_areas(areas);
     }
 
-    rti::util::pair<double>
-    compute_mean_coord
-    (std::vector<std::pair<rti::util::triple<float>, double> > coordvaluepairs)
+    rti::util::pair<rti::util::pair<double> >
+    compute_mean_coords
+    (std::vector<std::tuple<rti::util::triple<float>, rti::util::pair<double>, double> > coordvaluepairs)
     {
       { // hack
         static auto firstexecution = true;
@@ -201,19 +201,24 @@ namespace rti { namespace trace {
             << ">>> Warning: This code assumes a source perpendicular to the z-achsis!" << std::endl;
         firstexecution = false;
       }
-      auto acc = rti::util::pair<double> {0, 0}; // x and y
+      auto xyacc = rti::util::pair<double> {0, 0}; // x and y
+      auto directionacc = rti::util::pair<double> {0, 0};
       for (auto const& cv : coordvaluepairs) {
-        acc[0] += cv.first[0];
-        acc[1] += cv.first[1];
+        xyacc[0] += (std::get<0>(cv))[0];
+        xyacc[1] += (std::get<0>(cv))[1];
+        directionacc[0] += (std::get<1>(cv))[0];
+        directionacc[1] += (std::get<1>(cv))[1];
       }
       auto num = coordvaluepairs.size();
-      return {acc[0]/num, acc[1]/num};
+      return {rti::util::pair<double> {xyacc[0]/num, xyacc[1]/num},
+              rti::util::pair<double> {directionacc[0]/num, directionacc[1]/num}};
     }
 
-    rti::util::pair<double>
+    rti::util::pair<rti::util::pair<double> >
     compute_variance_of_coords
-    (std::vector<std::pair<rti::util::triple<float>, double> > coordvaluepairs,
-     rti::util::triple<double> meancoord)
+    (std::vector<std::tuple<rti::util::triple<float>, rti::util::pair<double>, double> > coordvaluepairs,
+     rti::util::triple<double> xymeancoord,
+     rti::util::pair<double> directionmeancoord)
     {
       { // hack
         static auto firstexecution = true;
@@ -223,14 +228,20 @@ namespace rti { namespace trace {
         firstexecution = false;
       }
       auto acc = rti::util::pair<double> {0, 0};
+      auto diracc = rti::util::pair<double> {0, 0};
       for (auto const& cv : coordvaluepairs) {
-        auto tmp0 = (cv.first[0] - meancoord[0]);
-        acc[0] += tmp0 * tmp0;
-        auto tmp1 = (cv.first[1] - meancoord[1]);
-        acc[1] += tmp1 * tmp1;
+        auto xytmp0 = ((std::get<0>(cv))[0] - xymeancoord[0]);
+        acc[0] += xytmp0 * xytmp0;
+        auto xytmp1 = ((std::get<0>(cv))[1] - xymeancoord[1]);
+        acc[1] += xytmp1 * xytmp1;
+        auto dirtmp0 = ((std::get<1>(cv))[0] - directionmeancoord[0]);
+        diracc[0] += dirtmp0 * dirtmp0;
+        auto dirtmp1 = ((std::get<1>(cv))[1] - directionmeancoord[1]);
+        diracc[1] += dirtmp1 * dirtmp1;
       }
       auto num = coordvaluepairs.size();
-      return {acc[0]/num, acc[1]/num};
+      return {rti::util::pair<double> {acc[0]/num, acc[1]/num},
+              rti::util::pair<double> {diracc[0]/num, diracc[1]/num}};
     }
 
   public:
@@ -342,7 +353,11 @@ namespace rti { namespace trace {
 
 
         // vector of pairs of source sample points and "energy" delivered to the surface.
-        auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+        // auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+        auto relevantSourceSamples = std::vector<std::tuple<rti::util::triple<float>, rti::util::pair<double>, double> > {};
+        auto csrcp = dynamic_cast<rti::ray::source<numeric_type>*>(&mSource);
+        auto cosine_direction = dynamic_cast<rti::ray::cosine_direction<numeric_type>*>(&csrcp->get_direction());
+
 
         {
           // Estimate the distribution
@@ -366,6 +381,7 @@ namespace rti { namespace trace {
             mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
             auto rayOriginCopy = rti::util::triple<float>
               {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
+            auto rayDirectionSamplesCopy = cosine_direction->get_last_random_pair();
 
             //RAYSRCLOG(rayhit);
 
@@ -423,7 +439,7 @@ namespace rti { namespace trace {
             } while (reflect);
             assert(sumOfRelevantValuesDroped >= 0 && "Correctness Assumption");
             if (sumOfRelevantValuesDroped > 0) {
-              relevantSourceSamples.push_back({rayOriginCopy, sumOfRelevantValuesDroped});
+              relevantSourceSamples.push_back({rayOriginCopy, rayDirectionSamplesCopy, sumOfRelevantValuesDroped});
               // std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
             }
           }
@@ -452,9 +468,13 @@ namespace rti { namespace trace {
         // the CE method for continuous optimization with a Gaussian sampling density is as
         // follows."
 
-        auto CEDimensions = 2;
-        auto coordmean = compute_mean_coord(relevantSourceSamples);
-        auto coordvariance = compute_variance_of_coords(relevantSourceSamples, {coordmean[0], coordmean[1], 0.0});
+        auto coordmeans = compute_mean_coords(relevantSourceSamples);
+        auto xycoordmean = coordmeans[0];
+        auto dircoordmean = coordmeans[1];
+        auto coordvariance = compute_variance_of_coords
+          (relevantSourceSamples, {xycoordmean[0], xycoordmean[1], 0.0}, dircoordmean);
+        auto xycoordvariance = coordvariance[0];
+        auto dircoordvariance = coordvariance[1];
 
         // The Cross Entropy Method for Optimization, Botev, Kroese, Rubinstein, L'Ecuyer
         // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
@@ -476,17 +496,20 @@ namespace rti { namespace trace {
         // template<typename T>
         // statslib_inline
         // T rmvnorm(const T& mu_par, const T& Sigma_par, const bool pre_chol = false);
-        //auto onesample = stats::rmvnorm<std::array<double, 2> >(coordmean, coordvariance);
+        //auto onesample = stats::rmvnorm<std::array<double, 2> >(xycoordmean, xycoordvariance);
 
         // auto means = arma::zeros(2,1);
-        auto means = arma::mat {2,1};
-        means << coordmean[0] << arma::endr
-              << coordmean[1] << arma::endr;
-        auto covmat = arma::mat {2,2};
-        covmat << coordvariance[0] << 0.0 << arma::endr
-               << 0.0 << coordvariance[1] << arma::endr;
+        auto means = arma::Mat<double> {4,1};
+        means << xycoordmean[0]  << arma::endr
+              << xycoordmean[1]  << arma::endr
+              << dircoordmean[0] << arma::endr
+              << dircoordmean[1] << arma::endr;
+        auto covmat = arma::Mat<double> {4,4};
+        covmat << xycoordvariance[0] << 0.0  << 0.0 << 0.0 << arma::endr
+               << 0.0 << xycoordvariance[1]  << 0.0 << 0.0 << arma::endr
+               << 0.0 << 0.0 << dircoordvariance[0] << 0.0 << arma::endr
+               << 0.0 << 0.0 << 0.0 << dircoordvariance[1] << arma::endr;
         // auto onesample = stats::rmvnorm (means, covmat);
-        auto csrcp = dynamic_cast<rti::ray::source<numeric_type>*>(&mSource);
         auto recorgp = dynamic_cast<rti::ray::rectangle_origin_z<numeric_type>*>(&csrcp->get_origin());
         auto zval = recorgp->get_z_val();
         auto orgdel = recorgp->get_x_y_delimiters();
@@ -499,8 +522,8 @@ namespace rti { namespace trace {
           #pragma omp barrier
           if (tid == 0) {
             std::cerr << "relevantSourceSamples.size() == " << relevantSourceSamples.size() << std::endl;
-            std::cerr << "means == {" << means(0) << ", " << means(1) << "}" << std::endl;
-            std::cerr << "variances == {" << covmat(0,0) << ", " << covmat(1,1) << "}" << std::endl;
+            std::cerr << "means == {" << means(0) << ", " << means(1) << ", " << means(2) << ", " << means(3) << "}" << std::endl;
+            std::cerr << "variances == {" << covmat(0,0) << ", " << covmat(1,1) << ", " << covmat(2,2) << ", " << covmat(3,3) << "}" << std::endl;
             std::cerr << "zval == " << zval
                       << " c1 == {" << c1[0] << ", " << c1[1] << "}"
                       << " c2 == {" << c2[0] << ", " << c2[1] << "}"
@@ -545,28 +568,36 @@ namespace rti { namespace trace {
               // std::cout << "sample.n_rows == " << sample.n_rows << std::endl;
               auto sx = sample(0);
               auto sy = sample(1);
+              auto r1 = sample(2);
+              auto r2 = sample(3);
               { // Debug
                 int tid = omp_get_thread_num();
                 if (tid == 0) {
                   if (cnt < 128) {
                     cnt += 1;
-                    std::cerr << "sample == {" << sx << ", " << sy << "}";
-                    if ( !(c1[0] <= sx && sx <= c2[0] && c1[1] <= sy && sy <= c2[1])) {
+                    std::cerr << "sample == {" << sx << ", " << sy << ", " << r1 << ", " << r2 << "}";
+                    if ( !(c1[0] <= sx && sx <= c2[0] && c1[1] <= sy && sy <= c2[1]) ||
+                         !(0 <= r1 && r1 <= 1 && 0 <= r2 && r2 <= 1)) {
                       std::cerr << " rejected";
                     }
                     std::cerr << std::endl << std::flush;
                   }
                 }
               }
-              if ( ! (c1[0] <= sx && sx <= c2[0] &&
-                      c1[1] <= sy && sy <= c2[1])) {
+              if ( ! (c1[0] <= sx && sx <= c2[0] && c1[1] <= sy && sy <= c2[1]) ||
+                   ! (0 <= r1 && r1 <= 1 && 0 <= r2 && r2 <= 1)) {
                 rejectedsamples += 1;
                 continue;
               }
+
               // else; sample accepted
               rayhit.ray.org_x = sx;
               rayhit.ray.org_y = sy;
               rayhit.ray.org_z = zval;
+              auto direction = rti::ray::cos_hemi::get(cosine_direction->get_basis(), r1, r2);
+              rayhit.ray.dir_x = direction[0];
+              rayhit.ray.dir_y = direction[1];
+              rayhit.ray.dir_z = direction[2];
               //std::cerr << "just before break" << std::endl;
 
               // Compute weight for unbiasing

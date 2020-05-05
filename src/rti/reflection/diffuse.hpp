@@ -61,7 +61,11 @@ namespace rti { namespace reflection {
       auto normal = pGeometry.get_normal(primID);
       /* Compute lambertian reflection with respect to surface normal */
       auto orthonormalBasis = rti::util::get_orthonormal_basis(normal);
-      auto direction = rti::ray::cos_hemi::get<Ty>(orthonormalBasis, pRng, pRngState);
+      auto r1 = ((Ty) pRng.get(pRngState)) / pRng.max();
+      auto r2 = ((Ty) pRng.get(pRngState)) / pRng.max();
+      assert (0 <= r1 && r1 <= 1 && "Error in computing random number in the interval [0, 1]");
+      assert (0 <= r2 && r2 <= 1 && "Error in computing random number in the interval [0, 1]");
+      auto direction = rti::ray::cos_hemi::get<Ty>(orthonormalBasis, r1, r2);
 
       return {newOrigin, direction};
     }
