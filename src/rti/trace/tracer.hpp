@@ -62,7 +62,7 @@ namespace rti { namespace trace {
         assert( false && "Error: backface culling is enabled; as a consequence for triangles \
                 the tracer depends on the order of the vertices of the triangles");
       }
-      std::cerr << "Warning: tnear set to a constant! FIX" << std::endl;
+      RLOG_WARNING << "Warning: tnear set to a constant! FIX" << std::endl;
     }
 
   private:
@@ -355,7 +355,7 @@ namespace rti { namespace trace {
             // }
           } while (reflect);
         }
-        std::cout << "before area calc" << std::endl << std::flush;
+        RLOG_TRACE << "before area calc" << std::endl << std::flush;
         if (rtiContext->compute_exposed_areas_by_sampling()) {
           std::cerr
             << "###############"
@@ -370,7 +370,7 @@ namespace rti { namespace trace {
         } else {
           use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
         }
-        std::cout << "after area calc" << std::endl << std::flush;
+        RLOG_TRACE << "after area calc" << std::endl << std::flush;
       }
       // Assertion: hitAccumulator is reduced to one instance by openmp reduction
 
