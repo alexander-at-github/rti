@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
     numeric_type sticking;
     public:
     particle_t(numeric_type sticking) : sticking(sticking) {}
-    numeric_type process_hit(size_t primID) override final { return sticking; }
+    numeric_type process_hit(size_t primID, std::array<numeric_type, 3> direction) override final { return sticking; }
     void init_new() override final { return; }
   };
   class particle_factory : public rti::particle::i_particle_factory<numeric_type> {

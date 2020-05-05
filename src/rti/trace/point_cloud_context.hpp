@@ -283,7 +283,8 @@ namespace rti { namespace trace {
           continue;
         }
         set.insert(hitprimid);
-        auto sticking = particle.process_hit(pRayHit.hit.primID);
+        auto const ray = pRayHit.ray;
+        auto sticking = particle.process_hit(pRayHit.hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
         assert(0 <= sticking && sticking <= 1 && "Assumption");
         auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(hitprimid, valuetodrop);

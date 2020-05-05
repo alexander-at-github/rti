@@ -126,7 +126,8 @@ namespace rti { namespace trace {
         this->geoRayout = this->mReflectionModel.use(
           pRayHit.ray, pRayHit.hit, this->mGeometry, this->mRng, this->mRngState);
 
-        auto sticking = particle.process_hit(pRayHit.hit.primID);
+        auto const ray = pRayHit.ray;
+        auto sticking = particle.process_hit(pRayHit.hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
         this->rayout = this->geoRayout;
         auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);

@@ -148,7 +148,7 @@ namespace rti { namespace trace {
           // TODO: One could consider to let hits with very small values in tfar through.
         }
 
-        auto sticking = particle.process_hit(pRayHit.hit.primID);
+        auto sticking = particle.process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
         this->geoRayout = this->mReflectionModel.use(
           pRayHit.ray, pRayHit.hit, this->mGeometry, this->mRng, this->mRngState);
         this->rayout = this->geoRayout;
