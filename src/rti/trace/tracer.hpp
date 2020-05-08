@@ -13,6 +13,8 @@
 #include <omp.h>
 
 #include <embree3/rtcore.h>
+#include <RcppArmadillo.h>
+#include <RInside.h>
 #include <stats.hpp>
 
 #include "rti/geo/absc_point_cloud_geometry.hpp"
@@ -233,6 +235,17 @@ namespace rti { namespace trace {
       return {acc[0]/num, acc[1]/num};
     }
 
+    void
+    callR()
+    {
+      auto argc = 0;
+      auto argv = (char**) nullptr;
+      auto ri = RInside (argc, argv);
+      std::string cmd = "set.seed(42); matrix(rnorm(9),3,3)"; 	// create a random Matrix in r
+      arma::mat m = Rcpp::as<arma::mat>(ri.parseEval(cmd)); // parse, eval + return result
+      std::cout << "callR() arma::mat: " << m(0, 0) << std::endl;
+    }
+
   public:
 
     rti::trace::result<numeric_type> run()
@@ -247,6 +260,8 @@ namespace rti { namespace trace {
 
     rti::trace::result<numeric_type> run_aux()
     {
+      callR();
+
       // Prepare a data structure for the result.
       auto result = rti::trace::result<numeric_type> {};
       auto& geo = mFactory.get_geometry();

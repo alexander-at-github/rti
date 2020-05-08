@@ -207,7 +207,7 @@ int main(int argc, char* argv[]) {
   // Compute bounding box
   auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z axis.
-  auto epsilon = 10; //0.1; // -0.1;
+  auto epsilon = 1; //0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
     bdBox[0][2] += epsilon;
   } else {

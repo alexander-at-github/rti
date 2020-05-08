@@ -21,3 +21,5 @@ add_subdirectory(armadillo)
 
 add_subdirectory(gcem)
 add_subdirectory(statslib)
+
+add_subdirectory(rinside)

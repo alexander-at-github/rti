@@ -12,6 +12,9 @@ set (
   BUILD_SHARED_LIBS ON # A particularity of Boost 1.70
   )
 
+message(STATUS "RINSIDE_INCLUDE_DIRS == ${RINSIDE_INCLUDE_DIRS}")
+message(STATUS "RINSIDE_LIBRARIES == ${RINSIDE_LIBRARIES}")
+
 find_package (
   Boost REQUIRED
   COMPONENTS system filesystem # "${BOOST_COMPONENTS_REQUIRED}"
@@ -82,6 +85,7 @@ target_include_directories (
   ${ARMADILLO_INCLUDE_DIRS}
   ${gcem_INCLUDE_DIRS}
   ${STATSLIB_INCLUDE_DIRS}
+  ${RINSIDE_INCLUDE_DIRS}
   $<INSTALL_INTERFACE:include>
   )
 target_compile_features (
@@ -99,6 +103,7 @@ target_link_libraries (
   ${ARMADILLO_LIBRARIES}
   # ${BLAS_LIBRARIES}
   ${LAPACK_LIBRARIES}
+  ${RINSIDE_LIBRARIES}
   )
 
 ###### TMP
@@ -156,6 +161,7 @@ target_include_directories (
   ${ARMADILLO_INCLUDE_DIRS}
   ${gcem_INCLUDE_DIRS}
   ${STATSLIB_INCLUDE_DIRS}
+  ${RINSIDE_INCLUDE_DIRS}
   )
 target_compile_features (
   rti
@@ -173,6 +179,7 @@ target_link_libraries (
   ${ARMADILLO_LIBRARIES}
   # ${BLAS_LIBRARIES}
   ${LAPACK_LIBRARIES}
+  ${RINSIDE_LIBRARIES}
   )
 install (
   TARGETS rti
