@@ -241,9 +241,35 @@ namespace rti { namespace trace {
       auto argc = 0;
       auto argv = (char**) nullptr;
       auto ri = RInside (argc, argv);
-      std::string cmd = "set.seed(42); matrix(rnorm(9),3,3)"; 	// create a random Matrix in r
-      arma::mat m = Rcpp::as<arma::mat>(ri.parseEval(cmd)); // parse, eval + return result
-      std::cout << "callR() arma::mat: " << m(0, 0) << std::endl;
+      auto nrows = 100;
+      auto ncols = 2;
+      auto data = Rcpp::NumericMatrix {nrows, ncols};
+      data(0, 0) = 0;
+      data(0, 1) = 1;
+      data(1, 0) = 2;
+      data(1, 1) = 3;
+      ri["data"] = data;
+      ri.parseEvalQ("print('FOO FROM R'); print(data)");
+      //std::string cmd0 = "library(mclust); density <- densityMclust(data); summary(density, parameters=TRUE);";
+      //ri.parseEvalQ(cmd0);
+      std::string mclustfitcmd = "library(mclust); density <- densityMclust(data);";
+      std::string getmeancmd = "density$parameters$mean;";
+      std::string getvariance1cmd = "density$parameters$variance$sigma[,,1]";
+      ri.parseEvalQ(mclustfitcmd);
+      auto mean = Rcpp::as<arma::mat>(ri.parseEval(getmeancmd));
+      auto variance1 = Rcpp::as<arma::mat>(ri.parseEval(getvariance1cmd));
+      std::cerr
+        << "mean:" << std::endl << mean << std::endl
+        << "variance1:" << std::endl << variance1 << std::endl;
+      ri.parseEvalQ(
+        "postscript('r-plot.eps', horizontal=F, width=4, height=4,paper='special', onefile=F); \
+         plot(density, what='density', data=data); \
+         dev.off();");
+      std::cerr << "DONE WITH THE R STUFF" << std::endl;
+
+      // std::string cmd = "set.seed(42); matrix(rnorm(9),3,3)"; 	// create a random Matrix in r
+      // arma::mat m = Rcpp::as<arma::mat>(ri.parseEval(cmd)); // parse, eval + return result
+      // std::cout << "callR() arma::mat: " << m(0, 0) << std::endl;
     }
 
   public:
