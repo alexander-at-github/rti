@@ -17,15 +17,6 @@ namespace rti { namespace trace {
   template<typename numeric_type>
   class point_cloud_context : public rti::trace::absc_context<numeric_type> {
 
-  public:
-    // managment for ray weights
-    static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
-    // =================================================================
-    // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
-    // =================================================================
-    static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.1f;
-    static constexpr float RAY_RENEW_WEIGHT = 3 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
-
   private:
     // geometry related data
     bool geoNotIntersected = true;
@@ -67,7 +58,7 @@ namespace rti { namespace trace {
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState,
             rti::particle::i_particle<numeric_type>& particle) :
-      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0, pRng, pRngState), // initialize to some values
+      rti::trace::absc_context<numeric_type>(false, geoRayout, 0, pRng, pRngState), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -290,8 +281,7 @@ namespace rti { namespace trace {
       this->rayWeight -= energydelivered;
       valueoflastintersectcall = energydelivered;
 
-      this->rejection_control_check_weight_reweight_or_kill
-        (this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
+      this->rejection_control_check_weight_reweight_or_kill();
     }
 
   public:
@@ -316,11 +306,6 @@ namespace rti { namespace trace {
       // algorithm for incoherent rays (default).
       // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
       rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
-    }
-
-    void init_ray_weight() override final
-    {
-      this->rayWeight = this->INITIAL_RAY_WEIGHT;
     }
 
     bool compute_exposed_areas_by_sampling() override final

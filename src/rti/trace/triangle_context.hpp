@@ -61,7 +61,7 @@ namespace rti { namespace trace {
             rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState) :
-      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0, pRng, pRngState), // initialize to some values
+      rti::trace::absc_context<numeric_type>(false, geoRayout, 0, pRng, pRngState), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -247,10 +247,6 @@ namespace rti { namespace trace {
       // this->mRtcContext.filter = nullptr;
       // assert(RTC_MAX_INSTANCE_LEVEL_COUNT == 1 && "Assumption");
       // this->mRtcContext.instID[0] = RTC_INVALID_GEOMETRY_ID; // initialize to some value
-    }
-
-    void init_ray_weight() override final {
-      this->rayWeight = this->INITIAL_RAY_WEIGHT;
     }
 
     bool compute_exposed_areas_by_sampling() override final

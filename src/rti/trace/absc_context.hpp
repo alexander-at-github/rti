@@ -29,8 +29,8 @@ namespace rti { namespace trace {
 
     virtual ~absc_context() {}
     // Constructor to initialize member variables
-    absc_context(float pRayWeight, bool pReflect, rti::util::pair<rti::util::triple<numeric_type> >& pRayout, numeric_type pTfar, rti::rng::i_rng& rng, rti::rng::i_rng::i_state& rngstate) :
-      rayWeight(pRayWeight),
+    absc_context(bool pReflect, rti::util::pair<rti::util::triple<numeric_type> >& pRayout, numeric_type pTfar, rti::rng::i_rng& rng, rti::rng::i_rng::i_state& rngstate) :
+      rayWeight(1), // some value
       reflect(pReflect),
       rayout(pRayout),
       tfar(pTfar),
@@ -59,10 +59,14 @@ namespace rti { namespace trace {
     */
     virtual void intersect1(RTCScene&, RTCRayHit&) = 0;
     virtual void init() = 0;
-    virtual void init_ray_weight() = 0;
 
     virtual bool compute_exposed_areas_by_sampling() = 0;
     virtual numeric_type get_value_of_last_intersect_call() = 0;
+
+    void init_ray_weight()
+    {
+      rayWeight = initialrayweight;
+    }
 
     // Public data members
     double rayWeight; // initialize to some value
@@ -70,33 +74,56 @@ namespace rti { namespace trace {
     rti::util::pair<rti::util::triple<numeric_type> >& rayout;
     numeric_type tfar; // initialize to some value
 
+  private:
+    float initialrayweight;
+  public:
+    void set_initial_ray_weight(float iw)
+    {
+      initialrayweight = iw;
+    }
+  protected:
+    float get_initial_ray_weight()
+    {
+      return initialrayweight;
+    }
+    float get_ray_weight_lower_threshold()
+    {
+      // =================================================================
+      // choosing a good value for the weight lower threshold is important
+      // =================================================================
+      return 0.1 * initialrayweight;
+    }
+    float get_ray_renew_weight()
+    {
+      return 0.3 * initialrayweight;
+    }
+
   protected:
     rti::rng::i_rng& rng;
     rti::rng::i_rng::i_state& rngstate;
   protected:
-    template<typename numeric_type_o>
-    void
-    rejection_control_check_weight_reweight_or_kill(numeric_type_o weightlow, numeric_type_o renewweight)
+    void rejection_control_check_weight_reweight_or_kill()
     {
-      assert(weightlow <= renewweight && "Precondition");
+      assert(get_ray_weight_lower_threshold() <= get_ray_renew_weight() && "Precondition");
       // We do what is sometimes called Roulette in MC literatur.
       // Jun Liu calls it "rejection controll" in his book.
       // If the weight of the ray is above a certain threshold, we always reflect.
       // If the weight of the ray is below the threshold, we randomly decide to either kill the
       // ray or increase its weight (in an unbiased way).
       this->reflect = true;
-      if (this->rayWeight < weightlow) {
-        RLOG_DEBUG << "in rejection_control_check_weight_reweight_or_kill() (rayWeight < weightlow) holds" << std::endl;
+      if (this->rayWeight < get_ray_weight_lower_threshold()) {
+        RLOG_DEBUG << "in rejection_control_check_weight_reweight_or_kill() "
+                   << "(rayWeight < get_ray_weight_lower_threshold()) holds" << std::endl;
         // We want to set the weight of (the reflection of) the ray to RAY_NEW_WEIGHT.
         // In order to stay  unbiased we kill the reflection with a probability of
-        // (1 - current.rayWeight / renewweight).
+        // (1 - current.rayWeight / get_ray_renew_weight()).
         auto rndm = this->rng.get(this->rngstate);
-        assert(this->rayWeight <= renewweight && "Assumption");
-        auto killProbability = 1.0f - this->rayWeight / renewweight;
+        assert(this->rayWeight <= get_ray_renew_weight() && "Assumption");
+        auto killProbability = 1.0f - this->rayWeight / get_ray_renew_weight();
         if (rndm < (killProbability * this->rng.max())) {
           kill_the_ray();
         } else {
-          set_ray_weight_to_new_weight(renewweight);
+          set_ray_weight_to_new_weight(get_ray_renew_weight());
         }
       }
       // If the ray has enough weight, then we do not kill in any case.

@@ -469,6 +469,7 @@ namespace rti { namespace trace {
 
 
           // Estimate the distribution
+          rtiContext->set_initial_ray_weight(1); // standard weight for a ray
           size_t raycnt = 0;
           size_t numprerays = 32 * 1024;
           //#pragma omp for
@@ -493,7 +494,6 @@ namespace rti { namespace trace {
             //RAYSRCLOG(rayhit);
             pointLogBuff = rayOriginCopy;
             rayLogBuff.clear();
-
 
             // std::cout
             //   << "new ray == ("
@@ -532,11 +532,11 @@ namespace rti { namespace trace {
 
               { // Debug
                 //RAYLOG(rayhit, rtiContext->tfar);
-                auto p1 = rti::util::triple<float> {(rayhit).ray.org_x, (rayhit).ray.org_y, (rayhit).ray.org_z}; \
-                auto tfar_ = ((rtiContext->tfar) > 10 ? 10 : (rtiContext->tfar)); \
-                auto p2 = rti::util::triple<float> {p1[0] + tfar_ * (rayhit).ray.dir_x, \
-                                                    p1[1] + tfar_ * (rayhit).ray.dir_y, \
-                                                    p1[2] + tfar_ * (rayhit).ray.dir_z}; \
+                auto p1 = rti::util::triple<float> {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
+                auto tfar_ = (float) (rtiContext->tfar > 10 ? 10.0f : rtiContext->tfar);
+                auto p2 = rti::util::triple<float> {p1[0] + tfar_ * rayhit.ray.dir_x,
+                                                    p1[1] + tfar_ * rayhit.ray.dir_y,
+                                                    p1[2] + tfar_ * rayhit.ray.dir_z};
                 rayLogBuff.push_back({p1, p2});
               }
 
@@ -687,8 +687,6 @@ namespace rti { namespace trace {
           // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
 
           particle->init_new();
-          // prepare our custom ray tracing context
-          rtiContext->init_ray_weight();
 
           RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
           // TODO: FIX: tnear set to a constant
@@ -745,7 +743,10 @@ namespace rti { namespace trace {
               // Compute weight for unbiasing
               auto dmvNorm = stats::dmvnorm(sample, means, covmat);
               auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
-              rtiContext->rayWeight = dmvUniv / dmvNorm;
+              // prepare our custom ray tracing context
+              auto rayweight = dmvUniv / dmvNorm;
+              rtiContext->set_initial_ray_weight(rayweight);
+              rtiContext->init_ray_weight();
               // We need to fix the weight / bias LATER for the truncation of the truncated
               // multivariate normal distribution. (dmvNorm is too small).
 
@@ -754,12 +755,9 @@ namespace rti { namespace trace {
               //   << "dmvUniv == " << dmvUniv << std::endl
               //   << "rayWeight (ratio U/N) == " << rtiContext->rayWeight << std::endl;
               break;
-
             } while (true);
           }
           //std::cerr << "HERE" << std::endl << std::flush;
-
-
 
           RAYSRCLOG(rayhit);
 

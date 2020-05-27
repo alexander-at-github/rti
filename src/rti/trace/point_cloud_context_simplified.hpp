@@ -18,15 +18,6 @@ namespace rti { namespace trace {
   template<typename numeric_type> // intended to be a numeric type
   class point_cloud_context_simplified : public rti::trace::absc_context<numeric_type> {
 
-  public:
-    // managment for ray weights
-    static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
-    // =================================================================
-    // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
-    // =================================================================
-    static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.005f;
-    static constexpr float RAY_RENEW_WEIGHT = 20 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
-
   private:
     // geometry related data
     bool geoNotIntersected = true;
@@ -67,7 +58,7 @@ namespace rti { namespace trace {
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState,
             rti::particle::i_particle<numeric_type>& particle) :
-      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0, pRng, pRngState),// initialize to some values
+      rti::trace::absc_context<numeric_type>(false, geoRayout, 0, pRng, pRngState),// initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -154,13 +145,12 @@ namespace rti { namespace trace {
         assert(false && "Assumption");
       }
 
-      this->rejection_control_check_weight_reweight_or_kill
-        (this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
-      if (this->reflect) {
-        RLOG_TRACE << "r";
-      } else {
-        RLOG_TRACE << "-r";
-      }
+      this->rejection_control_check_weight_reweight_or_kill();
+      // if (this->reflect) {
+      //   RLOG_TRACE << "r";
+      // } else {
+      //   RLOG_TRACE << "-r";
+      // }
     }
 
     void init() override final
@@ -169,12 +159,6 @@ namespace rti { namespace trace {
       // algorithm for incoherent rays (default).
       // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
       rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
-    }
-
-    void init_ray_weight() override final
-    {
-      this->rayWeight = this->INITIAL_RAY_WEIGHT;
-      RLOG_TRACE << "I";
     }
 
     bool compute_exposed_areas_by_sampling() override final
