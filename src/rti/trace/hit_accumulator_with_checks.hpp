@@ -3,8 +3,8 @@
 #include "rti/trace/i_hit_accumulator.hpp"
 
 namespace rti { namespace trace {
-  template<typename Ty>
-  class hit_accumulator_with_checks : public rti::trace::i_hit_accumulator<Ty> {
+  template<typename numeric_type>
+  class hit_accumulator_with_checks : public rti::trace::i_hit_accumulator<numeric_type> {
 
     using internal_numeric_type = double;
 
@@ -20,7 +20,7 @@ namespace rti { namespace trace {
       mS3s(pSize,0),
       mS4s(pSize,0) {}
 
-    hit_accumulator_with_checks(hit_accumulator_with_checks<Ty> const& pA) :
+    hit_accumulator_with_checks(hit_accumulator_with_checks<numeric_type> const& pA) :
       mAcc(pA.mAcc), // copy construct the vector member
       mCnts(pA.mCnts),
       mTotalCnts(pA.mTotalCnts),
@@ -30,7 +30,7 @@ namespace rti { namespace trace {
       mS3s(pA.mS3s),
       mS4s(pA.mS4s) {}
 
-    hit_accumulator_with_checks(hit_accumulator_with_checks<Ty> const&& pA) :
+    hit_accumulator_with_checks(hit_accumulator_with_checks<numeric_type> const&& pA) :
       mAcc(std::move(pA.mAcc)), // move the vector member
       mCnts(std::move(pA.mCnts)),
       mTotalCnts(std::move(pA.mTotalCnts)),
@@ -41,8 +41,8 @@ namespace rti { namespace trace {
       mS4s(std::move(pA.mS4s)) {}
 
     // A copy constructor which can accumulate values from two instances
-    hit_accumulator_with_checks(hit_accumulator_with_checks<Ty> const& pA1,
-                                hit_accumulator_with_checks<Ty> const& pA2) :
+    hit_accumulator_with_checks(hit_accumulator_with_checks<numeric_type> const& pA1,
+                                hit_accumulator_with_checks<numeric_type> const& pA2) :
       // Precondition: the size of the accumulators are equal
       hit_accumulator_with_checks(pA1) { // copy construct from the first argument
       assert(pA1.mAcc.size() == pA2.mAcc.size() &&
@@ -77,7 +77,7 @@ namespace rti { namespace trace {
     }
 
     // Assignment operators corresponding to the constructors
-    hit_accumulator_with_checks<Ty>& operator=(hit_accumulator_with_checks<Ty> const& pOther) {
+    hit_accumulator_with_checks<numeric_type>& operator=(hit_accumulator_with_checks<numeric_type> const& pOther) {
       if (this != &pOther) {
         // copy from pOther to this
         mAcc.clear();
@@ -99,7 +99,7 @@ namespace rti { namespace trace {
       return *this;
     }
 
-    hit_accumulator_with_checks<Ty>& operator=(hit_accumulator_with_checks<Ty> const&& pOther) {
+    hit_accumulator_with_checks<numeric_type>& operator=(hit_accumulator_with_checks<numeric_type> const&& pOther) {
       if (this != &pOther) {
         // move from pOther to this
         mAcc.clear();
@@ -122,7 +122,7 @@ namespace rti { namespace trace {
     }
 
     // Member Functions
-    void use(unsigned int pPrimID, Ty value) override final {
+    void use(unsigned int pPrimID, numeric_type value) override final {
       assert(pPrimID < mAcc.size() && "primitive ID is out of bounds");
       mAcc[pPrimID] += (internal_numeric_type) value;
       mCnts[pPrimID] += 1;
@@ -147,24 +147,30 @@ namespace rti { namespace trace {
     }
 
     std::vector<internal_numeric_type> get_relative_error() override final {
-      std::cerr << "### Fix! relative error" << std::endl;
-      auto result = std::vector<internal_numeric_type>(mS1s.size(), 0); // size, initial values
+      auto result =
+        std::vector<internal_numeric_type>(mS1s.size(),
+                                           std::numeric_limits<internal_numeric_type>::max()); // size, initial values
+      if (mTotalCnts == 0) {
+        return result;
+      }
       for (size_t idx = 0; idx < result.size(); ++idx) {
         auto s1square = mS1s[idx] * mS1s[idx];
         if (s1square == 0) {
-          result[idx] = std::numeric_limits<internal_numeric_type>::max();
+          //result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
-        // We require at least 2 samples to compute the relative error.
-        if (mCnts[idx] <= 1) {
-          result[idx] = std::numeric_limits<internal_numeric_type>::max();
-          continue;
-        }
-        assert(mCnts[idx] != 0 && "Assumption");
+
+        // // We require at least 2 samples to compute the relative error.
+        // if (mCnts[idx] <= 1) {
+        //   result[idx] = std::numeric_limits<internal_numeric_type>::max();
+        //   continue;
+        // }
+        // assert(mCnts[idx] != 0 && "Assumption");
+
         // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
         // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
         // page 83 and 84.
-        result[idx] = (internal_numeric_type) (std::sqrt(mS2s[idx] / s1square - 1 / mCnts[idx]));
+        result[idx] = (internal_numeric_type) (std::sqrt(mS2s[idx] / s1square - 1 / mTotalCnts));
         // Debug
         // if (result[idx] != std::numeric_limits<internal_numeric_type>::max()) {
         //   std::cerr << "mCnts[idx] == " << mCnts[idx] << std::endl;
@@ -177,20 +183,21 @@ namespace rti { namespace trace {
     }
 
     std::vector<internal_numeric_type> get_vov() override final { // variance of variance
-      std::cerr << "### Fix! vov" << std::endl;
-      auto result = std::vector<internal_numeric_type>(mS1s.size(), 0); // size, initial values
+      auto result =
+        std::vector<internal_numeric_type>(mS1s.size(),
+                                           std::numeric_limits<internal_numeric_type>::max()); // size, initial values
       for (size_t idx = 0; idx < result.size(); ++idx) {
         if (mCnts[idx] == 0) {
-          result[idx] = std::numeric_limits<internal_numeric_type>::max();
+          // result[idx] = std::numeric_limits<internal_numeric_type>::max();
           continue;
         }
-        // We require a minimum number of samples.
-        // This also prevents numericals errors in the computation of the variance of the variance.
-        // magic number
-        if (mCnts[idx] <= 8) {
-          result[idx] = std::numeric_limits<internal_numeric_type>::max();
-          continue;
-        }
+        // // We require a minimum number of samples.
+        // // This also prevents numericals errors in the computation of the variance of the variance.
+        // // magic number
+        // if (mCnts[idx] <= 8) {
+        //   result[idx] = std::numeric_limits<internal_numeric_type>::max();
+        //   continue;
+        // }
         auto s1 = mS1s[idx];
         auto s2 = mS2s[idx];
         auto s3 = mS3s[idx];
@@ -198,9 +205,10 @@ namespace rti { namespace trace {
         auto s1square = s1 * s1;
         auto s1FourthPow = s1square * s1square;
         auto s2square = s2 * s2;
-        auto nn = mCnts[idx];
+        auto nn = mTotalCnts;
         auto nnsquare = nn * nn;
         auto nncube = nn * nn * nn;
+        assert(nncube < std::numeric_limits<decltype(nncube)>::max() && "Correctness Assertion");
         // For details and explanation of the formula see the book Exploring Monte Carlo Methods
         // by Dunn and Shultis page 84 and 85.
         auto numerator = (s4) - (4 * s1 * s3 / nn) + (8 * s2 * s1square / nnsquare)

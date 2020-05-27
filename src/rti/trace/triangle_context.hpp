@@ -44,9 +44,6 @@ namespace rti { namespace trace {
     rti::geo::i_boundary<numeric_type>& mBoundary;
     rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
 
-    rti::rng::i_rng& mRng;
-    rti::rng::i_rng::i_state& mRngState;
-
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
     // Initialize to some reasonable size. The vector may grow, if needed.
@@ -64,17 +61,14 @@ namespace rti { namespace trace {
             rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState) :
-      // initialize members of virtual base class
-      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
+      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0, pRng, pRngState), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
       mHitAccumulator(pHitAccumulator),
       mBoundaryID(pBoundaryID),
       mBoundary(pBoundary),
-      mBoundaryReflectionModel(pBoundaryReflectionModel),
-      mRng(pRng),
-      mRngState(pRngState) {
+      mBoundaryReflectionModel(pBoundaryReflectionModel) {
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
     }
@@ -119,8 +113,8 @@ namespace rti { namespace trace {
       // Reference all the data in the context with local variables
       // auto& reflect =    rticontextptr->reflect;
       auto& geometryID = rticontextptr->mGeometryID;
-      auto& rng =        rticontextptr->mRng;
-      auto& rngState =   rticontextptr->mRngState;
+      auto& rng =        rticontextptr->rng;
+      auto& rngstate =   rticontextptr->rngstate;
       auto& geometry =   rticontextptr->mGeometry;
       auto& geoRayout =  rticontextptr->geoRayout;
 
@@ -134,7 +128,7 @@ namespace rti { namespace trace {
       }
       RLOG_DEBUG << "hitptr->geomID == " << hitptr->geomID << " primID == " << hitptr->primID << std::endl;
       // Non-Debug
-      geoRayout = rticontextptr->mReflectionModel.use(*rayptr, *hitptr, geometry, rng, rngState);
+      geoRayout = rticontextptr->mReflectionModel.use(*rayptr, *hitptr, geometry, rng, rngstate);
       rticontextptr->geoFirstHitTFar = rayptr->tfar;
       rticontextptr->geoNotIntersected = false;
       // In a triangle context, always accept hits.
@@ -162,8 +156,8 @@ namespace rti { namespace trace {
       auto  validptr = args->valid;
       // Reference all the data in the context with local variables
       auto& boundaryID = rticontextptr->mBoundaryID;
-      auto& rng =        rticontextptr->mRng;
-      auto& rngState =   rticontextptr->mRngState;
+      auto& rng =        rticontextptr->rng;
+      auto& rngstate =   rticontextptr->rngstate;
       auto& boundary =   rticontextptr->mBoundary;
       auto& boundRayout = rticontextptr->boundRayout;
 
@@ -176,7 +170,7 @@ namespace rti { namespace trace {
       }
       RLOG_DEBUG << "hitptr->geomID == " << hitptr->geomID << " primID == " << hitptr->primID << std::endl;
       // Non-Debug
-      boundRayout = rticontextptr->mBoundaryReflectionModel.use(*rayptr, *hitptr, boundary, rng, rngState);
+      boundRayout = rticontextptr->mBoundaryReflectionModel.use(*rayptr, *hitptr, boundary, rng, rngstate);
       rticontextptr->boundFirstHitTFar = rayptr->tfar;
       rticontextptr->boundNotIntersected = false;
       return;
@@ -216,35 +210,10 @@ namespace rti { namespace trace {
       auto valuetodrop = this->rayWeight * this->mGeometry.get_sticking_coefficient();
       this->mHitAccumulator.use(hitprimId, valuetodrop);
       this->rayWeight -= valuetodrop;
+      valueoflastintersectcall = valuetodrop;
 
-      weight_check_reweight_kill();
-    }
-
-    void weight_check_reweight_kill() {
-      // We do what is sometimes called Roulette in MC literatur.
-      // Jun Liu calls it "rejection controll" in his book.
-      // If the weight of the ray is above a certain threshold, we always reflect.
-      // If the weight of the ray is below the threshold, we randomly decide to either kill the
-      // ray or increase its weight (in an unbiased way).
-      this->reflect = true;
-      if (this->rayWeight < RAY_WEIGHT_LOWER_THRESHOLD) {
-        RLOG_DEBUG << "in post_process_intersect() (rayWeight < RAY_WEIGHT_LOWER_THRESHOLD) holds" << std::endl;
-        // We want to set the weight of (the reflection of) the ray to RAY_NEW_WEIGHT.
-        // In order to stay  unbiased we kill the reflection with a probability of
-        // (1 - rticontextptr->rayWeight / RAY_RENEW_WEIGHT).
-        auto rndm = this->mRng.get(this->mRngState);
-        assert(this->rayWeight < RAY_RENEW_WEIGHT && "Assumption");
-        auto killProbability = 1.0f - this->rayWeight / RAY_RENEW_WEIGHT;
-        if (rndm < (killProbability * this->mRng.max())) {
-          // kill the ray
-          this->reflect = false;
-        } else {
-          // The ray survived the roulette: set the ray weight to the new weight
-          //reflect = true;
-          this->rayWeight = RAY_RENEW_WEIGHT;
-        }
-      }
-      // If the ray has enough weight, then we reflect it in any case.
+      this->rejection_control_check_weight_reweight_or_kill
+        (this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
     }
 
   public:
@@ -252,6 +221,7 @@ namespace rti { namespace trace {
       // prepare
       pRayHit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
       pRayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+      valueoflastintersectcall = 0; // default
       this->geoNotIntersected = true;
       this->boundNotIntersected = true;
       // Embree intersect
@@ -287,5 +257,14 @@ namespace rti { namespace trace {
     {
       return false;
     }
+
+  private:
+    numeric_type valueoflastintersectcall = 0;
+  public:
+    numeric_type get_value_of_last_intersect_call() override final
+    {
+      return valueoflastintersectcall;
+    }
+
   };
 }} // namespace

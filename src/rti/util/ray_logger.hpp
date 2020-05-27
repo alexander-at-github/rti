@@ -19,7 +19,6 @@ namespace rti { namespace util {
   static auto sPointLogVec = std::vector<rti::util::triple<float> > {};
   static constexpr auto sLineMaxLength = 64.f;
 
-
 #ifdef RAYLOG_ON
     //auto tfar = std::min((rh).ray.tfar, rti::util::sLineMaxLength);
     //

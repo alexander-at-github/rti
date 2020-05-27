@@ -115,6 +115,8 @@ namespace rti { namespace trace {
      rti::rng::i_rng::i_state& rngstate
      )
     {
+      assert(false && "Deprecated");
+
       // Precondition: Embree has been set up properly
       //   (e.g., the geometry has been built)
       // Precondition: We are in an OpenMP parallel block
@@ -156,11 +158,11 @@ namespace rti { namespace trace {
           rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
           source.fill_ray(rayhit.ray, rng, rngstate);
 
-          RAYSRCLOG(rayhit);
+          //RAYSRCLOG(rayhit);
 
           rtcIntersect1(scene, &context, &rayhit);
 
-          RAYLOG(rayhit, rayhit.ray.tfar);
+          //RAYLOG(rayhit, rayhit.ray.tfar);
 
           if (rayhit.hit.geomID != geometryID)
             continue;
@@ -235,37 +237,106 @@ namespace rti { namespace trace {
       return {acc[0]/num, acc[1]/num};
     }
 
-    void
-    callR()
+    rti::util::pair<std::vector<double> >
+    compute_GMM_using_R(std::vector<std::pair<rti::util::triple<float>, double> > sourcesamples)
     {
       auto argc = 0;
       auto argv = (char**) nullptr;
+      auto rplotfilename = "r-plot.eps";
       auto ri = RInside (argc, argv);
-      auto nrows = 100;
+      assert (sourcesamples.size() <= std::numeric_limits<int>::max() && "Correctness Assumption");
+      auto nrows = (int) sourcesamples.size();
       auto ncols = 2;
       auto data = Rcpp::NumericMatrix {nrows, ncols};
-      data(0, 0) = 0;
-      data(0, 1) = 1;
-      data(1, 0) = 2;
-      data(1, 1) = 3;
+      for (size_t idx = 0; idx < nrows; ++idx) {
+        data(idx, 0) = sourcesamples[idx].first[0]; // 0 === x
+        data(idx, 1) = sourcesamples[idx].first[1]; // 1 === y
+        //std::cout << data(idx, 0) << " " << data(idx, 1) << std::endl;
+      }
       ri["data"] = data;
-      ri.parseEvalQ("print('FOO FROM R'); print(data)");
+      //ri.parseEvalQ("print('FOO FROM R'); print(data)");
       //std::string cmd0 = "library(mclust); density <- densityMclust(data); summary(density, parameters=TRUE);";
       //ri.parseEvalQ(cmd0);
-      std::string mclustfitcmd = "library(mclust); density <- densityMclust(data);";
-      std::string getmeancmd = "density$parameters$mean;";
-      std::string getvariance1cmd = "density$parameters$variance$sigma[,,1]";
-      ri.parseEvalQ(mclustfitcmd);
-      auto mean = Rcpp::as<arma::mat>(ri.parseEval(getmeancmd));
-      auto variance1 = Rcpp::as<arma::mat>(ri.parseEval(getvariance1cmd));
-      std::cerr
-        << "mean:" << std::endl << mean << std::endl
-        << "variance1:" << std::endl << variance1 << std::endl;
+      // std::string mclustfitcmd = "library(mclust); density <- densityMclust(data, prior=priorControl(), G=1, modelNames='VVI');";
+
+      auto modelNames = (std::string) "VVI";
+
+      //ri.parseEvalQ("print(\"just printing something\")");
+      ri.parseEvalQ("library(mclust)");
+      ri.parseEvalQ(std::string("mclusticl <- mclustICL(data, modelNames='") + modelNames + "')");
+      //ri.parseEvalQ("print(mclusticl[1])"); // R uses 1-based index
+      std::cout << "HERE" << std::endl;
+      auto rrr = Rcpp::as<std::vector<double> > (ri["mclusticl"]);
+      { // Debug
+        std::cout << "rrr: ";
+        for (auto const& rrrelem : rrr) {
+          std::cout << rrrelem << " ";
+        }
+        std::cout << std::endl;
+      }
+      auto idxofmax = std::max_element(rrr.begin(), rrr.end()) - rrr.begin();
+      std::cout << "index of max element == " << idxofmax << std::endl;
+
+      auto numModelMixComponents = std::to_string(idxofmax + 1); // +1 because of 0-based indexing
+      auto densitycmdstr = std::string("density <- densityMclust(data, modelNames='") +
+                                       modelNames + "', G=" + numModelMixComponents + ", priorControl())";
+      std::cout << densitycmdstr << std::endl;
+      ri.parseEvalQ(densitycmdstr);
+
+      ri.parseEvalQ("print(summary(density$parameters))");
+      ri.parseEvalQ("--\nprint(density$parameters$variance$sigma)");
+
+      std::cout << "HERE 1" << std::endl;
+      auto means = Rcpp::as<arma::mat> (ri.parseEval("density$parameters$mean"));
+      assert(means.n_cols == 1 && "Correctness Assertion");
+      auto meansvec = std::vector<double> (means.n_rows, 0);
+      for (size_t idxr = 0; idxr < means.n_rows; ++idxr) {
+        meansvec[idxr] = means(idxr, 0);
+      }
+      std::cout << "HERE 2" << std::endl;
+      auto variances = Rcpp::as<arma::cube> (ri.parseEval("density$parameters$variance$sigma"));
+      //auto variances = Rcpp::as<arma::mat> (ri.parseEval("density$parameters$variance$sigma[,,1]")); // also works
+      // Note that the ri[] syntax (as shown in the commented-out code below) does not work.
+      //auto variances = Rcpp::as<arma::mat> (ri["density$parameters$variance$sigma[,,1]"]); // does not work!
+      std::cout << "HERE 3" << std::endl;
+      assert(variances.n_slices == 1 && "Correctness Assertion");
+      assert(variances.n_rows == variances.n_cols && "Correctness Assertion");
+      auto variancesvec = std::vector<double> (variances.n_rows, 0);
+      for (size_t idxr = 0; idxr < variances.n_rows; ++idxr) {
+        for (size_t idxc = 0; idxc < variances.n_cols; ++idxc) {
+          if (idxr == idxc) {
+            variancesvec[idxr] = variances(idxr, idxc, 0);
+            continue;
+          }
+          assert(variances(idxr, idxc, 0) == 0 && "Correctness Assertion");
+        }
+      }
+
+      std::cout << "printing GMM to file " << rplotfilename << std::endl;
+      std::cout << "for the plot I am using hard-coded limits of the finstack geoemtry" << std::endl;
       ri.parseEvalQ(
-        "postscript('r-plot.eps', horizontal=F, width=4, height=4,paper='special', onefile=F); \
-         plot(density, what='density', data=data); \
+         std::string("postscript('") + rplotfilename + "', horizontal=F, width=4, height=4, paper='special', onefile=F); \
+         plot(density, what='density', xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));  \
          dev.off();");
+
       std::cerr << "DONE WITH THE R STUFF" << std::endl;
+      return {meansvec, variancesvec};
+
+      // std::string mclustfitcmd = "library(mclust); density <- densityMclust(data, prior=priorControl(), modelNames='VVI');";
+      // std::string getmeancmd = "density$parameters$mean;";
+      // std::string getvariance1cmd = "density$parameters$variance$sigma[,,1]";
+      // ri.parseEvalQ(mclustfitcmd);
+      // auto mean = Rcpp::as<arma::mat>(ri.parseEval(getmeancmd));
+      // auto variance1 = Rcpp::as<arma::mat>(ri.parseEval(getvariance1cmd));
+      // std::cerr
+      //   << "mean:" << std::endl << mean << std::endl
+      //   << "variance1:" << std::endl << variance1 << std::endl;
+      // // plot(density, what='density', data=data);
+      // // plot(density, what='denstiy', type='persp')
+      // ri.parseEvalQ(
+      //    std::string("postscript('") + rplotfilename + "', horizontal=F, width=4, height=4,paper='special', onefile=F); \
+      //    plot(density, what='density', type='persp'); \
+      //    dev.off();");
 
       // std::string cmd = "set.seed(42); matrix(rnorm(9),3,3)"; 	// create a random Matrix in r
       // arma::mat m = Rcpp::as<arma::mat>(ri.parseEval(cmd)); // parse, eval + return result
@@ -286,8 +357,6 @@ namespace rti { namespace trace {
 
     rti::trace::result<numeric_type> run_aux()
     {
-      callR();
-
       // Prepare a data structure for the result.
       auto result = rti::trace::result<numeric_type> {};
       auto& geo = mFactory.get_geometry();
@@ -344,7 +413,12 @@ namespace rti { namespace trace {
       // auto rng = std::make_unique<rti::rng::cstdlib_rng>();
       auto rng = std::make_unique<rti::rng::mt64_rng>();
 
-      // Start timing
+      // vector of pairs of source sample points and "energy" delivered to the surface.
+      auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+      // Gaussian Mixture Model
+      auto gmm = rti::util::pair<std::vector<double> > {};
+
+      std::cout << "Starting stop watch" << std::endl;
       auto timer = rti::util::timer {};
 
       #pragma omp parallel \
@@ -382,14 +456,22 @@ namespace rti { namespace trace {
         rtiContext->init();
 
 
-        // vector of pairs of source sample points and "energy" delivered to the surface.
-        auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+        // // vector of pairs of source sample points and "energy" delivered to the surface.
+        // auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
 
+        #pragma omp single
         {
+          std::cout << "Hello from thread with the number " << omp_get_thread_num() << " in omp-single block." << std::endl;
+
+          auto rayLogBuff = std::vector<rti::util::pair<rti::util::triple<float> > > {};
+          auto pointLogBuff = rti::util::triple<float> {};
+
+
+
           // Estimate the distribution
           size_t raycnt = 0;
-          size_t numprerays = 256 * 1024;
-          #pragma omp for
+          size_t numprerays = 32 * 1024;
+          //#pragma omp for
           for (size_t idx = 0; idx < (unsigned long long int) numprerays; ++idx) {
 
             // Note: Embrees backface culling does not solve our problem of intersections
@@ -409,8 +491,19 @@ namespace rti { namespace trace {
               {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
 
             //RAYSRCLOG(rayhit);
+            pointLogBuff = rayOriginCopy;
+            rayLogBuff.clear();
 
-            if_RLOG_PROGRESS_is_set_print_progress(raycnt, numprerays);
+
+            // std::cout
+            //   << "new ray == ("
+            //   << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+            //   << ") ("
+            //   << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+            //   << ")" << std::endl << std::flush;
+
+
+            //if_RLOG_PROGRESS_is_set_print_progress(raycnt, numprerays);
 
             auto reflect = false;
             auto sumOfRelevantValuesDroped = 0.0;
@@ -427,13 +520,25 @@ namespace rti { namespace trace {
               // Runn the intersection
               rtiContext->intersect1(scene, rayhit);
 
-              if (rayhit.hit.geomID == geometryID && geo.get_relevance(rayhit.hit.primID)) {
-                sumOfRelevantValuesDroped +=
-                  dynamic_cast<rti::trace::triangle_context_simplified<numeric_type>*>
-                  (rtiContext.get())->get_value_of_last_intersect_call();
+
+              if (rayhit.hit.geomID == geometryID) {
+                auto hitprimID = (dynamic_cast<rti::trace::point_cloud_context<numeric_type>*>
+                                  (rtiContext.get())->mGeoHitPrimIDs)[0];
+                if (geo.get_relevance(hitprimID)) {
+                  sumOfRelevantValuesDroped +=
+                    rtiContext.get()->get_value_of_last_intersect_call();
+                }
               }
 
-              //RAYLOG(rayhit, rtiContext->tfar);
+              { // Debug
+                //RAYLOG(rayhit, rtiContext->tfar);
+                auto p1 = rti::util::triple<float> {(rayhit).ray.org_x, (rayhit).ray.org_y, (rayhit).ray.org_z}; \
+                auto tfar_ = ((rtiContext->tfar) > 10 ? 10 : (rtiContext->tfar)); \
+                auto p2 = rti::util::triple<float> {p1[0] + tfar_ * (rayhit).ray.dir_x, \
+                                                    p1[1] + tfar_ * (rayhit).ray.dir_y, \
+                                                    p1[2] + tfar_ * (rayhit).ray.dir_z}; \
+                rayLogBuff.push_back({p1, p2});
+              }
 
               reflect = rtiContext->reflect;
               auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
@@ -465,14 +570,27 @@ namespace rti { namespace trace {
             assert(sumOfRelevantValuesDroped >= 0 && "Correctness Assumption");
             if (sumOfRelevantValuesDroped > 0) {
               relevantSourceSamples.push_back({rayOriginCopy, sumOfRelevantValuesDroped});
+              { // Debug
+                RTCRayHit rayhit2;
+                rayhit2.ray.org_x = pointLogBuff[0];
+                rayhit2.ray.org_y = pointLogBuff[1];
+                rayhit2.ray.org_z = pointLogBuff[2];
+                //RAYSRCLOG(rayhit2);
+                for (auto& seg : rayLogBuff) {
+                  rti::util::sRayLogVec.push_back(seg);
+                }
+                rayLogBuff.clear();
+              }
               // std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
+              if (relevantSourceSamples.size() >= (4 * 1024)) {
+                break;
+              }
             }
           }
           // std::cout << std::endl; // for the progress bar
+          std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
+          gmm = compute_GMM_using_R(relevantSourceSamples);
         }
-        std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
-        std::cerr << "HERE" << std::endl << std::flush;
-
 
 
         // The Cross Entropy Method for Optimization, Botev, Krose, Rubinstein, L'Ecuyer
@@ -493,9 +611,8 @@ namespace rti { namespace trace {
         // the CE method for continuous optimization with a Gaussian sampling density is as
         // follows."
 
-        auto CEDimensions = 2;
-        auto coordmean = compute_mean_coord(relevantSourceSamples);
-        auto coordvariance = compute_variance_of_coords(relevantSourceSamples, {coordmean[0], coordmean[1], 0.0});
+        // auto coordmean = compute_mean_coord(relevantSourceSamples);
+        // auto coordvariance = compute_variance_of_coords(relevantSourceSamples, {coordmean[0], coordmean[1], 0.0});
 
         // The Cross Entropy Method for Optimization, Botev, Kroese, Rubinstein, L'Ecuyer
         // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
@@ -519,13 +636,16 @@ namespace rti { namespace trace {
         // T rmvnorm(const T& mu_par, const T& Sigma_par, const bool pre_chol = false);
         //auto onesample = stats::rmvnorm<std::array<double, 2> >(coordmean, coordvariance);
 
+        auto meansvec = gmm[0];
+        auto variancesvec = gmm[1];
+
         // auto means = arma::zeros(2,1);
         auto means = arma::mat {2,1};
-        means << coordmean[0] << arma::endr
-              << coordmean[1] << arma::endr;
+        means << meansvec[0] << arma::endr
+              << meansvec[1] << arma::endr;
         auto covmat = arma::mat {2,2};
-        covmat << coordvariance[0] << 0.0 << arma::endr
-               << 0.0 << coordvariance[1] << arma::endr;
+        covmat << variancesvec[0] << 0.0 << arma::endr
+               << 0.0 << variancesvec[1] << arma::endr;
         // auto onesample = stats::rmvnorm (means, covmat);
         auto csrcp = dynamic_cast<rti::ray::source<numeric_type>*>(&mSource);
         auto recorgp = dynamic_cast<rti::ray::rectangle_origin_z<numeric_type>*>(&csrcp->get_origin());
@@ -552,6 +672,8 @@ namespace rti { namespace trace {
 
         std::cerr << "Finished computation of sampling distribution" << std::endl << std::flush;
 
+        std::cerr << "Starting " << mNumRays << " rays" << std::endl;
+
         auto raycnt = (size_t) 0;
         auto rejectedsamples = (size_t) 0;
         auto cnt = 0u;
@@ -577,15 +699,25 @@ namespace rti { namespace trace {
             // TODO: There does not seem to be a way to use your own RNG for
             // MVN distributions.
             do {
-              auto sample = stats::rmvnorm (means, covmat);
-              // uses arma::randn()
-              // To change the RNG seed, use arma_rng::set_seed(value)
+              // auto sample = stats::rmvnorm (means, covmat);
+              // // uses arma::randn()
+              // // To change the RNG seed, use arma_rng::set_seed(value)
 
-              // std::cout << "sample.n_elem == " << sample.n_elem << std::endl;
-              // std::cout << "sample.n_cols == " << sample.n_cols << std::endl;
-              // std::cout << "sample.n_rows == " << sample.n_rows << std::endl;
-              auto sx = sample(0);
-              auto sy = sample(1);
+              // // std::cout << "sample.n_elem == " << sample.n_elem << std::endl;
+              // // std::cout << "sample.n_cols == " << sample.n_cols << std::endl;
+              // // std::cout << "sample.n_rows == " << sample.n_rows << std::endl;
+              // auto sx_ = sample(0);
+              // auto sy_ = sample(1);
+
+              auto xdist = std::normal_distribution<numeric_type> {(numeric_type) meansvec[0], (numeric_type) variancesvec[0]};
+              auto ydist = std::normal_distribution<numeric_type> {(numeric_type) meansvec[1], (numeric_type) variancesvec[1]};
+              auto sx = xdist(*rng);
+              auto sy = ydist(*rng);
+              // TODO create the sample variable
+              auto sample = arma::mat(2,1); // number of rows and number of columns
+              sample(0,0) = sx;
+              sample(1,0) = sy;
+
               { // Debug
                 int tid = omp_get_thread_num();
                 if (tid == 0) {
@@ -625,6 +757,8 @@ namespace rti { namespace trace {
 
             } while (true);
           }
+          //std::cerr << "HERE" << std::endl << std::flush;
+
 
 
           RAYSRCLOG(rayhit);
@@ -712,18 +846,18 @@ namespace rti { namespace trace {
       rtcReleaseGeometry(geometry);
       rtcReleaseGeometry(boundary);
 
-      auto raylog = RAYLOG_GET_PTR();
-      if (raylog != nullptr) {
-        auto raylogfilename = "raylog.vtp";
-        std::cout << "Writing ray log to " << raylogfilename << std::endl;
-        rti::io::vtp_writer<float>::write(raylog, raylogfilename);
-      }
-      auto raysrclog = RAYSRCLOG_GET_PTR();
-      if (raysrclog != nullptr) {
-        auto raysrclogfilename = "raysrclog.vtp";
-        std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
-        rti::io::vtp_writer<float>::write(raysrclog, raysrclogfilename);
-      }
+      // auto raylog = RAYLOG_GET_PTR();
+      // if (raylog != nullptr) {
+      //   auto raylogfilename = "raylog.vtp";
+      //   std::cout << "Writing ray log to " << raylogfilename << std::endl;
+      //   rti::io::vtp_writer<float>::write(raylog, raylogfilename);
+      // }
+      // auto raysrclog = RAYSRCLOG_GET_PTR();
+      // if (raysrclog != nullptr) {
+      //   auto raysrclogfilename = "raysrclog.vtp";
+      //   std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
+      //   rti::io::vtp_writer<float>::write(raysrclog, raysrclogfilename);
+      // }
 
       return result;
     }

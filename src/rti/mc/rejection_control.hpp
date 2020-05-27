@@ -1,5 +1,7 @@
 #pragma once
 
+#include "rti/trace/absc_context.hpp"
+
 namespace rti { namespace mc {
 
   template<typename numeric_type>
@@ -9,7 +11,9 @@ namespace rti { namespace mc {
     rejection_control
     (rti::rng::i_rng& rng, rti::rng::i_rng::i_state& rngstate) :
       rng(rng),
-      rngstate(rngstate) {}
+      rngstate(rngstate) {
+      assert(false && "DEPRECATED");
+    }
 
     template<typename numeric_type_o>
     void

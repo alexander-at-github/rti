@@ -46,12 +46,9 @@ namespace rti { namespace trace {
     rti::geo::i_boundary<numeric_type>& mBoundary;
     rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
 
-    rti::rng::i_rng& mRng;
-    rti::rng::i_rng::i_state& mRngState;
-
-    //rti::mc::rejection_control<numeric_type> rejectioncontrol;
     rti::particle::i_particle<numeric_type>& particle;
 
+  public:
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
     // Initialize to some reasonable size. The vector may grow, if needed.
@@ -70,7 +67,7 @@ namespace rti { namespace trace {
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState,
             rti::particle::i_particle<numeric_type>& particle) :
-      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0), // initialize to some values
+      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0, pRng, pRngState), // initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -78,12 +75,9 @@ namespace rti { namespace trace {
       mBoundaryID(pBoundaryID),
       mBoundary(pBoundary),
       mBoundaryReflectionModel(pBoundaryReflectionModel),
-      mRng(pRng),
-      mRngState(pRngState),
       particle(particle) {
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve some reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
-      std::cerr << "TODO: add unified rejection control" << std::endl;
     }
 
   public:
@@ -126,8 +120,8 @@ namespace rti { namespace trace {
       // Reference all the data in the context with local variables
       // auto& reflect =    rticontextptr->reflect;
       auto& geometryID = rticontextptr->mGeometryID;
-      auto& rng =        rticontextptr->mRng;
-      auto& rngState =   rticontextptr->mRngState;
+      auto& rng =        rticontextptr->rng;
+      auto& rngState =   rticontextptr->rngstate;
       auto& geometry =   rticontextptr->mGeometry;
       auto& geoRayout =  rticontextptr->geoRayout;
 
@@ -204,8 +198,8 @@ namespace rti { namespace trace {
       auto  validptr = args->valid;
       // Reference all the data in the context with local variables
       auto& boundaryID = rticontextptr->mBoundaryID;
-      auto& rng =        rticontextptr->mRng;
-      auto& rngState =   rticontextptr->mRngState;
+      auto& rng =        rticontextptr->rng;
+      auto& rngstate =   rticontextptr->rngstate;
       auto& boundary =   rticontextptr->mBoundary;
       auto& boundRayout = rticontextptr->boundRayout;
 
@@ -219,7 +213,7 @@ namespace rti { namespace trace {
       // RLOG_DEBUG << "hitptr->geomID == " << hitptr->geomID << " primID == " << hitptr->primID << std::endl;
       // // Non-Debug
       if(rticontextptr->boundNotIntersected) {
-        boundRayout = rticontextptr->mBoundaryReflectionModel.use(*rayptr, *hitptr, boundary, rng, rngState);
+        boundRayout = rticontextptr->mBoundaryReflectionModel.use(*rayptr, *hitptr, boundary, rng, rngstate);
         rticontextptr->boundFirstHitTFar = rayptr->tfar;
         rticontextptr->boundNotIntersected = false;
       }
@@ -291,31 +285,13 @@ namespace rti { namespace trace {
         sumvaluedroped += valuetodrop;
       }
       auto hitprimcount = set.size();
-      assert(this->rayWeight >= sumvaluedroped / hitprimcount && "Assertion");
-      this->rayWeight -= sumvaluedroped / hitprimcount;
-      // We do what is sometimes called Roulette in MC literatur.
-      // Jun Liu calls it "rejection controll" in his book.
-      // If the weight of the ray is above a certain threshold, we always reflect.
-      // If the weight of the ray is below the threshold, we randomly decide to either kill the
-      // ray or increase its weight (in an unbiased way).
-      if (this->rayWeight < RAY_WEIGHT_LOWER_THRESHOLD) {
-        RLOG_DEBUG << "in post_process_intersect() (rayWeight < RAY_WEIGHT_LOWER_THRESHOLD) holds" << std::endl;
-        // We want to set the weight of (the reflection of) the ray to RAY_NEW_WEIGHT.
-        // In order to stay  unbiased we kill the reflection with a probability of
-        // (1 - rticontextptr->rayWeight / RAY_RENEW_WEIGHT).
-        auto rndm = this->mRng.get(this->mRngState);
-        assert(this->rayWeight < RAY_RENEW_WEIGHT && "Assumption");
-        auto killProbability = 1.0f - this->rayWeight / RAY_RENEW_WEIGHT;
-        if (rndm < (killProbability * this->mRng.max())) {
-          // kill the ray
-          this->reflect = false;
-        } else {
-          // The ray survived the roulette: set the ray weight to the new weight
-          //reflect = true;
-          this->rayWeight = RAY_RENEW_WEIGHT;
-        }
-      }
-      // If the ray has enough weight, then we reflect it in any case.
+      auto energydelivered = sumvaluedroped / hitprimcount;
+      assert(this->rayWeight >= energydelivered && "Assertion");
+      this->rayWeight -= energydelivered;
+      valueoflastintersectcall = energydelivered;
+
+      this->rejection_control_check_weight_reweight_or_kill
+        (this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
     }
 
   public:
@@ -324,6 +300,7 @@ namespace rti { namespace trace {
       // prepare
       pRayHit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
       pRayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+      valueoflastintersectcall = 0; // default
       this->geoNotIntersected = true;
       this->boundNotIntersected = true;
       // Embree intersect
@@ -349,6 +326,14 @@ namespace rti { namespace trace {
     bool compute_exposed_areas_by_sampling() override final
     {
       return false;
+    }
+
+  private:
+    numeric_type valueoflastintersectcall = 0;
+  public:
+    numeric_type get_value_of_last_intersect_call() override final
+    {
+      return valueoflastintersectcall;
     }
   };
 }}

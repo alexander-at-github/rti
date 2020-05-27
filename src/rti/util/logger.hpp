@@ -7,7 +7,7 @@
 namespace rti { namespace util {
 // Set the log level by commenting the following lines out
 //
-#define RLOG_LEVEL_INFO
+//#define RLOG_LEVEL_INFO
 //#define RLOG_LEVEL_TRACE
 //#define RLOG_LEVEL_DEBUG
 //#define RLOG_LEVEL_WARNING
@@ -18,9 +18,9 @@ namespace rti { namespace util {
   static std::ostream& sLStream = std::cerr;
 
 #ifdef RLOG_LEVEL_INFO
-#define RLOG_INFO rti::util::sLStream
+#define RLOG_INFO rti::util::sLStream << "[info] "
 #else
-#define RLOG_INFO if (true) {} else rti::util::sLStream << "[info] "
+#define RLOG_INFO if (true) {} else rti::util::sLStream
 #endif
 
 #ifdef RLOG_LEVEL_TRACE

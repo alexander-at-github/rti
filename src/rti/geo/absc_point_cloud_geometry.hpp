@@ -89,8 +89,19 @@ namespace rti { namespace geo {
 
     bool get_relevance(unsigned int primID) override final
     {
-      assert(false && "Not implemented");
-      return false;
+      assert(primID <= mNumPoints && "Correctness Assertion");
+      auto relevance = (mVVBuffer[primID].xx <= 0.12 && mVVBuffer[primID].zz <= 0.27);
+      // std::cout
+      //   << "absc_point_cloud_geometry::get_relevanceI() will return "
+      //   << (relevance ? "TRUE" : "FALSE") << " "
+      //   << "primID == " << primID << " "
+      //   << "x == " << mVVBuffer[primID].xx << " "
+      //   << "y == " << mVVBuffer[primID].yy << " "
+      //   << "z == " << mVVBuffer[primID].zz
+      //   << std::endl;
+      return relevance;
+      // assert(false && "Not implemented");
+      // return false;
     }
 
   protected:
