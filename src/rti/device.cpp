@@ -233,8 +233,8 @@ namespace rti {
     auto direction = rti::ray::cosine_direction<numeric_type>::construct_in_opposite_direction_of_z_axis();
     auto source = rti::ray::source<numeric_type> {origin, direction};
     auto tracer = rti::trace::tracer<numeric_type>
-      {geometryFactory, boundary, source, pimpl->numberOfRays, *(pimpl->particlefactory)};
-    auto traceresult = tracer.run();
+      {geometryFactory, boundary, source, *(pimpl->particlefactory)};
+    auto traceresult = tracer.run_plain(pimpl->numberOfRays);
     pimpl->mcestimates = extract_mc_estimates(traceresult);
     pimpl->hitcnts = extract_hit_cnts(traceresult);
     assert(pimpl->mcestimates.size() == pimpl->hitcnts.size() && "Correctness Assumption");

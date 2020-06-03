@@ -274,8 +274,26 @@ int main(int argc, char* argv[]) {
   auto particlefactory = particle_factory ((numeric_type) stickingC);
   //auto particlefactory = nullptr;
 
-  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays, particlefactory};
-  auto result = tracer.run();
+  auto result = rti::trace::result<numeric_type> {};
+  {// NEW
+    auto numrays_firstphase = 8 * 1024 * 1024;
+    auto numrays_secondphase = 8 * 1024 * 1024;
+    std::cout << "Using a fixed numeber of rays of " << numrays_firstphase << " + " << numrays_secondphase << std::endl;
+    auto tracer = rti::trace::tracer<numeric_type>
+      {*geoFactory, boundary, source, particlefactory};
+    auto result_firstphase = tracer.run_plain(numrays_firstphase);
+    auto errors = result_firstphase.hitAccumulator->get_relative_error();
+    auto result_secondphase = tracer.run_adaptive(errors, numrays_secondphase);
+    tracer.destroy_data();
+
+    result = std::move(result_secondphase);
+  }// NEW END
+
+  // { // OLD
+  //   auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, particlefactory};
+  //   auto result = tracer.run_plain(numrays);
+  // } // OLD END
+
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
 

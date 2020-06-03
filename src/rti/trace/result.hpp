@@ -17,10 +17,11 @@ namespace rti { namespace trace {
     std::unique_ptr<rti::trace::i_hit_accumulator<Ty> > hitAccumulator;
     uint64_t timeNanoseconds = 0;
     std::string geometryClassName;
+    std::string tracerFunctionName;
     std::string inputFilePath;
     size_t numRays;
-    size_t hitc;
-    size_t nonhitc;
+    size_t hitc = 0;
+    size_t nonhitc = 0;
 
     void print(std::ostream& pOs) const {
       pOs

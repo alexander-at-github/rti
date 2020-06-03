@@ -129,9 +129,9 @@ namespace rti { namespace trace {
       mTotalCnts += 1;
 
       mS1s[pPrimID] += (internal_numeric_type) value;
-      mS2s[pPrimID] += (internal_numeric_type) value * value;
-      mS3s[pPrimID] += (internal_numeric_type) value * value * value;
-      mS4s[pPrimID] += (internal_numeric_type) value * value * value * value;
+      mS2s[pPrimID] += ((internal_numeric_type) value) * value;
+      mS3s[pPrimID] += ((internal_numeric_type) value) * value * value;
+      mS4s[pPrimID] += ((internal_numeric_type) value) * value * value * value;
     }
 
     std::vector<internal_numeric_type> get_values() override final {
@@ -148,8 +148,8 @@ namespace rti { namespace trace {
 
     std::vector<internal_numeric_type> get_relative_error() override final {
       auto result =
-        std::vector<internal_numeric_type>(mS1s.size(),
-                                           std::numeric_limits<internal_numeric_type>::max()); // size, initial values
+        std::vector<internal_numeric_type>
+        (mS1s.size(), std::numeric_limits<internal_numeric_type>::max()); // size, initial values
       if (mTotalCnts == 0) {
         return result;
       }
@@ -184,8 +184,8 @@ namespace rti { namespace trace {
 
     std::vector<internal_numeric_type> get_vov() override final { // variance of variance
       auto result =
-        std::vector<internal_numeric_type>(mS1s.size(),
-                                           std::numeric_limits<internal_numeric_type>::max()); // size, initial values
+        std::vector<internal_numeric_type>
+        (mS1s.size(), std::numeric_limits<internal_numeric_type>::max()); // size, initial values
       for (size_t idx = 0; idx < result.size(); ++idx) {
         if (mCnts[idx] == 0) {
           // result[idx] = std::numeric_limits<internal_numeric_type>::max();

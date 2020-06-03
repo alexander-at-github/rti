@@ -7,6 +7,7 @@
 //#define STATS_USE_OPENMP
 
 #include <boost/core/demangle.hpp>
+#include <boost/current_function.hpp>
 
 #include <cmath>
 #include <chrono>
@@ -49,13 +50,17 @@ namespace rti { namespace trace {
     tracer(rti::geo::i_factory<numeric_type>& pFactory,
            rti::geo::i_boundary<numeric_type>& pBoundary,
            rti::ray::i_source& pSource,
-           size_t pNumRays,
            rti::particle::i_particle_factory<numeric_type>& particlefactory) :
       mFactory(pFactory),
       mBoundary(pBoundary),
       mSource(pSource),
-      mNumRays(pNumRays),
-      particlefactory(particlefactory) {
+      particlefactory(particlefactory),
+      rtigeometry(mFactory.get_geometry()),
+      rtcgeometry(rtigeometry.get_rtc_geometry()),
+      rtcboundary(mBoundary.get_rtc_geometry()),
+      device(rtigeometry.get_rtc_device()),
+      scene(rtcNewScene(device))
+    {
       assert (mFactory.get_geometry().get_rtc_device() == pBoundary.get_rtc_device() &&
               "the geometry and the boundary need to refer to the same Embree (rtc) device");
       assert(rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 &&
@@ -64,7 +69,6 @@ namespace rti { namespace trace {
       //   << "RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED == "
       //   << rtcGetDeviceProperty(mFactory.get_geometry().get_rtc_device(), RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED)
       //   << std::endl;
-      auto& device = mFactory.get_geometry().get_rtc_device();
       assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_VERSION) >= 30601 && "Error: The minimum version of Embree is 3.6.1");
       if (rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_BACKFACE_CULLING_ENABLED) != 0) {
         std::cerr << "=== Warning: Embree backface culling enabled. This may result in incorrect results "
@@ -73,6 +77,8 @@ namespace rti { namespace trace {
                 the tracer depends on the order of the vertices of the triangles");
       }
       RLOG_WARNING << "Warning: tnear set to a constant! FIX" << std::endl;
+
+      prepare_embree();
     }
 
   private:
@@ -105,77 +111,77 @@ namespace rti { namespace trace {
       raycnt += 1;
     }
 
-    void
-    compute_exposed_areas_by_sampling
-    (rti::geo::i_geometry<numeric_type>& geo,
-     RTCScene& scene,
-     rti::trace::i_hit_accumulator<numeric_type>& hitacc,
-     unsigned int geometryID,
-     rti::rng::i_rng& rng,
-     rti::rng::i_rng::i_state& rngstate
-     )
-    {
-      assert(false && "Deprecated");
+    // void
+    // compute_exposed_areas_by_sampling
+    // (rti::geo::i_geometry<numeric_type>& geo,
+    //  RTCScene& scene,
+    //  rti::trace::i_hit_accumulator<numeric_type>& hitacc,
+    //  unsigned int geometryID,
+    //  rti::rng::i_rng& rng,
+    //  rti::rng::i_rng::i_state& rngstate
+    //  )
+    // {
+    //   assert(false && "Deprecated");
 
-      // Precondition: Embree has been set up properly
-      //   (e.g., the geometry has been built)
-      // Precondition: We are in an OpenMP parallel block
-      // Precondition: the following cast characterizes a precondition:
-      auto pcgeo =
-        dynamic_cast<rti::geo::absc_point_cloud_geometry<numeric_type>*> (&geo);
+    //   // Precondition: Embree has been set up properly
+    //   //   (e.g., the geometry has been built)
+    //   // Precondition: We are in an OpenMP parallel block
+    //   // Precondition: the following cast characterizes a precondition:
+    //   auto pcgeo =
+    //     dynamic_cast<rti::geo::absc_point_cloud_geometry<numeric_type>*> (&geo);
 
-      std::cerr << "### FIX: This function does not consider that areas of "
-                << "discs may be located outside of the boundary" << std::endl;
+    //   std::cerr << "### FIX: This function does not consider that areas of "
+    //             << "discs may be located outside of the boundary" << std::endl;
 
-      // We use a new RTC context object.
-      auto context = RTCIntersectContext {};
-      rtcInitIntersectContext(&context);
-      auto numOfSamples = 1024u;
+    //   // We use a new RTC context object.
+    //   auto context = RTCIntersectContext {};
+    //   rtcInitIntersectContext(&context);
+    //   auto numOfSamples = 1024u;
 
-      auto numofprimitives = pcgeo->get_num_primitives();
-      auto areas = std::vector<double> (numofprimitives, 0);
-      #pragma omp for
-      for (size_t primidx = 0; primidx < numofprimitives; ++primidx) {
-        auto pointradius = pcgeo->get_prim(primidx);
-        auto normal = pcgeo->get_normal(primidx);
-        auto point = rti::util::triple<numeric_type>
-          {pointradius[0], pointradius[1], pointradius[2]};
-        auto radius = pointradius[3];
-        auto origincenter = rti::util::sum(point, rti::util::scale(2*radius, normal));
-        auto invnormal = rti::util::inv(normal);
-        auto origin = rti::ray::disc_origin<numeric_type>
-          {origincenter, invnormal, radius};
-        auto direction = rti::ray::constant_direction<numeric_type> {invnormal};
-        auto source = rti::ray::source<numeric_type> {origin, direction};
+    //   auto numofprimitives = pcgeo->get_num_primitives();
+    //   auto areas = std::vector<double> (numofprimitives, 0);
+    //   #pragma omp for
+    //   for (size_t primidx = 0; primidx < numofprimitives; ++primidx) {
+    //     auto pointradius = pcgeo->get_prim(primidx);
+    //     auto normal = pcgeo->get_normal(primidx);
+    //     auto point = rti::util::triple<numeric_type>
+    //       {pointradius[0], pointradius[1], pointradius[2]};
+    //     auto radius = pointradius[3];
+    //     auto origincenter = rti::util::sum(point, rti::util::scale(2*radius, normal));
+    //     auto invnormal = rti::util::inv(normal);
+    //     auto origin = rti::ray::disc_origin<numeric_type>
+    //       {origincenter, invnormal, radius};
+    //     auto direction = rti::ray::constant_direction<numeric_type> {invnormal};
+    //     auto source = rti::ray::source<numeric_type> {origin, direction};
 
-        alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-        auto hits = 0u;
-        for (size_t sidx = 0; sidx < numOfSamples; ++sidx) {
-          rayhit.ray.tnear = 0;
-          rayhit.ray.time = 0;
-          rayhit.ray.tfar = std::numeric_limits<float>::max();
-          rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
-          rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
-          source.fill_ray(rayhit.ray, rng, rngstate);
+    //     alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    //     auto hits = 0u;
+    //     for (size_t sidx = 0; sidx < numOfSamples; ++sidx) {
+    //       rayhit.ray.tnear = 0;
+    //       rayhit.ray.time = 0;
+    //       rayhit.ray.tfar = std::numeric_limits<float>::max();
+    //       rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+    //       rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+    //       source.fill_ray(rayhit.ray, rng, rngstate);
 
-          //RAYSRCLOG(rayhit);
+    //       //RAYSRCLOG(rayhit);
 
-          rtcIntersect1(scene, &context, &rayhit);
+    //       rtcIntersect1(scene, &context, &rayhit);
 
-          //RAYLOG(rayhit, rayhit.ray.tfar);
+    //       //RAYLOG(rayhit, rayhit.ray.tfar);
 
-          if (rayhit.hit.geomID != geometryID)
-            continue;
-          if (rayhit.hit.primID != primidx)
-            continue;
-          hits += 1;
-        }
-        assert (0 <= hits && hits <= numOfSamples && "Correctness assertion");
-        //std::cerr << " " << (double) hits / numOfSamples;
-        areas[primidx] = pcgeo->get_area(primidx) * (double) hits / numOfSamples;
-      }
-      hitacc.set_exposed_areas(areas);
-    }
+    //       if (rayhit.hit.geomID != geometryID)
+    //         continue;
+    //       if (rayhit.hit.primID != primidx)
+    //         continue;
+    //       hits += 1;
+    //     }
+    //     assert (0 <= hits && hits <= numOfSamples && "Correctness assertion");
+    //     //std::cerr << " " << (double) hits / numOfSamples;
+    //     areas[primidx] = pcgeo->get_area(primidx) * (double) hits / numOfSamples;
+    //   }
+    //   hitacc.set_exposed_areas(areas);
+    // }
 
     void
     use_entire_areas_of_primitives_as_exposed
@@ -238,7 +244,8 @@ namespace rti { namespace trace {
     }
 
     rti::util::pair<std::vector<double> >
-    compute_GMM_using_R(std::vector<std::pair<rti::util::triple<float>, double> > sourcesamples)
+    compute_GMM_using_R
+    (std::vector<std::pair<rti::util::triple<float>, double> > sourcesamples)
     {
       auto argc = 0;
       auto argv = (char**) nullptr;
@@ -345,62 +352,82 @@ namespace rti { namespace trace {
 
   public:
 
-    rti::trace::result<numeric_type> run()
+    rti::trace::result<numeric_type> run_plain(size_t numrays)
     {
       try {
-        return run_aux();
-      } catch (std::bad_alloc& ex) {
-        std::cerr << ">>> bad_alloc: " << ex.what() << std::endl;
+        return run_plain_aux(numrays);
+      } catch (std::exception& ex) {
+        std::cerr << ">>> exception: " << ex.what() << std::endl;
       }
       return {};
     }
 
-    rti::trace::result<numeric_type> run_aux()
+    template<typename parameter_type>
+    rti::trace::result<numeric_type>
+    run_adaptive
+    (std::vector<parameter_type> relativeerrors, size_t numrays)
     {
-      // Prepare a data structure for the result.
-      auto result = rti::trace::result<numeric_type> {};
-      auto& geo = mFactory.get_geometry();
-      result.inputFilePath = geo.get_input_file_path();
-      result.geometryClassName = boost::core::demangle(typeid(geo).name());
+      auto rethreshold = (parameter_type) 0.1;
+      auto numprerays = (size_t) (32 * 1024);
+      std::cout << "Adaptive source sampling: using " << rethreshold << " as threshold on the relative error." << std::endl;
+      try {
+        return run_adaptive_aux(relativeerrors, rethreshold, numprerays, numrays);
+      } catch (std::exception& ex) {
+        std::cerr << ">>> exception: " << ex.what() << std::endl;
+      }
+      return {};
+    }
 
-      // Prepare Embree
-      auto device = geo.get_rtc_device();
-      auto scene = rtcNewScene(device);
-
+  private:
+    void prepare_embree()
+    {
       // scene flags
       // Does one need to set this flag if one uses the registered call-back functions only?
       //rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE | RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION);
       rtcSetSceneFlags(scene, RTC_SCENE_FLAG_NONE);
-      //std::cerr << "rtc get scene flags == " << rtcGetSceneFlags(scene) << std::endl;
-
       // Selecting higher build quality results in better rendering performance but slower
       // scene commit times. The default build quality for a scene is RTC_BUILD_QUALITY_MEDIUM.
       auto bbquality = RTC_BUILD_QUALITY_HIGH;
       rtcSetSceneBuildQuality(scene, bbquality);
-      auto geometry = geo.get_rtc_geometry();
-      auto boundary = mBoundary.get_rtc_geometry();
-
-      auto boundaryID = rtcAttachGeometry(scene, boundary);
-      auto geometryID = rtcAttachGeometry(scene, geometry);
+      boundaryID = rtcAttachGeometry(scene, rtcboundary);
+      geometryID = rtcAttachGeometry(scene, rtcgeometry);
 
       mFactory.register_intersect_filter_funs(mBoundary);
       assert(rtcGetDeviceError(device) == RTC_ERROR_NONE && "Error");
-
       // Use openMP for parallelization
       #pragma omp parallel
       {
         rtcJoinCommitScene(scene);
         // TODO: move to the other parallel region at the bottom
       }
+    }
 
-      result.numRays = mNumRays;
+  public:
+    void destroy_data()
+    {
+      rtcReleaseGeometry(rtcgeometry);
+      rtcReleaseGeometry(rtcboundary);
+    }
+
+  private:
+    rti::trace::result<numeric_type>
+    run_plain_aux
+    (size_t numrays)
+    {
+      // Prepare a data structure for the result.
+      auto result = rti::trace::result<numeric_type> {};
+      result.inputFilePath = rtigeometry.get_input_file_path();
+      result.geometryClassName = boost::core::demangle(typeid(rtigeometry).name());
+      result.tracerFunctionName = BOOST_CURRENT_FUNCTION;
+
+      result.numRays = numrays;
 
       auto reflectionModel = rti::reflection::diffuse<numeric_type> {};
       auto boundaryReflection = rti::reflection::specular<numeric_type> {};
 
       auto geohitc = 0ull;
       auto nongeohitc = 0ull;
-      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<numeric_type> {geo.get_num_primitives()};
+      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<numeric_type> {rtigeometry.get_num_primitives()};
 
       #pragma omp declare \
         reduction(hit_accumulator_combine : \
@@ -412,11 +439,6 @@ namespace rti { namespace trace {
       // are modified). Hence, it may be shared by threads.
       // auto rng = std::make_unique<rti::rng::cstdlib_rng>();
       auto rng = std::make_unique<rti::rng::mt64_rng>();
-
-      // vector of pairs of source sample points and "energy" delivered to the surface.
-      auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
-      // Gaussian Mixture Model
-      auto gmm = rti::util::pair<std::vector<double> > {};
 
       std::cout << "Starting stop watch" << std::endl;
       auto timer = rti::util::timer {};
@@ -447,7 +469,7 @@ namespace rti { namespace trace {
         // in https://www.embree.org/api.html#rtcinitintersectcontext .
         // Note: the memory layout only works with plain old data, that is, C-style structs.
         // Otherwise the compiler might change the memory layout, e.g., with the vtable.
-        auto rtiContext = mFactory.get_new_context(geometryID, geo, reflectionModel,
+        auto rtiContext = mFactory.get_new_context(geometryID, rtigeometry, reflectionModel,
                                                    hitAccumulator, boundaryID, mBoundary,
                                                    boundaryReflection, *rng, *rngSeed2,
                                                    *particle);
@@ -455,143 +477,346 @@ namespace rti { namespace trace {
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext->init();
 
+        std::cerr << "Starting " << numrays << " rays in " << BOOST_CURRENT_FUNCTION << std::endl;
 
-        // // vector of pairs of source sample points and "energy" delivered to the surface.
-        // auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+        auto raycnt = (size_t) 0;
+        auto rejectedsamples = (size_t) 0;
+        auto cnt = 0u;
+        #pragma omp for
+        for (size_t idx = 0; idx < (unsigned long long int) numrays; ++idx) {
 
-        #pragma omp single
-        {
-          std::cout << "Hello from thread with the number " << omp_get_thread_num() << " in omp-single block." << std::endl;
+          // Note: Embrees backface culling does not solve our problem of intersections
+          // when starting a new ray very close to or a tiny bit below the surface.
+          // For that reason we set tnear to some value.
+          // There is a risk though: when setting tnear to some strictly positive value
+          // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
 
-          auto rayLogBuff = std::vector<rti::util::pair<rti::util::triple<float> > > {};
-          auto pointLogBuff = rti::util::triple<float> {};
+          particle->init_new();
+
+          RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
+          // TODO: FIX: tnear set to a constant
+          mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
+
+          RAYSRCLOG(rayhit);
+
+          if_RLOG_PROGRESS_is_set_print_progress(raycnt, numrays);
+
+          auto reflect = false;
+          do {
+            RLOG_DEBUG
+              << "preparing ray == ("
+              << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+              << ") ("
+              << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+              << ")" << std::endl;
+
+            rayhit.ray.tfar = std::numeric_limits<numeric_type>::max();
+
+            // Runn the intersection
+            rtiContext->intersect1(scene, rayhit);
+
+            RAYLOG(rayhit, rtiContext->tfar);
+
+            reflect = rtiContext->reflect;
+            auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
+                                                   rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
+                                                   rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
+            RLOG_DEBUG
+              << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
+              << " reflect == " << (reflect ? "true" : "false")  << std::endl;
+
+            // ATTENTION tnear is set in another function, too! When the ray starts from the source, then
+            // the source class also sets tnear!
+            auto tnear = 1e-4f; // float
+            // Same holds for time
+            auto time = 0.0f; // float
+            // reinterpret_cast<__m128&>(rayhit.ray) = _mm_load_ps(vara);
+            // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
+
+            reinterpret_cast<__m128&>(rayhit.ray) =
+              _mm_set_ps(tnear,
+                         (float) rtiContext->rayout[0][2],
+                         (float) rtiContext->rayout[0][1],
+                         (float) rtiContext->rayout[0][0]);
+            reinterpret_cast<__m128&>(rayhit.ray.dir_x) =
+              _mm_set_ps(time,
+                         (float) rtiContext->rayout[1][2],
+                         (float) rtiContext->rayout[1][1],
+                         (float) rtiContext->rayout[1][0]);
+
+            // if (rayhit.hit.geomID == boundaryID) {
+            //   // Ray hit the boundary
+            //   reflect = boundaryReflection.use(rayhit, *rng, *rngSeed2, this->mBoundary);
+            // } else {
+            //   geohitc += 1;
+            //   RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
+            //   RLOG_DEBUG << "prim == " << mGeo.prim_to_string(rayhit.hit.primID) << std::endl;
+            //   reflect = reflectionModel.use(rayhit, *rng, *rngSeed2, this->mGeo);
+            // }
+          } while (reflect);
+        }
+        RLOG_TRACE << "before area calc" << std::endl << std::flush;
+        if (rtiContext->compute_exposed_areas_by_sampling()) {
+          std::cerr
+            << "###############"
+            << "### WARNING ### Computing exposed area by sampling does not work"
+            << "###############" << std::endl;
+          // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
+          // rtcSetGeometryIntersectFilterFunction(rtcgeometry, nullptr);
+          // rtcSetGeometryIntersectFilterFunction(rtcboundary, nullptr);
+          // rtcCommitGeometry(rtcgeometry);
+          // rtcCommitGeometry(rtcboundary);
+          // compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
+        } else {
+          use_entire_areas_of_primitives_as_exposed(rtigeometry, hitAccumulator);
+        }
+        RLOG_TRACE << "after area calc" << std::endl << std::flush;
+      }
+      // Assertion: hitAccumulator is reduced to one instance by openmp reduction
+
+      result.timeNanoseconds = timer.elapsed_nanoseconds();
+      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<numeric_type> >(hitAccumulator);
+
+      return result;
+    }
+
+    template<typename parameter_type>
+    rti::trace::result<numeric_type>
+    run_adaptive_aux
+    (std::vector<parameter_type> relativeerrors, parameter_type rethreshold, size_t numprerays, size_t numrays)
+    {
+      // Prepare a data structure for the result.
+      auto result = rti::trace::result<numeric_type> {};
+      result.inputFilePath = rtigeometry.get_input_file_path();
+      result.geometryClassName = boost::core::demangle(typeid(rtigeometry).name());
+      result.tracerFunctionName = BOOST_CURRENT_FUNCTION;
+
+      result.numRays = numrays;
+
+      auto reflectionModel = rti::reflection::diffuse<numeric_type> {};
+      auto boundaryReflection = rti::reflection::specular<numeric_type> {};
+
+      auto geohitc = 0ull;
+      auto nongeohitc = 0ull;
+      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<numeric_type> {rtigeometry.get_num_primitives()};
+
+      // vector of pairs of source sample points and "energy" delivered to the surface.
+      auto relevantSourceSamples = std::vector<std::pair<rti::util::triple<float>, double> > {};
+      auto maxrelevantsourcesamplessizeperthread = (size_t) (4 * 1024 / omp_get_max_threads()); // per thread
+
+      #pragma omp declare \
+        reduction(hit_accumulator_combine : \
+                  rti::trace::hit_accumulator_with_checks<numeric_type> : \
+                  omp_out = rti::trace::hit_accumulator_with_checks<numeric_type>(omp_out, omp_in)) \
+        initializer(omp_priv = rti::trace::hit_accumulator_with_checks<numeric_type>(omp_orig))
+      #pragma omp declare \
+        reduction(merge_vectors : \
+                  decltype(relevantSourceSamples) : \
+                  omp_out.insert(omp_out.end(), omp_in.begin(), omp_in.end())) \
+        initializer(omp_priv = omp_orig)
+
+      // The random number generator itself is stateless (has no members which
+      // are modified). Hence, it may be shared by threads.
+      // auto rng = std::make_unique<rti::rng::cstdlib_rng>();
+      auto rng = std::make_unique<rti::rng::mt64_rng>();
+
+      std::cout << "Starting stop watch" << std::endl;
+      auto timer = rti::util::timer {};
+
+      /*** Sample to find relevant area of the source ***/
+      #pragma omp parallel \
+        reduction(merge_vectors : relevantSourceSamples)
+      {
+        // Thread local data goes here, if it is not needed anymore after the execution of the parallel region.
+        alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+        // REMARK: All data which is modified in the parallel loop should be
+        // handled here explicitely.
+        auto seed = (unsigned int) ((omp_get_thread_num() + 1) * 29); // multiply by magic number (prime)
+        // It seems really important to use two separate seeds / states for
+        // sampling the source and sampling reflections. When we use only one
+        // state for both, then the variance is very high.
+        auto rngSeed1 = std::make_unique<rti::rng::mt64_rng::state>(seed);
+        auto rngSeed2 = std::make_unique<rti::rng::mt64_rng::state>(seed+2);
+
+        // A dummy counter for the boundary
+        auto boundaryCntr = rti::trace::dummy_counter {};
+
+        // thread-local particle
+        auto particle = particlefactory.create();
+
+        // We will attach our data to the memory immediately following the context as described
+        // in https://www.embree.org/api.html#rtcinitintersectcontext .
+        // Note: the memory layout only works with plain old data, that is, C-style structs.
+        // Otherwise the compiler might change the memory layout, e.g., with the vtable.
+        auto rtiContext = mFactory.get_new_context(geometryID, rtigeometry, reflectionModel,
+                                                   hitAccumulator, boundaryID, mBoundary,
+                                                   boundaryReflection, *rng, *rngSeed2,
+                                                   *particle);
+
+        // Initialize (also takes care for the initialization of the Embree context)
+        rtiContext->init();
+
+        // Estimate the distribution
+        rtiContext->set_initial_ray_weight(1); // standard weight for a ray
+        size_t raycnt = 0;
+        #pragma omp for
+        for (size_t idx = 0; idx < (unsigned long long int) numprerays; ++idx) {
+
+          // Note: Embrees backface culling does not solve our problem of intersections
+          // when starting a new ray very close to or a tiny bit below the surface.
+          // For that reason we set tnear to some value.
+          // There is a risk though: when setting tnear to some strictly positive value
+          // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
+
+          particle->init_new();
+          // prepare our custom ray tracing context
+          rtiContext->init_ray_weight();
+
+          RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
+          // TODO: FIX: tnear set to a constant
+          mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
+          auto rayOriginCopy = rti::util::triple<float>
+            {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
+
+          //RAYSRCLOG(rayhit);
+
+          // std::cout
+          //   << "new ray == ("
+          //   << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+          //   << ") ("
+          //   << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+          //   << ")" << std::endl << std::flush;
 
 
+          //if_RLOG_PROGRESS_is_set_print_progress(raycnt, numprerays);
 
-          // Estimate the distribution
-          rtiContext->set_initial_ray_weight(1); // standard weight for a ray
-          size_t raycnt = 0;
-          size_t numprerays = 32 * 1024;
-          //#pragma omp for
-          for (size_t idx = 0; idx < (unsigned long long int) numprerays; ++idx) {
+          auto reflect = false;
+          auto sumOfRelevantValuesDroped = 0.0;
+          do {
+            RLOG_DEBUG
+              << "preparing ray == ("
+              << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
+              << ") ("
+              << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
+              << ")" << std::endl;
 
-            // Note: Embrees backface culling does not solve our problem of intersections
-            // when starting a new ray very close to or a tiny bit below the surface.
-            // For that reason we set tnear to some value.
-            // There is a risk though: when setting tnear to some strictly positive value
-            // we depend on the length of the direction vector of the ray (rayhit.ray.dir_X).
+            rayhit.ray.tfar = std::numeric_limits<numeric_type>::max();
 
-            particle->init_new();
-            // prepare our custom ray tracing context
-            rtiContext->init_ray_weight();
-
-            RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
-            // TODO: FIX: tnear set to a constant
-            mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
-            auto rayOriginCopy = rti::util::triple<float>
-              {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
-
-            //RAYSRCLOG(rayhit);
-            pointLogBuff = rayOriginCopy;
-            rayLogBuff.clear();
-
-            // std::cout
-            //   << "new ray == ("
-            //   << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
-            //   << ") ("
-            //   << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
-            //   << ")" << std::endl << std::flush;
+            // Runn the intersection
+            rtiContext->intersect1(scene, rayhit);
 
 
-            //if_RLOG_PROGRESS_is_set_print_progress(raycnt, numprerays);
-
-            auto reflect = false;
-            auto sumOfRelevantValuesDroped = 0.0;
-            do {
-              RLOG_DEBUG
-                << "preparing ray == ("
-                << rayhit.ray.org_x << " " << rayhit.ray.org_y << " " << rayhit.ray.org_z
-                << ") ("
-                << rayhit.ray.dir_x << " " << rayhit.ray.dir_y << " " << rayhit.ray.dir_z
-                << ")" << std::endl;
-
-              rayhit.ray.tfar = std::numeric_limits<numeric_type>::max();
-
-              // Runn the intersection
-              rtiContext->intersect1(scene, rayhit);
-
-
-              if (rayhit.hit.geomID == geometryID) {
-                auto hitprimID = (dynamic_cast<rti::trace::point_cloud_context<numeric_type>*>
-                                  (rtiContext.get())->mGeoHitPrimIDs)[0];
-                if (geo.get_relevance(hitprimID)) {
-                  sumOfRelevantValuesDroped +=
-                    rtiContext.get()->get_value_of_last_intersect_call();
-                }
-              }
-
-              { // Debug
-                //RAYLOG(rayhit, rtiContext->tfar);
-                auto p1 = rti::util::triple<float> {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
-                auto tfar_ = (float) (rtiContext->tfar > 10 ? 10.0f : rtiContext->tfar);
-                auto p2 = rti::util::triple<float> {p1[0] + tfar_ * rayhit.ray.dir_x,
-                                                    p1[1] + tfar_ * rayhit.ray.dir_y,
-                                                    p1[2] + tfar_ * rayhit.ray.dir_z};
-                rayLogBuff.push_back({p1, p2});
-              }
-
-              reflect = rtiContext->reflect;
-              auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
-                                                               rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
-                                                               rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
-              RLOG_DEBUG
-                << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
-                << " reflect == " << (reflect ? "true" : "false")  << std::endl;
-
-              // ATTENTION tnear is set in another function, too! When the ray starts from the source, then
-              // the source class also sets tnear!
-              auto tnear = 1e-4f; // float
-              // Same holds for time
-              auto time = 0.0f; // float
-              // reinterpret_cast<__m128&>(rayhit.ray) = _mm_load_ps(vara);
-              // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
-
-              reinterpret_cast<__m128&>(rayhit.ray) =
-                _mm_set_ps(tnear,
-                           (float) rtiContext->rayout[0][2],
-                           (float) rtiContext->rayout[0][1],
-                           (float) rtiContext->rayout[0][0]);
-              reinterpret_cast<__m128&>(rayhit.ray.dir_x) =
-                _mm_set_ps(time,
-                           (float) rtiContext->rayout[1][2],
-                           (float) rtiContext->rayout[1][1],
-                           (float) rtiContext->rayout[1][0]);
-            } while (reflect);
-            assert(sumOfRelevantValuesDroped >= 0 && "Correctness Assumption");
-            if (sumOfRelevantValuesDroped > 0) {
-              relevantSourceSamples.push_back({rayOriginCopy, sumOfRelevantValuesDroped});
-              { // Debug
-                RTCRayHit rayhit2;
-                rayhit2.ray.org_x = pointLogBuff[0];
-                rayhit2.ray.org_y = pointLogBuff[1];
-                rayhit2.ray.org_z = pointLogBuff[2];
-                //RAYSRCLOG(rayhit2);
-                for (auto& seg : rayLogBuff) {
-                  rti::util::sRayLogVec.push_back(seg);
-                }
-                rayLogBuff.clear();
-              }
-              // std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
-              if (relevantSourceSamples.size() >= (4 * 1024)) {
-                break;
+            if (rayhit.hit.geomID == geometryID) {
+              auto hitprimID = (dynamic_cast<rti::trace::point_cloud_context<numeric_type>*>
+                                (rtiContext.get())->mGeoHitPrimIDs)[0];
+              if (relativeerrors[hitprimID] > rethreshold) {
+              // if (rtigeometry.get_relevance(hitprimID)) {
+                sumOfRelevantValuesDroped +=
+                  rtiContext->get_value_of_last_intersect_call();
               }
             }
-          }
-          // std::cout << std::endl; // for the progress bar
-          std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
-          gmm = compute_GMM_using_R(relevantSourceSamples);
-        }
 
+            // { // Debug
+            //   //RAYLOG(rayhit, rtiContext->tfar);
+            //   auto p1 = rti::util::triple<float> {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
+            //   auto tfar_ = (float) (rtiContext->tfar > 10 ? 10.0f : rtiContext->tfar);
+            //   auto p2 = rti::util::triple<float> {p1[0] + tfar_ * rayhit.ray.dir_x,
+            //                                       p1[1] + tfar_ * rayhit.ray.dir_y,
+            //                                       p1[2] + tfar_ * rayhit.ray.dir_z};
+            //   rayLogBuff.push_back({p1, p2});
+            // }
+
+            reflect = rtiContext->reflect;
+            auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
+                                                             rayhit.ray.org_y + rayhit.ray.dir_y * rtiContext->tfar,
+                                                             rayhit.ray.org_z + rayhit.ray.dir_z * rtiContext->tfar};
+            RLOG_DEBUG
+              << "tracer::run(): hit-point: " << hitpoint[0] << " " << hitpoint[1] << " " << hitpoint[2]
+              << " reflect == " << (reflect ? "true" : "false")  << std::endl;
+
+            // ATTENTION tnear is set in another function, too! When the ray starts from the source, then
+            // the source class also sets tnear!
+            auto tnear = 1e-4f; // float
+            // Same holds for time
+            auto time = 0.0f; // float
+            // reinterpret_cast<__m128&>(rayhit.ray) = _mm_load_ps(vara);
+            // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
+
+            reinterpret_cast<__m128&>(rayhit.ray) =
+              _mm_set_ps(tnear,
+                         (float) rtiContext->rayout[0][2],
+                         (float) rtiContext->rayout[0][1],
+                         (float) rtiContext->rayout[0][0]);
+            reinterpret_cast<__m128&>(rayhit.ray.dir_x) =
+              _mm_set_ps(time,
+                         (float) rtiContext->rayout[1][2],
+                         (float) rtiContext->rayout[1][1],
+                         (float) rtiContext->rayout[1][0]);
+          } while (reflect);
+          assert(sumOfRelevantValuesDroped >= 0 && "Correctness Assumption");
+          if (sumOfRelevantValuesDroped > 0) {
+            relevantSourceSamples.push_back({rayOriginCopy, sumOfRelevantValuesDroped});
+            // { // Debug
+            //   RTCRayHit rayhit2;
+            //   rayhit2.ray.org_x = pointLogBuff[0];
+            //   rayhit2.ray.org_y = pointLogBuff[1];
+            //   rayhit2.ray.org_z = pointLogBuff[2];
+            //   //RAYSRCLOG(rayhit2);
+            //   for (auto& seg : rayLogBuff) {
+            //     rti::util::sRayLogVec.push_back(seg);
+            //   }
+            //   rayLogBuff.clear();
+            // }
+            // std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
+
+            // if (relevantSourceSamples.size() >= (maxrelevantsourcesamplessizeperthread)) {
+            //   break;
+            // }
+          }
+        }
+      }
+      assert(omp_get_num_threads() == 1 && "Assertion to support code readability");
+      std::cerr << "relevantSourceSamples.size() == " <<  relevantSourceSamples.size() << std::endl << std::flush;
+      // Gaussian Mixture Model
+      //auto gmm = rti::util::pair<std::vector<double> > {};
+      auto gmm = compute_GMM_using_R(relevantSourceSamples);
+
+      /*** Do the adaptive (primary) sampling ***/
+
+      #pragma omp parallel \
+        reduction(+ : geohitc, nongeohitc) \
+        reduction(hit_accumulator_combine : hitAccumulator)
+      {
+        // Thread local data goes here, if it is not needed anymore after the execution of the parallel region.
+        alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+
+        // REMARK: All data which is modified in the parallel loop should be
+        // handled here explicitely.
+        auto seed = (unsigned int) ((omp_get_thread_num() + 1) * 29); // multiply by magic number (prime)
+        // It seems really important to use two separate seeds / states for
+        // sampling the source and sampling reflections. When we use only one
+        // state for both, then the variance is very high.
+        auto rngSeed1 = std::make_unique<rti::rng::mt64_rng::state>(seed);
+        auto rngSeed2 = std::make_unique<rti::rng::mt64_rng::state>(seed+2);
+
+        // A dummy counter for the boundary
+        auto boundaryCntr = rti::trace::dummy_counter {};
+
+        // thread-local particle
+        auto particle = particlefactory.create();
+
+        // We will attach our data to the memory immediately following the context as described
+        // in https://www.embree.org/api.html#rtcinitintersectcontext .
+        // Note: the memory layout only works with plain old data, that is, C-style structs.
+        // Otherwise the compiler might change the memory layout, e.g., with the vtable.
+        auto rtiContext = mFactory.get_new_context(geometryID, rtigeometry, reflectionModel,
+                                                   hitAccumulator, boundaryID, mBoundary,
+                                                   boundaryReflection, *rng, *rngSeed2,
+                                                   *particle);
+
+        // Initialize (also takes care for the initialization of the Embree context)
+        rtiContext->init();
 
         // The Cross Entropy Method for Optimization, Botev, Krose, Rubinstein, L'Ecuyer
         // In Handbook of statistics (Vol. 31, pp. 35-59). Elsevier.
@@ -655,30 +880,30 @@ namespace rti { namespace trace {
         auto c2 = orgdel[1];
         assert(c1[0] <= c2[0] && c1[1] <= c2[1] && "Assumption");
 
-        { // Debug
-          int tid = omp_get_thread_num();
-          #pragma omp barrier
-          if (tid == 0) {
-            std::cerr << "relevantSourceSamples.size() == " << relevantSourceSamples.size() << std::endl;
-            std::cerr << "means == {" << means(0) << ", " << means(1) << "}" << std::endl;
-            std::cerr << "variances == {" << covmat(0,0) << ", " << covmat(1,1) << "}" << std::endl;
-            std::cerr << "zval == " << zval
-                      << " c1 == {" << c1[0] << ", " << c1[1] << "}"
-                      << " c2 == {" << c2[0] << ", " << c2[1] << "}"
-                      << std::endl << std::flush;
-          }
-          #pragma omp barrier
-        }
+        // { // Debug
+        //   int tid = omp_get_thread_num();
+        //   #pragma omp barrier
+        //   if (tid == 0) {
+        //     std::cerr << "relevantSourceSamples.size() == " << relevantSourceSamples.size() << std::endl;
+        //     std::cerr << "means == {" << means(0) << ", " << means(1) << "}" << std::endl;
+        //     std::cerr << "variances == {" << covmat(0,0) << ", " << covmat(1,1) << "}" << std::endl;
+        //     std::cerr << "zval == " << zval
+        //               << " c1 == {" << c1[0] << ", " << c1[1] << "}"
+        //               << " c2 == {" << c2[0] << ", " << c2[1] << "}"
+        //               << std::endl << std::flush;
+        //   }
+        //   #pragma omp barrier
+        // }
 
         std::cerr << "Finished computation of sampling distribution" << std::endl << std::flush;
 
-        std::cerr << "Starting " << mNumRays << " rays" << std::endl;
+        std::cerr << "Starting " << numrays << " rays" << std::endl;
 
         auto raycnt = (size_t) 0;
         auto rejectedsamples = (size_t) 0;
-        auto cnt = 0u;
+        auto debugcnt = 0u;
         #pragma omp for
-        for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {
+        for (size_t idx = 0; idx < (unsigned long long int) numrays; ++idx) {
 
           // Note: Embrees backface culling does not solve our problem of intersections
           // when starting a new ray very close to or a tiny bit below the surface.
@@ -719,8 +944,8 @@ namespace rti { namespace trace {
               { // Debug
                 int tid = omp_get_thread_num();
                 if (tid == 0) {
-                  if (cnt < 128) {
-                    cnt += 1;
+                  if (debugcnt < 128) {
+                    debugcnt += 1;
                     std::cerr << "sample == {" << sx << ", " << sy << "}";
                     if ( !(c1[0] <= sx && sx <= c2[0] && c1[1] <= sy && sy <= c2[1])) {
                       std::cerr << " rejected";
@@ -761,7 +986,7 @@ namespace rti { namespace trace {
 
           RAYSRCLOG(rayhit);
 
-          if_RLOG_PROGRESS_is_set_print_progress(raycnt, mNumRays);
+          if_RLOG_PROGRESS_is_set_print_progress(raycnt, numrays);
 
           auto reflect = false;
           do {
@@ -824,13 +1049,13 @@ namespace rti { namespace trace {
             << "### WARNING ### Computing exposed area by sampling does not work"
             << "###############" << std::endl;
           // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
-          // rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
-          // rtcSetGeometryIntersectFilterFunction(boundary, nullptr);
-          // rtcCommitGeometry(geometry);
-          // rtcCommitGeometry(boundary);
+          // rtcSetGeometryIntersectFilterFunction(rtcgeometry, nullptr);
+          // rtcSetGeometryIntersectFilterFunction(rtcboundary, nullptr);
+          // rtcCommitGeometry(rtcgeometry);
+          // rtcCommitGeometry(rtcboundary);
           // compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
         } else {
-          use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
+          use_entire_areas_of_primitives_as_exposed(rtigeometry, hitAccumulator);
         }
         RLOG_TRACE << "after area calc" << std::endl << std::flush;
       }
@@ -840,9 +1065,6 @@ namespace rti { namespace trace {
       result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<numeric_type> >(hitAccumulator);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
-
-      rtcReleaseGeometry(geometry);
-      rtcReleaseGeometry(boundary);
 
       // auto raylog = RAYLOG_GET_PTR();
       // if (raylog != nullptr) {
@@ -859,11 +1081,20 @@ namespace rti { namespace trace {
 
       return result;
     }
+
   private:
     rti::geo::i_factory<numeric_type>& mFactory;
     rti::geo::i_boundary<numeric_type>& mBoundary;
     rti::ray::i_source& mSource;
-    size_t mNumRays;
     rti::particle::i_particle_factory<numeric_type>& particlefactory;
+
+    rti::geo::i_geometry<numeric_type>& rtigeometry;
+    RTCGeometry& rtcgeometry;
+    RTCGeometry& rtcboundary;
+    unsigned int geometryID = std::numeric_limits<unsigned int>::max(); // some initial value
+    unsigned int boundaryID = std::numeric_limits<unsigned int>::max(); // some initial value
+    RTCDevice& device;
+    RTCScene scene; // no pointer or reference. The instance is saved here.
+
   };
 }}
