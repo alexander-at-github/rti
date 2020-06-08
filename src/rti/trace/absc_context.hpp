@@ -81,7 +81,7 @@ namespace rti { namespace trace {
     {
       initialrayweight = iw;
     }
-  protected:
+  public:
     float get_initial_ray_weight()
     {
       return initialrayweight;

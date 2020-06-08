@@ -19,6 +19,20 @@ namespace rti { namespace util {
   template<typename Ty>
   using quadruple = std::array<Ty, 4>;
 
+  template<typename T0, typename T1, typename T2>
+  class tripleN {
+  private:
+    T0 i0;
+    T1 i1;
+    T2 i2;
+  public:
+    tripleN() {}
+    tripleN(T0 i0, T1 i1, T2 i2) : i0(i0), i1(i1), i2(i2) {}
+    T0& get0() { return i0; }
+    T1& get1() { return i1; }
+    T2& get2() { return i2; }
+  };
+
   // This function modifies the arguments when called
   template<typename Ty>
   triple<Ty> scale(Ty pF, triple<Ty>& pT)

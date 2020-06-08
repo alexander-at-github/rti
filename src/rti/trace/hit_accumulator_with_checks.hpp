@@ -124,6 +124,7 @@ namespace rti { namespace trace {
     // Member Functions
     void use(unsigned int pPrimID, numeric_type value) override final {
       assert(pPrimID < mAcc.size() && "primitive ID is out of bounds");
+      //std::cout << "ha.use(): pPrimID == " << pPrimID << " value == " << value << std::endl;
       mAcc[pPrimID] += (internal_numeric_type) value;
       mCnts[pPrimID] += 1;
       mTotalCnts += 1;
@@ -170,7 +171,7 @@ namespace rti { namespace trace {
         // This is an approximation of the relative error assuming sqrt(N-1) =~ sqrt(N)
         // For details and an exact formula see the book Exploring Monte Carlo Methods by Dunn and Shultis
         // page 83 and 84.
-        result[idx] = (internal_numeric_type) (std::sqrt(mS2s[idx] / s1square - 1 / mTotalCnts));
+        result[idx] = (internal_numeric_type) (std::sqrt(mS2s[idx] / s1square - 1.0 / mTotalCnts));
         // Debug
         // if (result[idx] != std::numeric_limits<internal_numeric_type>::max()) {
         //   std::cerr << "mCnts[idx] == " << mCnts[idx] << std::endl;

@@ -243,13 +243,16 @@ namespace rti { namespace trace {
       return {acc[0]/num, acc[1]/num};
     }
 
-    rti::util::pair<std::vector<double> >
+    std::vector<rti::util::tripleN<double, rti::util::pair<double>, rti::util::pair<double> > >
+    //std::vector<std::tuple<double, rti::util::pair<double>, rti::util::pair<double> > >
+    //rti::util::pair<std::vector<rti::util::pair<double> > >
     compute_GMM_using_R
     (std::vector<std::pair<rti::util::triple<float>, double> > sourcesamples)
     {
       auto argc = 0;
       auto argv = (char**) nullptr;
-      auto rplotfilename = "r-plot.eps";
+      auto rplotfilename1 = "r-plot_1.eps";
+      auto rplotfilename2 = "r-plot_2.eps";
       auto ri = RInside (argc, argv);
       assert (sourcesamples.size() <= std::numeric_limits<int>::max() && "Correctness Assumption");
       auto nrows = (int) sourcesamples.size();
@@ -284,50 +287,84 @@ namespace rti { namespace trace {
       auto idxofmax = std::max_element(rrr.begin(), rrr.end()) - rrr.begin();
       std::cout << "index of max element == " << idxofmax << std::endl;
 
-      auto numModelMixComponents = std::to_string(idxofmax + 1); // +1 because of 0-based indexing
+      auto numModelMixComponents = idxofmax + 1; // +1 because of 0-based indexing
+      std::cout << "Using " << numModelMixComponents << " bivariate Gaussians" << std::endl;
       auto densitycmdstr = std::string("density <- densityMclust(data, modelNames='") +
-                                       modelNames + "', G=" + numModelMixComponents + ", priorControl())";
+        modelNames + "', G=" + std::to_string(numModelMixComponents) + ", prior=priorControl())";
       std::cout << densitycmdstr << std::endl;
       ri.parseEvalQ(densitycmdstr);
 
+      std::cout << std::endl;
       ri.parseEvalQ("print(summary(density$parameters))");
-      ri.parseEvalQ("--\nprint(density$parameters$variance$sigma)");
+      std::cout << std::endl;
+      ri.parseEvalQ("print(density$parameters$pro)");
+      std::cout << std::endl;
+      ri.parseEvalQ("print(density$parameters$mean)");
+      std::cout << std::endl;
+      ri.parseEvalQ("print(density$parameters$variance$sigma)");
+
+      std::cout << "printing GMM to file " << rplotfilename1 << " and " <<rplotfilename2 << std::endl;
+      std::cout << "for the plot I am using hard-coded limits of the finstack geoemtry" << std::endl;
+      ri.parseEvalQ(
+         std::string("postscript('") + rplotfilename1 + "', horizontal=F, width=8, height=8, paper='special', onefile=F); \
+         plot(density, what='density', type='persp', xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));  \
+         dev.off();");
+      ri.parseEvalQ(
+         std::string("postscript('") + rplotfilename2 + "', horizontal=F, width=8, height=8, paper='special', onefile=F); \
+         plot(density, what='density', data=data, xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));  \
+         dev.off();");
+
+      auto result =
+        std::vector<rti::util::tripleN<double, rti::util::pair<double>, rti::util::pair<double> > > (numModelMixComponents);
+
+      std::cout << "HERE 0" << std::endl;
+      auto componentprobabilities = Rcpp::as<std::vector<double> > (ri.parseEval("density$parameters$pro"));
+      assert(componentprobabilities.size() == numModelMixComponents && "Correctness Assertion");
 
       std::cout << "HERE 1" << std::endl;
       auto means = Rcpp::as<arma::mat> (ri.parseEval("density$parameters$mean"));
-      assert(means.n_cols == 1 && "Correctness Assertion");
-      auto meansvec = std::vector<double> (means.n_rows, 0);
-      for (size_t idxr = 0; idxr < means.n_rows; ++idxr) {
-        meansvec[idxr] = means(idxr, 0);
-      }
+      assert(means.n_cols == numModelMixComponents && "Correctness Assertion");
+      assert(means.n_rows == 2 && "Assumption: Model has two dimensions");
+      // auto meansvec = std::vector<rti::util::pair<double> > (means.n_cols);
+      // for (size_t idxc = 0; idxc < means.n_cols; ++idxc) {
+      //   meansvec[idxc] = {means(0, idxc), means(1, idxc)};
+      // }
+
       std::cout << "HERE 2" << std::endl;
       auto variances = Rcpp::as<arma::cube> (ri.parseEval("density$parameters$variance$sigma"));
       //auto variances = Rcpp::as<arma::mat> (ri.parseEval("density$parameters$variance$sigma[,,1]")); // also works
       // Note that the ri[] syntax (as shown in the commented-out code below) does not work.
       //auto variances = Rcpp::as<arma::mat> (ri["density$parameters$variance$sigma[,,1]"]); // does not work!
       std::cout << "HERE 3" << std::endl;
-      assert(variances.n_slices == 1 && "Correctness Assertion");
+      assert(variances.n_slices == numModelMixComponents && "Correctness Assertion");
+      assert(variances.n_rows == 2 && variances.n_cols == 2 && "Assumption: Model has two dimensions");
       assert(variances.n_rows == variances.n_cols && "Correctness Assertion");
-      auto variancesvec = std::vector<double> (variances.n_rows, 0);
-      for (size_t idxr = 0; idxr < variances.n_rows; ++idxr) {
-        for (size_t idxc = 0; idxc < variances.n_cols; ++idxc) {
-          if (idxr == idxc) {
-            variancesvec[idxr] = variances(idxr, idxc, 0);
-            continue;
-          }
-          assert(variances(idxr, idxc, 0) == 0 && "Correctness Assertion");
-        }
+      // auto variancesvec = std::vector<rti::util::pair<double> > (variances.n_slices);
+      // // for (size_t idxr = 0; idxr < variances.n_rows; ++idxr) {
+      // //   for (size_t idxc = 0; idxc < variances.n_cols; ++idxc) {
+      // //     if (idxr == idxc) {
+      // //       variancesvec[idxr] = variances(idxr, idxc, 0);
+      // //       continue;
+      // //     }
+      // //     assert(variances(idxr, idxc, 0) == 0 && "Correctness Assertion");
+      // //   }
+      // // }
+      // for (size_t idxs = 0; idxs < variances.n_slices; ++idxs) {
+      //   assert(variances(0, 1, idxs) == 0 && variances(1, 0, idxs) == 0 && "Correctness Assertion");
+      //   variancesvec[idxs] = {variances(0, 0, idxs), variances(1, 1, idxs)};
+      // }
+      for(size_t idx = 0; idx < numModelMixComponents; ++idx) {
+        assert(variances(0, 1, idx) == 0 && variances(1, 0, idx) == 0 && "Correctness Assertion; VVI model");
+        result[idx] = {componentprobabilities[idx],
+                       {means(0, idx), means(1, idx)},
+                       // Note: We are saving the variance here. Not the standatd deviation.
+                       {variances(0, 0, idx), variances(1, 1, idx)}};
       }
 
-      std::cout << "printing GMM to file " << rplotfilename << std::endl;
-      std::cout << "for the plot I am using hard-coded limits of the finstack geoemtry" << std::endl;
-      ri.parseEvalQ(
-         std::string("postscript('") + rplotfilename + "', horizontal=F, width=4, height=4, paper='special', onefile=F); \
-         plot(density, what='density', xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));  \
-         dev.off();");
-
       std::cerr << "DONE WITH THE R STUFF" << std::endl;
-      return {meansvec, variancesvec};
+      return result;
+      // return {meansvec, variancesvec};
+      //return {std::vector<double> {}, std::vector<double> {}};
 
       // std::string mclustfitcmd = "library(mclust); density <- densityMclust(data, prior=priorControl(), modelNames='VVI');";
       // std::string getmeancmd = "density$parameters$mean;";
@@ -367,8 +404,8 @@ namespace rti { namespace trace {
     run_adaptive
     (std::vector<parameter_type> relativeerrors, size_t numrays)
     {
-      auto rethreshold = (parameter_type) 0.1;
-      auto numprerays = (size_t) (32 * 1024);
+      auto rethreshold = (parameter_type) 0.2;
+      auto numprerays = (size_t) (128 * 1024);
       std::cout << "Adaptive source sampling: using " << rethreshold << " as threshold on the relative error." << std::endl;
       try {
         return run_adaptive_aux(relativeerrors, rethreshold, numprerays, numrays);
@@ -476,6 +513,7 @@ namespace rti { namespace trace {
 
         // Initialize (also takes care for the initialization of the Embree context)
         rtiContext->init();
+        rtiContext->set_initial_ray_weight(1); // standard weight for a ray
 
         std::cerr << "Starting " << numrays << " rays in " << BOOST_CURRENT_FUNCTION << std::endl;
 
@@ -496,8 +534,9 @@ namespace rti { namespace trace {
           RLOG_DEBUG << "NEW: Preparing new ray from source" << std::endl;
           // TODO: FIX: tnear set to a constant
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
+          rtiContext->init_ray_weight();
 
-          RAYSRCLOG(rayhit);
+          //RAYSRCLOG(rayhit);
 
           if_RLOG_PROGRESS_is_set_print_progress(raycnt, numrays);
 
@@ -515,7 +554,7 @@ namespace rti { namespace trace {
             // Runn the intersection
             rtiContext->intersect1(scene, rayhit);
 
-            RAYLOG(rayhit, rtiContext->tfar);
+            //RAYLOG(rayhit, rtiContext->tfar);
 
             reflect = rtiContext->reflect;
             auto hitpoint = rti::util::triple<numeric_type> {rayhit.ray.org_x + rayhit.ray.dir_x * rtiContext->tfar,
@@ -782,6 +821,31 @@ namespace rti { namespace trace {
       //auto gmm = rti::util::pair<std::vector<double> > {};
       auto gmm = compute_GMM_using_R(relevantSourceSamples);
 
+      // Prepare distributions from GMM
+      auto numMixtureComponents = gmm.size();
+      auto mixtureprobabilities = std::vector<numeric_type> (numMixtureComponents);
+      auto gaussdists = std::vector<rti::util::pair<std::normal_distribution<numeric_type> > > (numMixtureComponents);
+      auto gaussdistsArma = std::vector<rti::util::pair<arma::mat> > (numMixtureComponents);
+      for (size_t idx = 0; idx < gmm.size(); ++idx) {
+        auto probability = gmm[idx].get0();
+        auto mean = gmm[idx].get1();
+        auto variance = gmm[idx].get2();
+        mixtureprobabilities[idx] = probability;
+        /*****************************************************************************/
+        /*  Note: std::normal_distribution takes a standard deviation! Not variance! */
+        /*****************************************************************************/
+        gaussdists[idx] =
+          {std::normal_distribution<numeric_type> {(numeric_type) mean[0], (numeric_type) std::sqrt(variance[0])},
+           std::normal_distribution<numeric_type> {(numeric_type) mean[1], (numeric_type) std::sqrt(variance[1])}};
+        gaussdistsArma[idx][0] = arma::mat {2, 1}; // 2x1 matrix
+        gaussdistsArma[idx][0] << mean[0] << arma::endr << mean[1] << arma::endr;
+        gaussdistsArma[idx][1] = arma::mat {2, 2};
+        gaussdistsArma[idx][1] << variance[0] << 0.0 << arma::endr << 0.0 << variance[1] << arma::endr;
+      }
+      auto mixdist = std::discrete_distribution<int>
+        (mixtureprobabilities.begin(), mixtureprobabilities.end()); // int is the type of the result
+      std::cerr << "Finished computation of sampling distribution" << std::endl << std::flush;
+
       /*** Do the adaptive (primary) sampling ***/
 
       #pragma omp parallel \
@@ -799,6 +863,8 @@ namespace rti { namespace trace {
         // state for both, then the variance is very high.
         auto rngSeed1 = std::make_unique<rti::rng::mt64_rng::state>(seed);
         auto rngSeed2 = std::make_unique<rti::rng::mt64_rng::state>(seed+2);
+        auto rngSeed3 = std::make_unique<rti::rng::mt64_rng::state>(seed+4);
+        auto rng3 = std::make_unique<std::mt19937_64>(); // default seed
 
         // A dummy counter for the boundary
         auto boundaryCntr = rti::trace::dummy_counter {};
@@ -861,17 +927,6 @@ namespace rti { namespace trace {
         // T rmvnorm(const T& mu_par, const T& Sigma_par, const bool pre_chol = false);
         //auto onesample = stats::rmvnorm<std::array<double, 2> >(coordmean, coordvariance);
 
-        auto meansvec = gmm[0];
-        auto variancesvec = gmm[1];
-
-        // auto means = arma::zeros(2,1);
-        auto means = arma::mat {2,1};
-        means << meansvec[0] << arma::endr
-              << meansvec[1] << arma::endr;
-        auto covmat = arma::mat {2,2};
-        covmat << variancesvec[0] << 0.0 << arma::endr
-               << 0.0 << variancesvec[1] << arma::endr;
-        // auto onesample = stats::rmvnorm (means, covmat);
         auto csrcp = dynamic_cast<rti::ray::source<numeric_type>*>(&mSource);
         auto recorgp = dynamic_cast<rti::ray::rectangle_origin_z<numeric_type>*>(&csrcp->get_origin());
         auto zval = recorgp->get_z_val();
@@ -895,8 +950,6 @@ namespace rti { namespace trace {
         //   #pragma omp barrier
         // }
 
-        std::cerr << "Finished computation of sampling distribution" << std::endl << std::flush;
-
         std::cerr << "Starting " << numrays << " rays" << std::endl;
 
         auto raycnt = (size_t) 0;
@@ -918,7 +971,7 @@ namespace rti { namespace trace {
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
 
           { // Adaptive sampling
-            auto rng = dynamic_cast<rti::rng::mt64_rng::state*>(rngSeed1.get())->get_mt19937_64_ptr();
+            //auto rng3 = dynamic_cast<rti::rng::mt64_rng::state*>(rngSeed3.get())->get_mt19937_64_ptr();
             // TODO: There does not seem to be a way to use your own RNG for
             // MVN distributions.
             do {
@@ -932,11 +985,16 @@ namespace rti { namespace trace {
               // auto sx_ = sample(0);
               // auto sy_ = sample(1);
 
-              auto xdist = std::normal_distribution<numeric_type> {(numeric_type) meansvec[0], (numeric_type) variancesvec[0]};
-              auto ydist = std::normal_distribution<numeric_type> {(numeric_type) meansvec[1], (numeric_type) variancesvec[1]};
-              auto sx = xdist(*rng);
-              auto sy = ydist(*rng);
-              // TODO create the sample variable
+              auto mixidx = mixdist(*rng3);
+              assert(0 <= mixidx && mixidx <= numMixtureComponents && "Correctness Assertion");
+
+              // auto xdist = std::normal_distribution<numeric_type> {(numeric_type) meansvec[0], (numeric_type) variancesvec[0]};
+              // auto ydist = std::normal_distribution<numeric_type> {(numeric_type) meansvec[1], (numeric_type) variancesvec[1]};
+              auto xdist = gaussdists[mixidx][0];
+              auto ydist = gaussdists[mixidx][1];
+              auto sx = xdist(*rng3);
+              auto sy = ydist(*rng3);
+
               auto sample = arma::mat(2,1); // number of rows and number of columns
               sample(0,0) = sx;
               sample(1,0) = sy;
@@ -944,9 +1002,9 @@ namespace rti { namespace trace {
               { // Debug
                 int tid = omp_get_thread_num();
                 if (tid == 0) {
-                  if (debugcnt < 128) {
+                  if (debugcnt < 1024) {
                     debugcnt += 1;
-                    std::cerr << "sample == {" << sx << ", " << sy << "}";
+                    std::cerr << "debugcnt == " << debugcnt << " sample == {" << sx << ", " << sy << "}";
                     if ( !(c1[0] <= sx && sx <= c2[0] && c1[1] <= sy && sy <= c2[1])) {
                       std::cerr << " rejected";
                     }
@@ -966,19 +1024,29 @@ namespace rti { namespace trace {
               //std::cerr << "just before break" << std::endl;
 
               // Compute weight for unbiasing
-              auto dmvNorm = stats::dmvnorm(sample, means, covmat);
-              auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
+              //auto dmvNorm = stats::dmvnorm(sample, means, covmat);
+              auto dmvNorm = stats::dmvnorm(sample, gaussdistsArma[mixidx][0], gaussdistsArma[mixidx][1]);
+              //auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
               // prepare our custom ray tracing context
-              auto rayweight = dmvUniv / dmvNorm;
+              auto rayweight = (1.0 / mixtureprobabilities[mixidx]) / dmvNorm;
               rtiContext->set_initial_ray_weight(rayweight);
               rtiContext->init_ray_weight();
               // We need to fix the weight / bias LATER for the truncation of the truncated
               // multivariate normal distribution. (dmvNorm is too small).
 
-              // std::cerr
-              //   << "dmvNorm == " << dmvNorm << std::endl
-              //   << "dmvUniv == " << dmvUniv << std::endl
-              //   << "rayWeight (ratio U/N) == " << rtiContext->rayWeight << std::endl;
+              { // Debug
+                int tid = omp_get_thread_num();
+                if (tid == 0) {
+                  if (debugcnt < 1024) {
+                    std::cerr
+                      << "dmvNorm == " << dmvNorm << " "
+                      << "mixtureprobability == " << mixtureprobabilities[mixidx] << " "
+                      << "rayweight == " << rtiContext->get_initial_ray_weight() << std::endl;
+                    //   << "dmvUniv == " << dmvUniv << std::endl
+                    //   << "rayWeight (ratio U/N) == " << rtiContext->rayWeight << std::endl;
+                  }
+                }
+              }
               break;
             } while (true);
           }

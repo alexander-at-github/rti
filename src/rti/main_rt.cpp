@@ -277,11 +277,12 @@ int main(int argc, char* argv[]) {
   auto result = rti::trace::result<numeric_type> {};
   {// NEW
     auto numrays_firstphase = 8 * 1024 * 1024;
-    auto numrays_secondphase = 8 * 1024 * 1024;
+    auto numrays_secondphase = 1024; //8 * 1024 * 1024;
     std::cout << "Using a fixed numeber of rays of " << numrays_firstphase << " + " << numrays_secondphase << std::endl;
     auto tracer = rti::trace::tracer<numeric_type>
       {*geoFactory, boundary, source, particlefactory};
     auto result_firstphase = tracer.run_plain(numrays_firstphase);
+    geoFactory->write_to_file(*result_firstphase.hitAccumulator, "first_phase_results.vtp", {});
     auto errors = result_firstphase.hitAccumulator->get_relative_error();
     auto result_secondphase = tracer.run_adaptive(errors, numrays_secondphase);
     tracer.destroy_data();
