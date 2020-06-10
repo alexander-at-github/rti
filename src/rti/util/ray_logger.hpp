@@ -10,7 +10,7 @@
 
 namespace rti { namespace util {
 //
-#define RAYLOG_ON
+//#define RAYLOG_ON
 #define RAYSRCLOG_ON
 
   // vector of 3D line segments

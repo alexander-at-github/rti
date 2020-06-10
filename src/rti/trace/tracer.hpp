@@ -664,6 +664,8 @@ namespace rti { namespace trace {
 
       /*** Sample to find relevant area of the source ***/
       #pragma omp parallel \
+        reduction(+ : geohitc, nongeohitc)                  \
+        reduction(hit_accumulator_combine : hitAccumulator) \
         reduction(merge_vectors : relevantSourceSamples)
       {
         // Thread local data goes here, if it is not needed anymore after the execution of the parallel region.
@@ -848,6 +850,9 @@ namespace rti { namespace trace {
 
       /*** Do the adaptive (primary) sampling ***/
 
+      // Using a new hit accumulator
+      hitAccumulator = rti::trace::hit_accumulator_with_checks<numeric_type> {rtigeometry.get_num_primitives()};
+
       #pragma omp parallel \
         reduction(+ : geohitc, nongeohitc) \
         reduction(hit_accumulator_combine : hitAccumulator)
@@ -1024,26 +1029,26 @@ namespace rti { namespace trace {
               //std::cerr << "just before break" << std::endl;
 
               // Compute weight for unbiasing
-              //auto dmvNorm = stats::dmvnorm(sample, means, covmat);
-              auto dmvNorm = stats::dmvnorm(sample, gaussdistsArma[mixidx][0], gaussdistsArma[mixidx][1]);
+              auto probgmm = 0.0;
+              for(size_t idx = 0; idx < numMixtureComponents; ++idx) {
+                auto pnorm = rti::util::normal_pdf_2d
+                  (rti::util::pair<double> {sample(0), sample(1)},
+                   rti::util::pair<double> {gaussdistsArma[idx][0](0), gaussdistsArma[idx][0](1)},
+                   rti::util::pair<double> {gaussdistsArma[idx][1](0,0), gaussdistsArma[idx][1](1,1)});
+                probgmm += mixtureprobabilities[mixidx] * pnorm;
+              }
               //auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
-              // prepare our custom ray tracing context
-              auto rayweight = (1.0 / mixtureprobabilities[mixidx]) / dmvNorm;
+              auto rayweight = 1.0 / probgmm;
               rtiContext->set_initial_ray_weight(rayweight);
               rtiContext->init_ray_weight();
-              // We need to fix the weight / bias LATER for the truncation of the truncated
-              // multivariate normal distribution. (dmvNorm is too small).
 
               { // Debug
                 int tid = omp_get_thread_num();
                 if (tid == 0) {
                   if (debugcnt < 1024) {
                     std::cerr
-                      << "dmvNorm == " << dmvNorm << " "
-                      << "mixtureprobability == " << mixtureprobabilities[mixidx] << " "
+                      << "probgmm == " << probgmm << " "
                       << "rayweight == " << rtiContext->get_initial_ray_weight() << std::endl;
-                    //   << "dmvUniv == " << dmvUniv << std::endl
-                    //   << "rayWeight (ratio U/N) == " << rtiContext->rayWeight << std::endl;
                   }
                 }
               }
@@ -1116,6 +1121,7 @@ namespace rti { namespace trace {
             << "###############"
             << "### WARNING ### Computing exposed area by sampling does not work"
             << "###############" << std::endl;
+          assert(false && "Correctness Assertion");
           // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
           // rtcSetGeometryIntersectFilterFunction(rtcgeometry, nullptr);
           // rtcSetGeometryIntersectFilterFunction(rtcboundary, nullptr);

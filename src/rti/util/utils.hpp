@@ -8,7 +8,7 @@
 namespace rti { namespace util {
 
   //constexpr double pi() { return std::atan(1)*4; }
-  constexpr auto pi = std::acos(-1);
+  constexpr auto pi = std::acos(-1.0);
 
   template<typename Ty>
   using pair = std::array<Ty, 2>;
@@ -238,5 +238,29 @@ namespace rti { namespace util {
     assert(std::abs(rti::util::dot_product(rr[2], rr[0])) < epsilon &&
            "Error in orthonormal basis computation");
     return rr;
-    }
+  }
+
+  template<typename numeric_type>
+  numeric_type
+  standard_normal_pdf_2d(rti::util::pair<numeric_type> xy)
+  {
+    constexpr static double inv_sqrt_2pi = 1.0 / (2 * rti::util::pi);
+    auto ee = xy[0] * xy[0] + xy[1] * xy[1];
+    return inv_sqrt_2pi * std::exp((numeric_type) -0.5 * ee);
+  }
+
+  // Note: For our purpose one actually would not need to compute the exact value of the pdf. Up to a constant
+  // factor would be enough.
+  template<typename numeric_type>
+  numeric_type
+  normal_pdf_2d
+  (rti::util::pair<numeric_type> xy, rti::util::pair<numeric_type> uu, rti::util::pair<numeric_type> var)
+  {
+    // var is equal sigma^2
+    auto normalize = [](auto xx, auto uu, auto var) { return (xx - uu) / std::sqrt(var); };
+    auto normalizedxy = rti::util::pair<numeric_type>
+      {normalize(xy[0], uu[0], var[0]), normalize(xy[1], uu[1], var[1])};
+    return (1/std::sqrt(var[0] * var[1])) * standard_normal_pdf_2d(normalizedxy);
+  }
+
 }}

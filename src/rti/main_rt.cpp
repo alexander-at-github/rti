@@ -276,8 +276,8 @@ int main(int argc, char* argv[]) {
 
   auto result = rti::trace::result<numeric_type> {};
   {// NEW
-    auto numrays_firstphase = 8 * 1024 * 1024;
-    auto numrays_secondphase = 1024; //8 * 1024 * 1024;
+    auto numrays_firstphase = 1 * 1024 * 1024;
+    auto numrays_secondphase = 1 * 1024 * 1024;
     std::cout << "Using a fixed numeber of rays of " << numrays_firstphase << " + " << numrays_secondphase << std::endl;
     auto tracer = rti::trace::tracer<numeric_type>
       {*geoFactory, boundary, source, particlefactory};
