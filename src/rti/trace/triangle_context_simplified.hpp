@@ -182,7 +182,7 @@ namespace rti { namespace trace {
 
     bool compute_exposed_areas_by_sampling() override final
     {
-      return true;
+      return false;
     }
   };
 }}
