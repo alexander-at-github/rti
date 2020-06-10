@@ -6,6 +6,7 @@ namespace rti { namespace trace {
   using rti::util::operator<<;
   template<typename numeric_type>
   class i_hit_accumulator {
+  protected:
     using internal_numeric_type = double;
   public:
     virtual ~i_hit_accumulator() {}
@@ -19,5 +20,6 @@ namespace rti { namespace trace {
     virtual std::vector<internal_numeric_type> get_exposed_areas() = 0;
     virtual void print(std::ostream& pOs) const = 0;
     virtual numeric_type get_total_energy_used() = 0;
+    virtual size_t get_size() = 0;
   };
 }}

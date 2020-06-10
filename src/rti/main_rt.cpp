@@ -41,6 +41,7 @@
 #include "rti/ray/source.hpp"
 #include "rti/ray/rectangle_origin_z.hpp"
 #include "rti/test_and_benchmark/test_result.hpp"
+#include "rti/trace/hit_accumulator_combination.hpp"
 #include "rti/trace/point_cloud_context_simplified.hpp"
 #include "rti/trace/tracer.hpp"
 #include "rti/trace/triangle_context_simplified.hpp"
@@ -287,7 +288,8 @@ int main(int argc, char* argv[]) {
     auto result_secondphase = tracer.run_adaptive(errors, numrays_secondphase);
     tracer.destroy_data();
 
-    result = std::move(result_secondphase);
+    result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_combination<numeric_type> >
+      (*result_firstphase.hitAccumulator, *result_secondphase.hitAccumulator);
   }// NEW END
 
   // { // OLD
@@ -319,7 +321,7 @@ int main(int argc, char* argv[]) {
       ([](auto p1, auto const p2){return (p1+=" ")+=p2;}, "", std::vector<std::string> (argv, argv+argc));
     std::cerr << "cmdstr == " << cmdstr << std::endl;
     geoFactory->write_to_file(*result.hitAccumulator, outfilename,
-                              {{"running-time[ns]", std::to_string(result.timeNanoseconds)},
+                              {{"running-time[ns]", "unknown"}, // std::to_string(result.timeNanoseconds)},
                                {"git-hash", rti::main_rt::get_git_hash()},
                                {"cmd", cmdstr},
                                // the following line does not really give you the most derived type. FIX

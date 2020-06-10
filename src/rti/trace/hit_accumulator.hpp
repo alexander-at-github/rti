@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "rti/trace/i_hit_accumulator.hpp"
 
 namespace rti { namespace trace {
@@ -42,7 +44,7 @@ namespace rti { namespace trace {
 
     // A copy constructor which can accumulate values from two instances
     hit_accumulator(hit_accumulator<numeric_type> const& pA1,
-                                hit_accumulator<numeric_type> const& pA2) :
+                    hit_accumulator<numeric_type> const& pA2) :
       // Precondition: the size of the accumulators are equal
       hit_accumulator(pA1) { // copy construct from the first argument
       assert(pA1.mCnts.size() == pA2.mCnts.size() &&
@@ -280,6 +282,12 @@ namespace rti { namespace trace {
     {
       return mTotalEnergy;
     }
+
+    size_t get_size() override final
+    {
+      return mS1s.size();
+    }
+
   private:
     std::vector<size_t> mCnts;
     size_t mTotalCnts;

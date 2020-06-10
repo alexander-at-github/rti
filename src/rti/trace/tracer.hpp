@@ -2,8 +2,8 @@
 
 //#define STATS_ENABLE_MATRIX_FEATURES
 //#define STATS_ENABLE_STDVEC_WRAPPERS
-#define STATS_ENABLE_ARMA_WRAPPERS
-#define STATS_GO_INLINE
+//#define STATS_ENABLE_ARMA_WRAPPERS
+//#define STATS_GO_INLINE
 //#define STATS_USE_OPENMP
 
 #include <boost/core/demangle.hpp>
@@ -16,7 +16,7 @@
 #include <embree3/rtcore.h>
 #include <RcppArmadillo.h>
 #include <RInside.h>
-#include <stats.hpp>
+//#include <stats.hpp>
 
 #include "rti/geo/absc_point_cloud_geometry.hpp"
 #include "rti/geo/i_boundary.hpp"

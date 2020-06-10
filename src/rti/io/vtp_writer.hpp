@@ -176,7 +176,7 @@ namespace rti { namespace io {
     {
       auto inareas = ac.get_exposed_areas();
       assert (polydata->GetNumberOfCells() == inareas.size() &&
-              "number of cells in polydata does not fit the number of exposec-area values");
+              "number of cells in polydata does not fit the number of exposed-area values");
       if (inareas.size() == 0)
         return;
       auto areas = vtkSmartPointer<vtkDoubleArray>::New();
