@@ -38,6 +38,7 @@ target_sources(tests
   PRIVATE
   rti/ray/rectangle_origin_z.cpp
   rti/ray/cosine_direction.cpp
+  rti/util/utils.cpp
   )
 target_include_directories(tests
   PRIVATE
