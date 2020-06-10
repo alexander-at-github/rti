@@ -4,6 +4,7 @@
 #include <vtkDoubleArray.h>
 #include <vtkLine.h>
 #include <vtkPoints.h>
+#include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkSmartPointer.h>
 #include <vtkStringArray.h>
@@ -28,7 +29,7 @@ namespace rti { namespace io {
                std::string pOutfilename,
                std::vector<rti::util::pair<std::string> >& pMetadata) {
       // Precondition:
-      assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
+      assert (pGeometry.get_num_primitives() == pHA.get_energy_values().size() &&
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
       add_hit_values_to_points(polydata, pHA);
@@ -46,7 +47,7 @@ namespace rti { namespace io {
                std::string pOutfilename,
                std::vector<rti::util::pair<std::string> >& pMetadata) {
       // Precondition:
-      assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
+      assert (pGeometry.get_num_primitives() == pHA.get_energy_values().size() &&
               "hit count accumulator does not fit the given geometry");
       auto polydata = get_polydata(pGeometry);
       add_hit_values_to_triangles(polydata, pHA);
@@ -73,7 +74,7 @@ namespace rti { namespace io {
     }
 
     static
-    void write(std::vector<rti::util::triple<Ty> >* pVec,
+    void write(std::vector<std::pair<rti::util::triple<Ty>, Ty> >* pVec,
                std::string pOutfilename) {
       auto polydata = get_polydata(*pVec);
       write(polydata, pOutfilename);
@@ -105,7 +106,7 @@ namespace rti { namespace io {
     static
     void add_hit_values_to_points(vtkSmartPointer<vtkPolyData> pPolydata,
                         rti::trace::i_hit_accumulator<Ty>& pAc) {
-      auto invalues = pAc.get_values();
+      auto invalues = pAc.get_energy_values();
       assert (pPolydata->GetNumberOfPoints() == invalues.size() &&
               "polydata does not fit the hit count accumulator");
       auto hitValues = vtkSmartPointer<vtkDoubleArray>::New();
@@ -115,7 +116,7 @@ namespace rti { namespace io {
         //if (invalues[idx] != 0) RLOG_DEBUG << "writing " << invalues[idx] << " to vtkPolyData" << std::endl;
         hitValues->InsertValue(idx, invalues[idx]);
       }
-      hitValues->SetName(valueStr);
+      hitValues->SetName(energyValueStr);
       pPolydata->GetCellData()->AddArray(hitValues);
     }
 
@@ -123,7 +124,7 @@ namespace rti { namespace io {
     static
     void add_hit_values_to_triangles(vtkSmartPointer<vtkPolyData> pPolydata,
                                      rti::trace::i_hit_accumulator<Ty>& pAc) {
-      auto invalues = pAc.get_values();
+      auto invalues = pAc.get_energy_values();
       assert (pPolydata->GetNumberOfCells() == invalues.size() &&
               "number of cells in polydata does not fit the hit counter accumulator");
       auto hitValues = vtkSmartPointer<vtkDoubleArray>::New();
@@ -132,7 +133,7 @@ namespace rti { namespace io {
       for (size_t idx = 0; idx < invalues.size(); ++idx) {
         hitValues->InsertValue(idx, invalues[idx]);
       }
-      hitValues->SetName(valueStr);
+      hitValues->SetName(energyValueStr);
       pPolydata->GetCellData()->AddArray(hitValues);
     }
 
@@ -388,20 +389,26 @@ namespace rti { namespace io {
     }
 
     static
-    vtkSmartPointer<vtkPolyData> get_polydata(
-        std::vector<rti::util::triple<float> >& pVec) {
+    vtkSmartPointer<vtkPolyData> get_polydata
+    (std::vector<std::pair<rti::util::triple<float>, float> >& pVec)
+    {
       auto pointsOut =vtkSmartPointer<vtkPoints>::New();
+      auto pointData = vtkSmartPointer<vtkDoubleArray>::New();
+      pointData->SetNumberOfComponents(1);
+      pointData->SetName("energy-of-sample-point");
       for (auto const& pointIn : pVec) {
-        pointsOut->InsertNextPoint(pointIn.data());
+        pointsOut->InsertNextPoint(pointIn.first.data());
+        pointData->InsertNextValue(pointIn.second);
       }
       auto polydata = vtkSmartPointer<vtkPolyData>::New();
       polydata->SetPoints(pointsOut);
+      polydata->GetPointData()->AddArray(pointData);
       return polydata;
     }
 
     static constexpr char const* radiusStr = "radius";
     static constexpr char const* exposedAreaStr = "exposed-area";
-    static constexpr char const* valueStr = "value";
+    static constexpr char const* energyValueStr = "energy-value";
     static constexpr char const* hitcntStr = "hitcnt";
     static constexpr char const* relativeErrorStr = "relative-error";
     static constexpr char const* varOfVarStr = "variance-of-variance";

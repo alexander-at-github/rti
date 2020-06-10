@@ -163,7 +163,7 @@ namespace rti { namespace trace {
     //       rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
     //       source.fill_ray(rayhit.ray, rng, rngstate);
 
-    //       //RAYSRCLOG(rayhit);
+    //       //RAYSRCLOG(rayhit, rtiContext->get_initial_ray_weight());
 
     //       rtcIntersect1(scene, &context, &rayhit);
 
@@ -535,7 +535,7 @@ namespace rti { namespace trace {
           mSource.fill_ray(rayhit.ray, *rng, *rngSeed1); // fills also tnear!
           rtiContext->init_ray_weight();
 
-          //RAYSRCLOG(rayhit);
+          //RAYSRCLOG(rayhit, rtiContext->get_initial_ray_weight());
 
           if_RLOG_PROGRESS_is_set_print_progress(raycnt, numrays);
 
@@ -599,6 +599,7 @@ namespace rti { namespace trace {
             << "###############"
             << "### WARNING ### Computing exposed area by sampling does not work"
             << "###############" << std::endl;
+          assert(false && "Error");
           // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
           // rtcSetGeometryIntersectFilterFunction(rtcgeometry, nullptr);
           // rtcSetGeometryIntersectFilterFunction(rtcboundary, nullptr);
@@ -615,6 +616,7 @@ namespace rti { namespace trace {
       result.timeNanoseconds = timer.elapsed_nanoseconds();
       result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator<numeric_type> >(hitAccumulator);
 
+      std::cerr << "Leaving function " << BOOST_CURRENT_FUNCTION << std::endl;
       return result;
     }
 
@@ -623,6 +625,7 @@ namespace rti { namespace trace {
     run_adaptive_aux
     (std::vector<parameter_type> relativeerrors, parameter_type rethreshold, size_t numprerays, size_t numrays)
     {
+      RLOG_INFO << "Entering " << BOOST_CURRENT_FUNCTION << std::endl;
       // Prepare a data structure for the result.
       auto result = rti::trace::result<numeric_type> {};
       result.inputFilePath = rtigeometry.get_input_file_path();
@@ -719,7 +722,7 @@ namespace rti { namespace trace {
           auto rayOriginCopy = rti::util::triple<float>
             {rayhit.ray.org_x, rayhit.ray.org_y, rayhit.ray.org_z};
 
-          //RAYSRCLOG(rayhit);
+          //RAYSRCLOG(rayhit, rtiContext->get_initial_ray_weight());
 
           // std::cout
           //   << "new ray == ("
@@ -852,9 +855,14 @@ namespace rti { namespace trace {
       // Using a new hit accumulator
       hitAccumulator = rti::trace::hit_accumulator<numeric_type> {rtigeometry.get_num_primitives()};
 
+      auto minEnergyUsed = std::numeric_limits<double>::max();
+      auto maxEnergyUsed = 0.0;
+
       #pragma omp parallel \
         reduction(+ : geohitc, nongeohitc) \
-        reduction(hit_accumulator_combine : hitAccumulator)
+        reduction(hit_accumulator_combine : hitAccumulator) \
+        reduction(min: minEnergyUsed) \
+        reduction(max: maxEnergyUsed)
       {
         // Thread local data goes here, if it is not needed anymore after the execution of the parallel region.
         alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -1038,6 +1046,8 @@ namespace rti { namespace trace {
               }
               //auto dmvUniv = 1.0 / (((double) c2[0] - c1[0]) * ((double) c2[1] - c1[1]));
               auto rayweight = 1.0 / probgmm;
+              if (rayweight < minEnergyUsed) { minEnergyUsed = rayweight; }
+              if (rayweight > maxEnergyUsed) { maxEnergyUsed = rayweight; }
               rtiContext->set_initial_ray_weight(rayweight);
               rtiContext->init_ray_weight();
 
@@ -1056,7 +1066,7 @@ namespace rti { namespace trace {
           }
           //std::cerr << "HERE" << std::endl << std::flush;
 
-          RAYSRCLOG(rayhit);
+          RAYSRCLOG(rayhit, rtiContext->get_initial_ray_weight());
 
           if_RLOG_PROGRESS_is_set_print_progress(raycnt, numrays);
 
@@ -1151,6 +1161,11 @@ namespace rti { namespace trace {
       //   std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
       //   rti::io::vtp_writer<float>::write(raysrclog, raysrclogfilename);
       // }
+
+      RLOG_INFO
+      << "minEnergyUsed == " << minEnergyUsed
+      << " maxEnergyUsed == " << maxEnergyUsed
+      << " total energy used == " << result.hitAccumulator->get_total_energy_used() << std::endl;
 
       return result;
     }

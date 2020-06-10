@@ -16,7 +16,7 @@ namespace rti { namespace util {
   // vector of 3D line segments
   static auto sRayLogVec = std::vector<rti::util::pair<rti::util::triple<float> > > {};
   // vector of 3D points
-  static auto sPointLogVec = std::vector<rti::util::triple<float> > {};
+  static auto sPointLogVec = std::vector<std::pair<rti::util::triple<float>, float> > {};
   static constexpr auto sLineMaxLength = 64.f;
 
 #ifdef RAYLOG_ON
@@ -50,9 +50,9 @@ namespace rti { namespace util {
 
 
 #ifdef RAYSRCLOG_ON
-#define RAYSRCLOG(rh) \
+#define RAYSRCLOG(rh, energy)                          \
   { \
-  rti::util::sPointLogVec.push_back({rh.ray.org_x, rh.ray.org_y, rh.ray.org_z}); \
+    rti::util::sPointLogVec.push_back({{rh.ray.org_x, rh.ray.org_y, rh.ray.org_z}, energy}); \
   } \
   do {} while(false) // allows to put a semicolon after macro (without warnings)
 #else
@@ -66,7 +66,7 @@ namespace rti { namespace util {
   [](){return &rti::util::sPointLogVec;}()
 #else
 #define RAYSRCLOG_GET_PTR(rh) \
-  [](){return (std::vector<rti::util::triple<float> >*)  nullptr;}()
+  [](){return (std::vector<std::pair<rti::util::triple<float>, float> >*)  nullptr;}()
 #endif
 
 

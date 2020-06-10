@@ -7,11 +7,12 @@
 namespace rti { namespace util {
 // Set the log level by commenting the following lines out
 //
-//#define RLOG_LEVEL_INFO
-//#define RLOG_LEVEL_TRACE
+#define RLOG_LEVEL_INFO
+#define RLOG_LEVEL_TRACE
 //#define RLOG_LEVEL_DEBUG
 //#define RLOG_LEVEL_WARNING
 //#define RLOG_LEVEL_ERROR
+
 #define RLOG_LEVEL_PROGRESS
 
   // Set the logging destination here

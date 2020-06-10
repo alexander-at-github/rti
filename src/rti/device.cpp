@@ -112,15 +112,8 @@ namespace rti {
   std::vector<numeric_type>
   extract_mc_estimates(rti::trace::result<numeric_type>& traceresult)
   {
-    auto& hitacc = traceresult.hitAccumulator;
-    auto sums = hitacc->get_values();
-    auto cntssum = hitacc->get_cnts_sum();
-    auto mcestimates = std::vector<numeric_type> {};
-    mcestimates.reserve(sums.size());
-    for (size_t idx = 0; idx < sums.size(); ++idx) {
-      mcestimates.push_back(sums[idx] / cntssum);
-    }
-    return mcestimates;
+    auto rvec = traceresult.hitAccumulator->get_energy_values();
+    return std::vector<numeric_type>(rvec.begin(), rvec.end());
   }
 
   template<typename numeric_type>

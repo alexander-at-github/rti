@@ -181,9 +181,9 @@ namespace rti { namespace util {
 
   // A foldl for std::vector
   template<typename T1, typename T2>
-  static T1 foldl(std::function<T1 (T1&, T2 const&)> pF,
-                  T1 pT1,
-                  std::vector<T2> pT2)
+  static T1 foldl(std::function<T1 (T1&, T2 const&)> pF, // function
+                  T1 pT1, // initial value
+                  std::vector<T2> pT2) // vector to fold over
   {
     auto pT2Size = pT2.size(); // copy the size once into a separate memory location.
     return foldl_aux<T1,T2>(pF, pT1, pT2.data(), pT2Size);

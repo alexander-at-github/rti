@@ -133,14 +133,14 @@ namespace rti { namespace trace {
     void kill_the_ray()
     {
       this->reflect = false;
-      RLOG_TRACE << "K";
+      // RLOG_TRACE << "K";
     }
 
     template<typename numeric_type_o>
     void set_ray_weight_to_new_weight(numeric_type_o renewweight)
     {
       this->rayWeight = renewweight;
-      RLOG_TRACE << "S";
+      // RLOG_TRACE << "S";
     }
   };
 }}

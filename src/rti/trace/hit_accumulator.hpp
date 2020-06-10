@@ -11,9 +11,9 @@ namespace rti { namespace trace {
   public:
     // Constructors
     hit_accumulator(size_t pSize) :
-      mAcc(pSize, 0), // pSize number of elements initialized to 0.
-      mCnts(pSize, 0),
+      mCnts(pSize, 0), // pSize number of elements initialized to 0.
       mTotalCnts(0),
+      mTotalEnergy(0),
       exposedareas(pSize, 0),
       mS1s(pSize, 0),
       mS2s(pSize, 0),
@@ -21,9 +21,9 @@ namespace rti { namespace trace {
       mS4s(pSize,0) {}
 
     hit_accumulator(hit_accumulator<numeric_type> const& pA) :
-      mAcc(pA.mAcc), // copy construct the vector member
-      mCnts(pA.mCnts),
+      mCnts(pA.mCnts), // copy construct the vector member
       mTotalCnts(pA.mTotalCnts),
+      mTotalEnergy(pA.mTotalEnergy),
       exposedareas(pA.exposedareas),
       mS1s(pA.mS1s),
       mS2s(pA.mS2s),
@@ -31,9 +31,9 @@ namespace rti { namespace trace {
       mS4s(pA.mS4s) {}
 
     hit_accumulator(hit_accumulator<numeric_type> const&& pA) :
-      mAcc(std::move(pA.mAcc)), // move the vector member
-      mCnts(std::move(pA.mCnts)),
+      mCnts(std::move(pA.mCnts)), // move the vector member
       mTotalCnts(std::move(pA.mTotalCnts)),
+      mTotalEnergy(std::move(pA.mTotalEnergy)),
       exposedareas(std::move(exposedareas)),
       mS1s(std::move(pA.mS1s)),
       mS2s(std::move(pA.mS2s)),
@@ -45,15 +45,13 @@ namespace rti { namespace trace {
                                 hit_accumulator<numeric_type> const& pA2) :
       // Precondition: the size of the accumulators are equal
       hit_accumulator(pA1) { // copy construct from the first argument
-      assert(pA1.mAcc.size() == pA2.mAcc.size() &&
-             pA1.mCnts.size() == pA2.mCnts.size() &&
+      assert(pA1.mCnts.size() == pA2.mCnts.size() &&
              pA1.mS1s.size() == pA2.mS1s.size() &&
              pA1.mS2s.size() == pA2.mS2s.size() &&
              pA1.mS3s.size() == pA2.mS3s.size() &&
              pA1.mS4s.size() == pA2.mS4s.size() &&
              "Error: size missmatch");
-      for (size_t idx = 0; idx < mAcc.size(); ++idx) {
-        mAcc[idx] += pA2.mAcc[idx];
+      for (size_t idx = 0; idx < mS1s.size(); ++idx) {
         mCnts[idx] += pA2.mCnts[idx];
         mS1s[idx] += pA2.mS1s[idx];
         mS2s[idx] += pA2.mS2s[idx];
@@ -61,6 +59,7 @@ namespace rti { namespace trace {
         mS4s[idx] += pA2.mS4s[idx];
       }
       mTotalCnts = pA1.mTotalCnts + pA2.mTotalCnts;
+      mTotalEnergy = pA1.mTotalEnergy + pA2.mTotalEnergy;
       /* Assertions about the exposed areas saved in the input instances */
       assert(pA1.exposedareas.size() == pA2.exposedareas.size());
       assert(exposedareas.size() == pA1.exposedareas.size());
@@ -80,11 +79,10 @@ namespace rti { namespace trace {
     hit_accumulator<numeric_type>& operator=(hit_accumulator<numeric_type> const& pOther) {
       if (this != &pOther) {
         // copy from pOther to this
-        mAcc.clear();
-        mAcc = pOther.mAcc;
         mCnts.clear();
         mCnts = pOther.mCnts;
         mTotalCnts = pOther.mTotalCnts;
+        mTotalEnergy = pOther.mTotalEnergy;
         exposedareas.clear();
         exposedareas = pOther.exposedareas;
         mS1s.clear();
@@ -102,11 +100,10 @@ namespace rti { namespace trace {
     hit_accumulator<numeric_type>& operator=(hit_accumulator<numeric_type> const&& pOther) {
       if (this != &pOther) {
         // move from pOther to this
-        mAcc.clear();
-        mAcc = std::move(pOther.mAcc);
         mCnts.clear();
         mCnts = std::move(pOther.mCnts);
         mTotalCnts = pOther.mTotalCnts;
+        mTotalEnergy = pOther.mTotalEnergy;
         exposedareas.clear();
         exposedareas = std::move(pOther.exposedareas);
         mS1s.clear();
@@ -123,20 +120,32 @@ namespace rti { namespace trace {
 
     // Member Functions
     void use(unsigned int pPrimID, numeric_type value) override final {
-      assert(pPrimID < mAcc.size() && "primitive ID is out of bounds");
+      assert(pPrimID < mS1s.size() && "primitive ID is out of bounds");
       //std::cout << "ha.use(): pPrimID == " << pPrimID << " value == " << value << std::endl;
-      mAcc[pPrimID] += (internal_numeric_type) value;
       mCnts[pPrimID] += 1;
       mTotalCnts += 1;
-
+      mTotalEnergy += value;
       mS1s[pPrimID] += (internal_numeric_type) value;
       mS2s[pPrimID] += ((internal_numeric_type) value) * value;
       mS3s[pPrimID] += ((internal_numeric_type) value) * value * value;
       mS4s[pPrimID] += ((internal_numeric_type) value) * value * value * value;
     }
 
-    std::vector<internal_numeric_type> get_values() override final {
-      return mAcc;
+    std::vector<internal_numeric_type> get_energy_values() override final {
+      RLOG_TRACE << "Entering " << BOOST_CURRENT_FUNCTION << std::endl;
+      auto lte = mTotalEnergy;
+      auto resultvec = std::vector<internal_numeric_type> {};
+      resultvec.reserve(mS1s.size());
+      assert(resultvec.size() == 0 && "Correctness Assertion");
+      // rti::util::foldl<std::vector<internal_numeric_type>, internal_numeric_type>
+      //   ([&lte](auto& vec, auto const& value){ vec.push_back(value/lte); std::cerr << "*"; return vec;},
+      //    resultvec,
+      //    mS1s);
+      for (size_t idx = 0; idx < mS1s.size(); ++idx) {
+        resultvec.push_back(mS1s[idx] / mTotalEnergy);
+      }
+      RLOG_TRACE << "Leaving " << BOOST_CURRENT_FUNCTION << std::endl;
+      return resultvec;
     }
 
     std::vector<size_t> get_cnts() override final {
@@ -260,20 +269,22 @@ namespace rti { namespace trace {
       pOs << "(";
       auto const* separator = " ";
       auto const* sep       = "";
-      for (auto& vv : mAcc) {
+      for (auto& vv : mS1s) {
         pOs << sep << vv;
         sep = separator;
       }
       pOs << ")" << std::endl;
     }
+
+    numeric_type get_total_energy_used() override final
+    {
+      return mTotalEnergy;
+    }
   private:
-    std::vector<internal_numeric_type> mAcc;
     std::vector<size_t> mCnts;
     size_t mTotalCnts;
+    internal_numeric_type mTotalEnergy;
     std::vector<internal_numeric_type> exposedareas;
-
-    // actuall - for now - mAcc und mS1s do the same thing!
-    // We might want to remove one of them later.
 
     // S1 denotes the sum of sample values
     std::vector<internal_numeric_type> mS1s;
