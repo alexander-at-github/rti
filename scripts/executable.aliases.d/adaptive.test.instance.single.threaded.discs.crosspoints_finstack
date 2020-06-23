@@ -1,0 +1,9 @@
+#! /usr/bin/env bash
+
+/home/alexander/iue/cdr/rti/build/bin/rti \
+--discs \
+--sticking 0.2 \
+--number-of-rays 1000000 \
+--max-threads 1 \
+--infile /home/alexander/iue/test.instances.d/vtp/cdl_crosspoints_finstack.vtp \
+--outfile /home/alexander/iue/cdr/rti/build/output/cdl_crosspoints_finstack.vtp

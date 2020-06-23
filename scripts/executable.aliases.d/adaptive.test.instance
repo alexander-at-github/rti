@@ -5,6 +5,6 @@ set -x
 /home/alexander/iue/cdr/rti/build/bin/rti \
 --triangles \
 --sticking 0.2 \
---number-of-rays 100000000 \
+--number-of-rays 1000000 \
 --infile /home/alexander/iue/cdr/rti/resources/vtp/cavity.1.triangles.vtp \
 --outfile /home/alexander/iue/cdr/rti/build/output/cavity.1.triangles.vtp

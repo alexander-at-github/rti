@@ -46,10 +46,13 @@ namespace rti { namespace io {
       std::string sqrtOfAreaStr = "sqrt-of-area";
       celldata->SetActiveAttribute(sqrtOfAreaStr.c_str(), vtkDataSetAttributes::SCALARS);
       vtkSmartPointer<vtkDataArray> sqrtOfAreaArray = celldata->GetScalars();
-      if (sqrtOfAreaArray == nullptr) {
+      std::string radiusStr = "radius";
+      celldata->SetActiveAttribute(radiusStr.c_str(), vtkDataSetAttributes::SCALARS);
+      vtkSmartPointer<vtkDataArray> radiusArray = celldata->GetScalars();
+      if (sqrtOfAreaArray == nullptr && radiusArray == nullptr) {
         std::cerr
           << "Warning: " << boost::core::demangle(typeid(this).name())
-          << " could not find cell data with the name \"sqrt-of-area\" in the file "
+          << " could not find cell data with the name \"sqrt-of-area\" or \"radius\" in the file "
           << pFilename << std::endl;
       }
       vtkSmartPointer<vtkDataArray> normals = celldata->GetNormals();
@@ -62,10 +65,15 @@ namespace rti { namespace io {
         double xyz[3]; // 3 dimensions
         polydata->GetPoint(idx, xyz);
         double radius[1]; // 1 dimension
-        sqrtOfAreaArray->GetTuple(idx, radius);
         double radiusEpsilon = 1.0 / 32; // about 3%
-        // TODO: Is that correct?
-        radius[0] *= std::sqrt(3.0)/2 * (1 + radiusEpsilon);
+        if (radiusArray != nullptr) {
+          radiusArray->GetTuple(idx, radius);
+          radius[0] *= (1 + radiusEpsilon);
+        } else if (sqrtOfAreaArray != nullptr) {
+          sqrtOfAreaArray->GetTuple(idx, radius);
+          // TODO: Is that correct?
+          radius[0] *= std::sqrt(3.0)/2 * (1 + radiusEpsilon);
+        }
         rti::util::quadruple<Ty> point {(Ty) xyz[0], (Ty) xyz[1] , (Ty) xyz[2], (Ty) radius[0]};
         mPoints.push_back(point);
         double nxnynz[3];

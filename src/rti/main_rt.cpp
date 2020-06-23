@@ -208,19 +208,20 @@ int main(int argc, char* argv[]) {
   // Compute bounding box
   auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z axis.
-  auto epsilon = 0.02; //0.1; // -0.1;
+  // I think the epsilon should be as small as possible
+  auto epsilon = 0.1; //0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
     bdBox[0][2] += epsilon;
   } else {
     bdBox[1][2] += epsilon;
   }
-  // std::cerr << "ALTERING BOUNDING BOX" << std::endl;
-  // assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
-  // epsilon = 5;
-  // bdBox[0][0] -= epsilon;
-  // bdBox[1][0] += epsilon;
-  // bdBox[0][1] -= epsilon;
-  // bdBox[1][1] += epsilon;
+  std::cerr << "ALTERING BOUNDING BOX" << std::endl;
+  assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
+  epsilon = -0.2;
+  bdBox[0][0] -= epsilon;
+  bdBox[1][0] += epsilon;
+  bdBox[0][1] -= epsilon;
+  bdBox[1][1] += epsilon;
 
   // Prepare boundary
   auto bdBoxAltered = bdBox;
@@ -278,7 +279,7 @@ int main(int argc, char* argv[]) {
   auto result = rti::trace::result<numeric_type> {};
   {// NEW
     auto numrays_firstphase = 8 * 1024 * 1024;
-    auto numrays_secondphase = 8 * 1024 * 1024;
+    auto numrays_secondphase = 24 * 1024 * 1024; //(16 + 32) * 1024 * 1024;
     std::cout << "Using a fixed numeber of rays of " << numrays_firstphase << " + " << numrays_secondphase << std::endl;
     auto tracer = rti::trace::tracer<numeric_type>
       {*geoFactory, boundary, source, particlefactory};

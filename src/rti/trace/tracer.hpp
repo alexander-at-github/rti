@@ -305,12 +305,14 @@ namespace rti { namespace trace {
       std::cout << "printing GMM to file " << rplotfilename1 << " and " <<rplotfilename2 << std::endl;
       std::cout << "for the plot I am using hard-coded limits of the finstack geoemtry" << std::endl;
       ri.parseEvalQ(
+         //plot(density, what='density', type='persp', xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));
          std::string("postscript('") + rplotfilename1 + "', horizontal=F, width=8, height=8, paper='special', onefile=F); \
-         plot(density, what='density', type='persp', xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));  \
+         plot(density, what='density', type='persp', xlim=c(-6, 6), ylim=c(-4, 4));  \
          dev.off();");
       ri.parseEvalQ(
+         //plot(density, what='density', data=data, xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));
          std::string("postscript('") + rplotfilename2 + "', horizontal=F, width=8, height=8, paper='special', onefile=F); \
-         plot(density, what='density', data=data, xlim=c(-0.004501, 0.328006), ylim=c(0.0005, 0.2875));  \
+         plot(density, what='density', data=data, xlim=c(-6, 6), ylim=c(-4, 4));  \
          dev.off();");
 
       auto result =
@@ -403,8 +405,8 @@ namespace rti { namespace trace {
     run_adaptive
     (std::vector<parameter_type> relativeerrors, size_t numrays)
     {
-      auto rethreshold = (parameter_type) 0.2;
-      auto numprerays = (size_t) (128 * 1024);
+      auto rethreshold = (parameter_type) 0.1;
+      auto numprerays = (size_t) 128 * 1024; //(8 * 128 * 1024);
       std::cout << "Adaptive source sampling: using " << rethreshold << " as threshold on the relative error." << std::endl;
       try {
         return run_adaptive_aux(relativeerrors, rethreshold, numprerays, numrays);

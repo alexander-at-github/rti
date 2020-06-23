@@ -46,12 +46,14 @@ namespace rti { namespace trace {
           relativeerrors.push_back(h1res[idx]);
           vovs.push_back(h1vovs[idx]);
           exposedareas.push_back(h1expa[idx]);
+          //RLOG_TRACE << "F";
         } else {
           cnts.push_back(h2cnts[idx]);
           energyvalues.push_back(h2evs[idx]);
           relativeerrors.push_back(h2res[idx]);
           vovs.push_back(h2vovs[idx]);
           exposedareas.push_back(h2expa[idx]);
+          //RLOG_TRACE << "S";
         }
         assert(cnts.size() == idx+1 && "Correctness Assertion");
         cntsSum += cnts[idx];
