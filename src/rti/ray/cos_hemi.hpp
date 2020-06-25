@@ -32,7 +32,7 @@ namespace rti { namespace ray {
       assert (0 <= r1 && r1 <= 1 && "Error in computing random number in the interval [0, 1]");
       assert (0 <= r2 && r2 <= 1 && "Error in computing random number in the interval [0, 1]");
 
-      constexpr Ty two_pi = 2 * rti::util::pi();
+      const Ty two_pi = 2 * rti::util::pi();
       Ty cc1 = sqrt(r2);
       Ty cc2 = cos(two_pi * r1) * sqrt(1 - r2);
       Ty cc3 = sin(two_pi * r1) * sqrt(1 - r2);
