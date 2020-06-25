@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
 #include <vtkCellData.h>
@@ -24,7 +22,7 @@ namespace rti { namespace io {
       auto extensionCondition = std::string(".vtp");
       if (extension != extensionCondition) {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << " may not be able to read the file " << pFilename
           << " because it does not have the " << extensionCondition
           << " extension." << std::endl;
@@ -39,7 +37,7 @@ namespace rti { namespace io {
       auto pointdata = polydata->GetPointData();
       if (pointdata == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find data in the file " << pFilename << std::endl;
       }
       this->mPoints.reserve(numPnts);

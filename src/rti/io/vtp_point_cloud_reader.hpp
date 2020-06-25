@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
 #include <vtkCellData.h>
@@ -25,7 +23,7 @@ namespace rti { namespace io {
       std::string extension = vtksys::SystemTools::GetFilenameLastExtension(pFilename);
       if (extension != ".vtp") {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << " may not be able to read the file " << pFilename
           << " because it does not have the .vtp extension." << std::endl;
       }
@@ -37,7 +35,7 @@ namespace rti { namespace io {
       vtkIdType numCells = polydata->GetNumberOfCells();
       if (numPnts != numCells) {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << "expects an input such that number of points equals number of cells. "
           << "File: " << pFilename << std::endl;
       }
@@ -48,14 +46,14 @@ namespace rti { namespace io {
       vtkSmartPointer<vtkDataArray> sqrtOfAreaArray = celldata->GetScalars();
       if (sqrtOfAreaArray == nullptr) {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << " could not find cell data with the name \"sqrt-of-area\" in the file "
           << pFilename << std::endl;
       }
       vtkSmartPointer<vtkDataArray> normals = celldata->GetNormals();
       if (normals == nullptr) {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << " could not find surface normal data in the file " << pFilename << std::endl;
       }
       for (vtkIdType idx = 0; idx < numPnts; ++idx) {

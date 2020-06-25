@@ -8,15 +8,6 @@ project (
   LANGUAGES CXX
   )
 
-set (
-  BUILD_SHARED_LIBS ON # A particularity of Boost 1.70
-  )
-
-find_package (
-  Boost REQUIRED COMPONENTS system filesystem # "${BOOST_COMPONENTS_REQUIRED}"
-  PATHS ${BOOST_ROOT}
-  NO_DEFAULT_PATH
-  )
 find_package (
   embree 3.6 REQUIRED
   PATHS ${EMBREE_DIR}
@@ -60,7 +51,6 @@ target_link_libraries (
   librtidevice
   PUBLIC
   OpenMP::OpenMP_CXX
-  Boost::system
   ${EMBREE_LIBRARIES}
   ${VTK_LIBRARIES}
   )
@@ -127,8 +117,6 @@ target_link_libraries (
   rti
   PRIVATE
   OpenMP::OpenMP_CXX
-  Boost::system
-  Boost::filesystem
   ${EMBREE_LIBRARIES}
   ${VTK_LIBRARIES}
   )

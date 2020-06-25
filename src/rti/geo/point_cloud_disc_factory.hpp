@@ -1,7 +1,6 @@
 #pragma once
 
-#include <boost/type_traits/is_base_of.hpp>
-#include <boost/static_assert.hpp>
+#include <type_traits>
 
 #include "rti/geo/i_factory.hpp"
 #include "rti/geo/point_cloud_disc_geometry.hpp"
@@ -14,8 +13,8 @@ namespace rti { namespace geo {
   class point_cloud_disc_factory : public rti::geo::i_factory<numeric_type> {
 
     // Precodition:
-    BOOST_STATIC_ASSERT_MSG(boost::is_base_of<rti::trace::absc_context<numeric_type>, context_type>::value,
-                            "Precondition");
+    static_assert(std::is_base_of<rti::trace::absc_context<numeric_type>, context_type>::value,
+                  "Precondition");
 
   public:
     point_cloud_disc_factory(RTCDevice& device,

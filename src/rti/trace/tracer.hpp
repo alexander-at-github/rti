@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <cmath>
 #include <chrono>
 #include <omp.h>
@@ -189,7 +187,7 @@ namespace rti { namespace trace {
       auto result = rti::trace::result<numeric_type> {};
       auto& geo = mFactory.get_geometry();
       result.inputFilePath = geo.get_input_file_path();
-      result.geometryClassName = boost::core::demangle(typeid(geo).name());
+      result.geometryClassName = typeid(geo).name();
 
       // Prepare Embree
       auto device = geo.get_rtc_device();

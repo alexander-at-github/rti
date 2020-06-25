@@ -4,6 +4,7 @@
 #include <cmath>
 #include <functional>
 #include <iostream>
+#include <vector>
 
 namespace rti { namespace util {
 
@@ -86,8 +87,6 @@ namespace rti { namespace util {
       pV[0] /= thrdNorm;
       pV[1] /= thrdNorm;
       pV[2] /= thrdNorm;
-      if ( ! is_normalized(pV) )
-        std::cerr << "Warning: Assertion error is about to happen. thrdNorm == " << thrdNorm << std::endl;
       assert( is_normalized(pV) && "Postcondition" );
     }
 
@@ -225,5 +224,11 @@ namespace rti { namespace util {
     assert(std::abs(rti::util::dot_product(rr[2], rr[0])) < epsilon &&
            "Error in orthonormal basis computation");
     return rr;
-    }
+  }
+
+  void trim_in_place(std::string& str)
+  {
+    str.erase(0, str.find_first_not_of(' '));
+    str.erase(str.find_last_not_of(' '));
+  }
 }}

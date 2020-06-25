@@ -1,6 +1,3 @@
-
-#include <boost/filesystem.hpp>
-
 #include <algorithm>
 #include <iostream>
 #include <numeric>
@@ -293,12 +290,8 @@ int main(int argc, char* argv[]) {
       outfilename.append(".vtp");
     }
     auto bbpath = vtksys::SystemTools::GetFilenamePath(outfilename);
-    auto bbfilename = vtksys::SystemTools::
+    auto bbfilename = bbpath.append("/") + vtksys::SystemTools::
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
-    { // boost uses portable path separator
-      namespace bfs = boost::filesystem;
-      bbfilename = (bfs::path{bbpath} / bfs::path{bbfilename}).string();
-    }
 
     std::cout << "Writing output to " << outfilename << std::endl << std::flush;
     auto cmdstr = rti::util::foldl<std::string, std::string>
@@ -309,8 +302,8 @@ int main(int argc, char* argv[]) {
                                {"git-hash", rti::main_rt::get_git_hash()},
                                {"cmd", cmdstr},
                                // the following line does not really give you the most derived type. FIX
-                               {"geo-factory-name", boost::core::demangle(typeid(geoFactory.get()).name())},
-                               {"geo-name", boost::core::demangle(typeid(geoFactory->get_geometry()).name())}});
+                               {"geo-factory-name", typeid(geoFactory.get()).name()},
+                               {"geo-name", typeid(geoFactory->get_geometry()).name()}});
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 

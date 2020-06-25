@@ -1,5 +1,3 @@
-#include <boost/algorithm/string.hpp>
-
 #include <cmath>
 #include <sstream>
 #include <unordered_map>
@@ -22,6 +20,7 @@
 
 #include "rti/util/clo.hpp"
 #include "rti/util/enum_class_hash_function.hpp"
+#include "rti/util/utils.hpp"
 
 // An example how to write (or read) normals in vtk is at the following URL.
 // https://vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataCellNormals
@@ -66,7 +65,7 @@ int main(int argc, char* argv[]) {
   std::vector<double> areaList;
   std::vector<int32_t> coverList;
   while (std::getline(filestream, line)) {
-    boost::trim(line);
+    rti::util::trim_in_place(line);
     if (line[0] == '#') {
       // The string in the variable line represents a comment
       continue;

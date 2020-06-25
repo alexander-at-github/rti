@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
 #include <vtkCellData.h>
@@ -33,7 +31,7 @@ namespace rti { namespace io { namespace xaver {
       std::string extension = vtksys::SystemTools::GetFilenameLastExtension(pFilename);
       if (extension != ".vtu") {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << " may not be able to read the file " << pFilename
           << " because it does not have the .vtp extension." << std::endl;
       }
@@ -58,14 +56,14 @@ namespace rti { namespace io { namespace xaver {
       // }
       if (pointdata == nullptr || celldata == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find data in the file " << pFilename << std::endl;
       }
       auto gsStr = "gridSpacing";
       auto gridSpacingArray = celldata->GetArray(gsStr);
       if (gridSpacingArray == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find grid spacing data in the file " << pFilename << std::endl;
       }
       auto normalStr1 = "Normals";
@@ -76,7 +74,7 @@ namespace rti { namespace io { namespace xaver {
       }
       if (normalsArray == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find surface normals in the file " << pFilename << std::endl;
       }
       for (vtkIdType idx = 0; idx < numPnts; ++idx) {

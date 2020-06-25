@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <cassert>
 
 #include <embree3/rtcore.h>
@@ -104,7 +102,7 @@ namespace rti { namespace geo {
 
     void print(std::ostream& pOs) override final
     {
-      pOs << "(:class " << boost::core::demangle(typeid(this).name());
+      pOs << "(:class " << typeid(this).name();
       if (this->mVVBuffer != nullptr)
         for (size_t idx = 0; idx < this->mNumTriangles; ++idx) {
           pOs << this->prim_to_string(idx);

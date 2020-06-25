@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
 #include <vtkCellData.h>
@@ -33,7 +31,7 @@ namespace rti { namespace io { namespace christoph {
       std::string extension = vtksys::SystemTools::GetFilenameLastExtension(pFilename);
       if (extension != ".vtu") {
         std::cerr
-          << "Warning: " << boost::core::demangle(typeid(this).name())
+          << "Warning: " << typeid(this).name()
           << " may not be able to read the file " << pFilename
           << " because it does not have the .vtp extension." << std::endl;
       }
@@ -58,7 +56,7 @@ namespace rti { namespace io { namespace christoph {
       // }
       if (pointdata == nullptr || celldata == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find data in the file " << pFilename << std::endl;
       }
       auto areaStr = "area_around_vertex";
@@ -69,7 +67,7 @@ namespace rti { namespace io { namespace christoph {
       }
       if (areasArray == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find grid spacing data in the file " << pFilename << std::endl;
       }
       auto normalStr1 = "Normals";
@@ -80,11 +78,11 @@ namespace rti { namespace io { namespace christoph {
       }
       if (normalsArray == nullptr) {
         std::cerr
-          << "Warning: "  << boost::core::demangle(typeid(this).name())
+          << "Warning: "  << typeid(this).name()
           << " could not find surface normals in the file " << pFilename << std::endl;
       }
       std::cout
-        << "Warning: " << boost::core::demangle(typeid(this).name())
+        << "Warning: " << typeid(this).name()
         << " inverts all z coordinates." << std::endl;
       for (vtkIdType idx = 0; idx < numPnts; ++idx) {
         double xyz[3]; // 3 dimensions

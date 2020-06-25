@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/core/demangle.hpp>
-
 #include <cmath>
 #include <chrono>
 
@@ -22,7 +20,7 @@ namespace rti { namespace test_and_benchmark {
       // Prepare a data structure for the result.
       rti::test_and_benchmark::test_result result {};
       result.inputFilePath = mGeo.get_input_file_path();
-      result.geometryClassName = boost::core::demangle(typeid(mGeo).name());
+      result.geometryClassName = typeid(mGeo).name();
 
       // Prepare Embree
       RTCDevice device = mGeo.get_rtc_device();

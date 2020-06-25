@@ -2,8 +2,6 @@
 
 #include <limits>
 
-#include <boost/core/demangle.hpp>
-
 #include "rti/geo/i_geometry.hpp"
 #include "rti/io/i_point_cloud_reader.hpp"
 #include "rti/util/utils.hpp"
@@ -40,7 +38,7 @@ namespace rti { namespace geo {
 
     void print(std::ostream& pOs) override final
     {
-      pOs << "(:class " << boost::core::demangle(typeid(this).name());
+      pOs << "(:class " << typeid(this).name();
       if (mVVBuffer != nullptr)
         for (size_t idx = 0; idx < this->mNumPoints; ++idx)
           pOs << this->prim_to_string(idx);

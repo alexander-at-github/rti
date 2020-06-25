@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/type_traits/is_base_of.hpp>
-
 #include <memory>
 
 #include "rti/particle/i_particle.hpp"
