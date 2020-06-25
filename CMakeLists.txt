@@ -61,7 +61,6 @@ message(STATUS "CMAKE_CXX_FLAGS == ${CMAKE_CXX_FLAGS}")
 
 externalproject_add(rti
   DEPENDS
-    #boost-external
 		#embree-external
     #vtk-external
     #

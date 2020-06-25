@@ -8,10 +8,9 @@ cd <rti-base-directory>
 mkdir build
 cd build
 ````
-The following commands will download and build Boost, Embree, and VTK in the folder `<rti-base-directory>/dependencies`. This may take some time. You need to build them only once:
+The following commands will download and build Embree and VTK in the folder `<rti-base-directory>/dependencies`. This may take some time. You need to build them only once:
 ````
 cmake ..
-cmake --build . --target boost-external
 cmake --build . --target embree-external
 cmake --build . --target vtk-external
 ````
