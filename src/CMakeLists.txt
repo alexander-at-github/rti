@@ -40,7 +40,7 @@ set (
 
 ### Create library
 add_library (
-  librtidevice "rti/device.cpp"
+  librtidevice "rti/device_instantiations.cpp"
   )
 target_include_directories (
   librtidevice
@@ -51,11 +51,11 @@ target_include_directories (
   ${VTK_INCLUDE_DIRS}
   $<INSTALL_INTERFACE:include>
   )
-target_compile_features (
-  librtidevice
-  PRIVATE
-  cxx_std_11
-  )
+#target_compile_features (
+#  librtidevice
+#  PRIVATE
+#  cxx_std_11
+#  )
 target_link_libraries (
   librtidevice
   PUBLIC

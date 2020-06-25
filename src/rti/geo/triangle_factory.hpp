@@ -18,11 +18,13 @@ namespace rti { namespace geo {
                      rti::io::i_triangle_reader<Ty>& pReader) :
       mGeometry(pDevice, pReader) {}
 
-    rti::geo::i_geometry<Ty>& get_geometry() override final {
+    rti::geo::i_geometry<Ty>& get_geometry() override final
+    {
       return mGeometry;
     }
 
-    void register_intersect_filter_funs(rti::geo::i_boundary<Ty>& pBoundary) {
+    void register_intersect_filter_funs(rti::geo::i_boundary<Ty>& pBoundary) override final
+    {
       ContextType::register_intersect_filter_funs(mGeometry, pBoundary);
     }
 
@@ -36,7 +38,8 @@ namespace rti { namespace geo {
       rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState,
-      rti::particle::i_particle<Ty>& particle) override final {
+      rti::particle::i_particle<Ty>& particle) override final
+    {
       auto cntxt = std::make_unique<ContextType>
         (pGeometryID,
          // the cast characterizes a precondition to this function
@@ -50,11 +53,12 @@ namespace rti { namespace geo {
 
     void write_to_file(rti::trace::i_hit_accumulator<Ty>& pHA,
                        std::string pOutfilename,
-                       std::vector<rti::util::pair<std::string> > pMetadata) override final {
+                       std::vector<rti::util::pair<std::string> > pMetadata) override final
+    {
       rti::io::vtp_writer<Ty>::write(this->mGeometry, pHA, pOutfilename, pMetadata);
     }
 
   private:
     rti::geo::triangle_geometry<Ty> mGeometry;
   };
-}} // namespace
+}}

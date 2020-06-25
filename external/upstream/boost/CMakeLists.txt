@@ -2,14 +2,17 @@
 ### We need to use a custom build
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+  message(STATUS "boost cmake build recognized GNU compiler")
   if(APPLE)
     set(_toolset "darwin")
   else()
     set(_toolset "gcc")
   endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang")
+  message(STATUS "boost cmake build recognized Clang compiler")
   set(_toolset "clang")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
+  message(STATUS "boost cmake build recognized Intel compiler")
   if(APPLE)
     set(_toolset "intel-darwin")
   else()

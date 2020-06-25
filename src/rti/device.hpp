@@ -46,8 +46,4 @@ namespace rti {
   private:
     std::unique_ptr<rti::deviceImpl<numeric_type> > pimpl;
   };
-
-  // Instantiations of the device class template
-  template class device<float>;
-  template class device<double>;
 }

@@ -23,7 +23,7 @@ namespace rti { namespace geo {
       init_this(pRTCDevice, pReader);
     }
 
-    Ty get_area(unsigned int primID)
+    Ty get_area(unsigned int primID) override final
     {
       auto tri = mTTBuffer[primID];
       auto v0 = mVVBuffer[tri.v0];

@@ -56,10 +56,10 @@ namespace rti { namespace geo {
       return {(Ty) xx, (Ty) yy, (Ty) zz};
     }
 
-    Ty get_area(unsigned int primID)
+    Ty get_area(unsigned int primID) override final
     {
       auto radius = this->mVVBuffer[primID].radius;
-      return radius * radius * rti::util::pi;
+      return radius * radius * rti::util::pi();
     }
 
   private:

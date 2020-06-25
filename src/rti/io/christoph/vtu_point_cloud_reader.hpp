@@ -103,7 +103,7 @@ namespace rti { namespace io { namespace christoph {
         normal[2] *= -1;
         // Do not add points which have an area equal to zero.
         // Do not add points which have a normal equal to the zero vector.
-        if (area == 0 || (nxnynz[0] == 0 && nxnynz[1] == 0 && nxnynz[2] == 0)) {
+        if (area[0] == 0 || (nxnynz[0] == 0 && nxnynz[1] == 0 && nxnynz[2] == 0)) {
           continue;
         }
         mPoints.push_back(point);

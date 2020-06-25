@@ -38,7 +38,7 @@ namespace rti { namespace geo {
       return mGeometry;
     }
 
-    void register_intersect_filter_funs(rti::geo::i_boundary<numeric_type>& pBoundary)
+    void register_intersect_filter_funs(rti::geo::i_boundary<numeric_type>& pBoundary) override final
     {
       context_type::register_intersect_filter_funs(mGeometry, pBoundary);
     }
