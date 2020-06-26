@@ -1,17 +1,10 @@
 @PACKAGE_INIT@
 
 # Capturing the variables from configuration time
-set(BOOST_ROOT @BOOST_ROOT@)
 set(EMBREE_DIR @EMBREE_DIR@)
 set(VTK_DIR @VTK_DIR@)
 
 set (BUILD_SHARED_LIBS_BACKUP ${BUILD_SHARED_LIBS})
-set (BUILD_SHARED_LIBS ON) # A particularity of Boost 1.70
-find_package(Boost REQUIRED COMPONENTS system
-  PATHS ${BOOST_ROOT}
-  NO_DEFAULT_PATH
-  )
-set (BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS_BACKUP}) # A particularity of Boost 1.70
 find_package (
   embree 3.6 REQUIRED
   PATHS ${EMBREE_DIR}
