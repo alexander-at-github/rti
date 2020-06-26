@@ -39,6 +39,5 @@ externalproject_get_property(vtk-external INSTALL_DIR BINARY_DIR)
 set(
   VTK_DIR "${BINARY_DIR}"
   CACHE PATH "Path to VTK installation"
-  FORCE
   )
 

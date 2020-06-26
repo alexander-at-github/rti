@@ -28,8 +28,14 @@ message(STATUS "${PROJECT_NAME} external project's staged install path: ${STAGED
 
 list(APPEND BOOST_COMPONENTS_REQUIRED "log" "system" "timer" "iostreams" "filesystem")
 
+# move value of VTK_DIR to cache.
+if(DEFINED ${VTK_DIR})
+  set(VTK_DIR ${VTK_DIR} CACHE PATH "Path to VTK installation")
+endif()
+
 include(ExternalProject)
 add_subdirectory(external/upstream)
+message(STATUS "Using VTK located at ${VTK_DIR}")
 
 if(NOT CMAKE_BUILD_TYPE)
   message(STATUS "NOT CMAKE_BUILD_TYPE holds")

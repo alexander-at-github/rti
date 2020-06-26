@@ -20,6 +20,12 @@ Build the rti library:
 cmake --build . --target rti
 ````
 
+If you want to use your own VTK installation, you can provide the path in your first invocation of cmake:
+
+````
+cmake -DVTK_DIR=/your/path/to/vtk ..
+````
+
 The library and CMake files will be saved in directories under `build/lib`.
 The API is declared in the header file `build/include/rti/device.hpp`.
 
