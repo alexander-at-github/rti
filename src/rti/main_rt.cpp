@@ -290,7 +290,10 @@ int main(int argc, char* argv[]) {
       outfilename.append(".vtp");
     }
     auto bbpath = vtksys::SystemTools::GetFilenamePath(outfilename);
-    auto bbfilename = bbpath.append("/") + vtksys::SystemTools::
+    if( ! bbpath.empty()) {
+      bbpath.append("/");
+    }
+    auto bbfilename = bbpath + vtksys::SystemTools::
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl << std::flush;
