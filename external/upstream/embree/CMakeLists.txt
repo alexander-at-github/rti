@@ -1,3 +1,6 @@
+# Override CXX standard, since Embree does not confirm to CXX20.
+set(CMAKE_CXX_STANDARD 17)
+
 externalproject_add(embree-external
   GIT_REPOSITORY
     https://github.com/embree/embree.git
