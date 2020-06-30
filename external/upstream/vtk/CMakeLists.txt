@@ -18,6 +18,11 @@ externalproject_add(vtk-external
     #-DBOOST_ROOT=$ENV{HPTCAD_BOOST_INSTALL_DIR}
     -DVTK_WRAP_PYTHON=OFF
     -DVTK_PYTHON_VERSION=3.5
+    -DVTK_LEGACY_REMOVE=ON
+    -DVTK_Group_StandAlone=OFF
+    -DVTK_Group_Rendering=OFF
+    -DModule_vtkIOXML=ON
+    -DVTK_RENDERING_BACKEND=None
   # BUILD_COMMAND
   #   make -j 9
   # No install needed
