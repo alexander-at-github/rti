@@ -48,7 +48,8 @@ message(STATUS "CMAKE_BUILD_TYPE == ${CMAKE_BUILD_TYPE}")
 # -Wno-unused-parameter
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -flto") #"-DNDEBUG -O3 -march=native -flto")
+# link time optimizations (-flto) creates errors with clang on ubuntu
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native") #"-DNDEBUG
 #set(CMAKE_CXX_FLAGS_RELEASE "-O")
 #set(CMAKE_CXX_FLAGS_RELEASE "-pg -O") # arguments for gprof
 #set(CMAKE_CXX_FLAGS_RELEASE "-O -fprofile-arcs -ftest-coverage") # arguments for gcov
