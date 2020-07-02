@@ -1,8 +1,5 @@
 #pragma once
 
-//#include <chrono>
-
-//#include "rti/trace/i_hit_counter.hpp"
 #include "rti/trace/i_hit_accumulator.hpp"
 // include ostream overload template to provide out stream functionality
 // by means of the print function.
@@ -34,4 +31,4 @@ namespace rti { namespace trace {
         << std::endl;
     }
   };
-}} // namespace
+}}

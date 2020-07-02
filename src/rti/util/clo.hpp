@@ -50,42 +50,34 @@ namespace rti { namespace util { namespace clo {
 
   // Option Manager
   class manager {
-    // If needed one can make it into a singleton class to access the options
-    // anywhere within the translation unit.
   public:
-    // constructor
     manager() {}
-    // define parameter
+
     manager* addCmlParam(bool_option pBoolOpt) {
       mBoolOpts.insert({pBoolOpt.mIdStr, pBoolOpt});
       return this;
     }
+
     manager* addCmlParam(string_option pStrOpt) {
       mStrOpts.insert({pStrOpt.mIdStr, pStrOpt});
       return this;
     }
-    // parse command line arguments
-    // The command line parameters need to be added befor this call.
+
     bool parse_args(int argc, char** argv) {
       mArgc = argc;
       mArgv = argv;
       // starting from 1 because argv[0] is equal to the name of the executable
       for (int idx = 1; idx < argc; /*empty*/) {
-        //std::cerr << "debug idx == " << idx << std::endl;
-
         bool argUsed = false;
         for (auto& som : mStrOpts) { // Checking string options
           auto& so = som.second; // second equals the value in the map entry
           for (auto& str : so.mOptStrs) {
-            // std::cerr << "debug str == " << str << std::endl;
-            // std::cerr << "debug argv[idx] == " << argv[idx] << " where idx == " << idx << std::endl;
             if (str == argv[idx]) {
               if (idx >= argc - 1) {
                 // Missing argument for this command line options
                 return false;
               } else {
                 so.value = std::string(argv[idx+1]);
-                // std::cerr << "debug so.value == " << so.value << std::endl;
                 argUsed = true;
               }
             }
@@ -124,11 +116,6 @@ namespace rti { namespace util { namespace clo {
       }
       return true;
     }
-    // // parse options in a text file
-    // bool parse_file(std::string pFilename) {
-    //   assert (false && "Not implemented");
-    //   return true;
-    // }
 
     bool get_bool_option_value(std::string pOptIdStr) {
       for (auto& bome : mBoolOpts)
@@ -136,8 +123,6 @@ namespace rti { namespace util { namespace clo {
           return bome.second.value;
       std::cerr << "Error in retrieving command line option value" << std::endl;
       assert(false && "Error in clo");
-      // QUESTION: Should we do something more (e.g., throw an execption) if
-      // there is no option of that name?
       return false;
     }
 
@@ -188,7 +173,6 @@ namespace rti { namespace util { namespace clo {
         std::string tmpS = tmp.str();
         // Remove the last word
         tmpS.erase(tmpS.end() - _or.size(), tmpS.end());
-        // write to the message buffer
         msg << tmpS << std::endl;
         // Add the help message as specified by the user of this class
         msg << spaces << "   " << so.mHelpStr << std::endl;
@@ -202,4 +186,4 @@ namespace rti { namespace util { namespace clo {
     int mArgc = 0;
     char **mArgv = nullptr;
   };
-}}} // namespace
+}}}

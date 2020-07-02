@@ -14,9 +14,9 @@
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace io {
-  // The parameter Ty is intended to be instantiated as a numeric type.
-  template<typename Ty>
-  class vtp_point_cloud_reader : public rti::io::i_point_cloud_reader<Ty> {
+  // The parameter numeric_type is intended to be instantiated as a numeric type.
+  template<typename numeric_type>
+  class vtp_point_cloud_reader : public rti::io::i_point_cloud_reader<numeric_type> {
   public:
     vtp_point_cloud_reader(const std::string& pFilename) :
       mInfilename(pFilename) {
@@ -64,11 +64,11 @@ namespace rti { namespace io {
         double radiusEpsilon = 1.0 / 32; // about 3%
         // TODO: Is that correct?
         radius[0] *= std::sqrt(3.0)/2 * (1 + radiusEpsilon);
-        rti::util::quadruple<Ty> point {(Ty) xyz[0], (Ty) xyz[1] , (Ty) xyz[2], (Ty) radius[0]};
+        rti::util::quadruple<numeric_type> point {(numeric_type) xyz[0], (numeric_type) xyz[1] , (numeric_type) xyz[2], (numeric_type) radius[0]};
         mPoints.push_back(point);
         double nxnynz[3];
         normals->GetTuple(idx, nxnynz);
-        rti::util::triple<Ty> normal {(Ty) nxnynz[0], (Ty) nxnynz[1], (Ty) nxnynz[2]};
+        rti::util::triple<numeric_type> normal {(numeric_type) nxnynz[0], (numeric_type) nxnynz[1], (numeric_type) nxnynz[2]};
         // Normalize
         if ( ! rti::util::is_normalized(normal))
           rti::util::normalize(normal);
@@ -81,11 +81,11 @@ namespace rti { namespace io {
 
     ~vtp_point_cloud_reader() {}
 
-    std::vector<rti::util::quadruple<Ty> > get_points() override final {
+    std::vector<rti::util::quadruple<numeric_type> > get_points() override final {
       return mPoints;
     }
 
-    std::vector<rti::util::triple<Ty> > get_normals() override final {
+    std::vector<rti::util::triple<numeric_type> > get_normals() override final {
       return mNormals;
     }
 
@@ -94,7 +94,7 @@ namespace rti { namespace io {
     }
   private:
     std::string mInfilename;
-    std::vector<rti::util::quadruple<Ty> > mPoints;
-    std::vector<rti::util::triple<Ty> > mNormals;
+    std::vector<rti::util::quadruple<numeric_type> > mPoints;
+    std::vector<rti::util::triple<numeric_type> > mNormals;
   };
 }} // namespace rti

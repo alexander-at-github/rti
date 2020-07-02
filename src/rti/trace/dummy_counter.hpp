@@ -28,4 +28,4 @@ namespace rti { namespace trace {
     void print(std::ostream& pOs) const override final {}
 
   };
-}} // namespace
+}}

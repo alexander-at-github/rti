@@ -21,12 +21,6 @@ namespace rti { namespace geo {
                              rti::io::i_point_cloud_reader<numeric_type>& reader) :
       mGeometry(device, reader) {}
 
-    // point_cloud_disc_factory(RTCDevice& device,
-    //                          std::vector<rti::util::quadruple<numeric_type> > points,
-    //                          std::vector<rti::util::triple<numeric_type> > normals,
-    //                          numeric_type stickingC) :
-    //   mGeometry(device, points, normals, stickingC) {}
-
     point_cloud_disc_factory(RTCDevice& device,
                              std::vector<rti::util::quadruple<numeric_type> > points,
                              std::vector<rti::util::triple<numeric_type> > normals) :

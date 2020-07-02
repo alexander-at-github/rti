@@ -13,11 +13,11 @@
 #include "rti/io/i_triangle_reader.hpp"
 
 namespace rti { namespace io {
-  template<typename Ty>
-  class vtp_triangle_reader : public rti::io::i_triangle_reader<Ty> {
+  template<typename numeric_type>
+  class vtp_triangle_reader : public rti::io::i_triangle_reader<numeric_type> {
   public:
     vtp_triangle_reader(const std::string& pFilename) :
-      rti::io::i_triangle_reader<Ty>(pFilename) {
+      rti::io::i_triangle_reader<numeric_type>(pFilename) {
       auto extension = vtksys::SystemTools::GetFilenameLastExtension(pFilename);
       auto extensionCondition = std::string(".vtp");
       if (extension != extensionCondition) {
@@ -44,7 +44,7 @@ namespace rti { namespace io {
       for (vtkIdType idx = 0; idx < numPnts; ++idx) {
         double xyz[3]; // 3 dimensions
         polydata->GetPoint(idx, xyz);
-        this->mPoints.push_back({(Ty) xyz[0], (Ty) xyz[1], (Ty) xyz[2]});
+        this->mPoints.push_back({(numeric_type) xyz[0], (numeric_type) xyz[1], (numeric_type) xyz[2]});
       }
       // Write triangles from the VTK data structure
       // for (vtkIdType idx = 0; idx < numCells; ++idx) {
@@ -54,7 +54,7 @@ namespace rti { namespace io {
       auto numCells = cellarray->GetNumberOfCells(); // vtkIdType
       this->mTriangles.reserve(numCells);
 
-            // Traverse over VTK triangles
+      // Traverse over VTK triangles
       cellarray->InitTraversal();
       auto idlist = vtkSmartPointer<vtkIdList>::New();
       while (cellarray->GetNextCell(idlist)) {
@@ -67,4 +67,4 @@ namespace rti { namespace io {
       this->mTriangles.shrink_to_fit();
     }
   };
-}} // namespace
+}}

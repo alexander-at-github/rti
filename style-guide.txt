@@ -15,10 +15,11 @@
 
 namespace lowercase_identifers {
 
-  class separated_by_underscores {
+  class type_names_separated_by_underscores {
   public:
 
-    void because_underscores_are() const {
+    void because_underscores_are() const
+    {
       auto mostLikeSpaces = 0u; // but local names are condensed
       auto foo = false;
       auto bar = cmplx_type {};
@@ -32,15 +33,18 @@ namespace lowercase_identifers {
       }
     }
 
-    const complex_type& value() const {
-      return mValue; // no conflict with value here
+    const complex_type& value() const
+    {
+      return value;
     }
 
-    void value(const complex_type& pValue) {
-      mValue = pValue ; // or here
+    void value(const complex_type& pValue)
+    {
+      value = pValue ;
     }
 
-    void run() {
+    void run()
+    {
       using super_namespace;
       // names from another namespace should have at least one explicite namespace
       // name and scope resolution operator for qualified name lookup
@@ -51,15 +55,16 @@ namespace lowercase_identifers {
     // the more public it is, the more important it is,
     // so order: public on top, then protected then private
 
-    template <typename Template, typename Parameters>
-    void are_upper_camel_case() {
+    template <typename template, typename parameters>
+    void are_typeset_like_typenames()
+    {
       // gman was here
     }
 
   private:
 
-    complex_type mValue;
+    complex_type value;
     // do not use single charaters as variable names
     unsigned long xx;
   };
-} // namespace lowercase_identifier
+}

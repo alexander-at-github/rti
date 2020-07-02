@@ -9,7 +9,7 @@ namespace rti { namespace trace {
     using internal_numeric_type = double;
 
   public:
-    // Constructors
+
     hit_accumulator_with_checks(size_t pSize) :
       mAcc(pSize, 0), // pSize number of elements initialized to 0.
       mCnts(pSize, 0),
@@ -121,7 +121,7 @@ namespace rti { namespace trace {
       return *this;
     }
 
-    // Member Functions
+
     void use(unsigned int pPrimID, Ty value) override final {
       assert(pPrimID < mAcc.size() && "primitive ID is out of bounds");
       mAcc[pPrimID] += (internal_numeric_type) value;
