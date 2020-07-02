@@ -167,7 +167,7 @@ externalproject_add(rti-bench
   DEPENDS
   #gbench-external
   SOURCE_DIR
-  ${CMAKE_CURRENT_LIST_DIR}/bench
+  ${CMAKE_CURRENT_LIST_DIR}/benchmark
   INSTALL_DIR
   ${CMAKE_BINARY_DIR}
   CMAKE_ARGS
