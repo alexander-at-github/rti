@@ -9,7 +9,9 @@ namespace rti { namespace mc {
     rejection_control
     (rti::rng::i_rng& rng, rti::rng::i_rng::i_state& rngstate) :
       rng(rng),
-      rngstate(rngstate) {}
+      rngstate(rngstate) {
+      assert(false && "deprecated"):
+    }
 
     template<typename numeric_type_o>
     void

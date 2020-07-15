@@ -13,7 +13,6 @@
 #include "rti/ray/rectangle_origin_z.hpp"
 #include "rti/ray/source.hpp"
 #include "rti/trace/point_cloud_context.hpp"
-#include "rti/trace/point_cloud_context_simplified.hpp"
 #include "rti/trace/tracer.hpp"
 #include "rti/util/utils.hpp"
 

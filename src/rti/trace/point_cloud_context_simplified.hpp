@@ -5,7 +5,6 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/mc/rejection_control.hpp"
 #include "rti/particle/i_particle.hpp"
 #include "rti/reflection/i_reflection_model.hpp"
 #include "rti/reflection/specular.hpp"
@@ -18,15 +17,6 @@
 namespace rti { namespace trace {
   template<typename numeric_type> // intended to be a numeric type
   class point_cloud_context_simplified : public rti::trace::absc_context<numeric_type> {
-
-  public:
-    // managment for ray weights
-    static constexpr float INITIAL_RAY_WEIGHT = 1.0f;
-    // =================================================================
-    // CHOOSING A GOOD VALUE FOR THE WEIGHT LOWER THRESHOLD IS IMPORTANT
-    // =================================================================
-    static constexpr float RAY_WEIGHT_LOWER_THRESHOLD = 0.005f;
-    static constexpr float RAY_RENEW_WEIGHT = 20 * RAY_WEIGHT_LOWER_THRESHOLD; // magic number
 
   private:
     // geometry related data
@@ -48,12 +38,7 @@ namespace rti { namespace trace {
     rti::geo::i_boundary<numeric_type>& mBoundary;
     rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
 
-    rti::rng::i_rng& mRng;
-    rti::rng::i_rng::i_state& mRngState;
-
-    rti::mc::rejection_control<numeric_type> rejectioncontrol;
     rti::particle::i_particle<numeric_type>& particle;
-
 
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
@@ -72,7 +57,7 @@ namespace rti { namespace trace {
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState,
             rti::particle::i_particle<numeric_type>& particle) :
-      rti::trace::absc_context<numeric_type>(INITIAL_RAY_WEIGHT, false, geoRayout, 0),// initialize to some values
+      rti::trace::absc_context<numeric_type>(false, geoRayout, 0, pRng, pRngState),// initialize to some values
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -80,9 +65,6 @@ namespace rti { namespace trace {
       mBoundaryID(pBoundaryID),
       mBoundary(pBoundary),
       mBoundaryReflectionModel(pBoundaryReflectionModel),
-      mRng(pRng),
-      mRngState(pRngState),
-      rejectioncontrol(mRng, mRngState),
       particle(particle) {
       mGeoHitPrimIDs.reserve(32); // magic number // Reserve a reasonable number of hit elements for one ray
       mGeoHitPrimIDs.clear();
@@ -124,7 +106,7 @@ namespace rti { namespace trace {
       if (pRayHit.hit.geomID == this->mBoundaryID) {
         RLOG_DEBUG << "Ray hit boundary" << std::endl;
         this->boundRayout = this->mBoundaryReflectionModel.use(
-          pRayHit.ray, pRayHit.hit, this->mBoundary, this->mRng, this->mRngState);
+          pRayHit.ray, pRayHit.hit, this->mBoundary, this->rng, this->rngstate);
         this->rayout = this->boundRayout;
         this->reflect = true;
         RLOG_TRACE << "b";
@@ -150,7 +132,7 @@ namespace rti { namespace trace {
 
         auto sticking = particle.process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
         this->geoRayout = this->mReflectionModel.use(
-          pRayHit.ray, pRayHit.hit, this->mGeometry, this->mRng, this->mRngState);
+          pRayHit.ray, pRayHit.hit, this->mGeometry, this->rng, this->rngstate);
         this->rayout = this->geoRayout;
         auto valuetodrop = this->rayWeight * sticking;
         this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
@@ -159,8 +141,7 @@ namespace rti { namespace trace {
         assert(false && "Assumption");
       }
 
-      rejectioncontrol.check_weight_reweight_or_kill
-        (*this, this->RAY_WEIGHT_LOWER_THRESHOLD, this->RAY_RENEW_WEIGHT);
+      this->rejection_control_check_weight_reweight_or_kill();
       if (this->reflect) {
         RLOG_TRACE << "r";
       } else {
@@ -174,12 +155,6 @@ namespace rti { namespace trace {
       // algorithm for incoherent rays (default).
       // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
       rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
-    }
-
-    void init_ray_weight() override final
-    {
-      this->rayWeight = this->INITIAL_RAY_WEIGHT;
-      RLOG_TRACE << "I";
     }
 
     bool compute_exposed_areas_by_sampling() override final
