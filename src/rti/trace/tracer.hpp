@@ -21,7 +21,6 @@
 #include "rti/rng/mt64_rng.hpp"
 #include "rti/trace/dummy_counter.hpp"
 #include "rti/trace/hit_accumulator.hpp"
-#include "rti/trace/hit_accumulator_with_checks.hpp"
 #include "rti/trace/point_cloud_context.hpp"
 #include "rti/trace/result.hpp"
 #include "rti/util/logger.hpp"
@@ -225,13 +224,13 @@ namespace rti { namespace trace {
 
       auto geohitc = 0ull;
       auto nongeohitc = 0ull;
-      auto hitAccumulator = rti::trace::hit_accumulator_with_checks<numeric_type> {geo.get_num_primitives()};
+      auto hitAccumulator = rti::trace::hit_accumulator<numeric_type> {geo.get_num_primitives()};
 
       #pragma omp declare \
         reduction(hit_accumulator_combine : \
-                  rti::trace::hit_accumulator_with_checks<numeric_type> : \
-                  omp_out = rti::trace::hit_accumulator_with_checks<numeric_type>(omp_out, omp_in)) \
-        initializer(omp_priv = rti::trace::hit_accumulator_with_checks<numeric_type>(omp_orig))
+                  rti::trace::hit_accumulator<numeric_type> : \
+                  omp_out = rti::trace::hit_accumulator<numeric_type>(omp_out, omp_in)) \
+        initializer(omp_priv = rti::trace::hit_accumulator<numeric_type>(omp_orig))
 
       // The random number generator itself is stateless (has no members which
       // are modified). Hence, it may be shared by threads.
@@ -372,7 +371,7 @@ namespace rti { namespace trace {
       // Assertion: hitAccumulator is reduced to one instance by openmp reduction
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
-      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator_with_checks<numeric_type> >(hitAccumulator);
+      result.hitAccumulator = std::make_unique<rti::trace::hit_accumulator<numeric_type> >(hitAccumulator);
       result.hitc = geohitc;
       result.nonhitc = nongeohitc;
 
