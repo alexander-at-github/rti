@@ -5,12 +5,29 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
-using embree_record_t = struct {RTCDevice dev; RTCScene scn; RTCGeometry geo;};
+#include "rti/trace/local_intersector.hpp"
+
+struct point_4f_t {
+  float xx, yy, zz, radius;
+};
+struct normal_vec_3f_t {
+  float xx, yy, zz;
+};
+
+using locint_type = rti::trace::local_intersector<float, point_4f_t, normal_vec_3f_t>;
+
+using embree_record_t = struct {
+  RTCDevice dev;
+  RTCScene scn;
+  RTCGeometry geo;
+  locint_type locint;
+};
 
 static
 void occluded_filter(const struct RTCFilterFunctionNArguments* args) {
   auto valid = args->valid; // a pointer
   valid[0] = 0; // set invalid; causes continuation of ray
+  //std::cerr << "Occluded filter. primID == " << (reinterpret_cast<RTCHit*> (args->hit))->primID << std::endl;
 }
 
 static
@@ -25,16 +42,12 @@ embree_record_t prepare_embree() {
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
   }
-  auto numpoints = 10u; // unsigned int
+  auto numpoints = 8u; // unsigned int
   auto device_config = "hugepages=1";
   auto device = rtcNewDevice(device_config);
+  assert(rtcGetDeviceProperty(device, RTC_DEVICE_PROPERTY_FILTER_FUNCTION_SUPPORTED) != 0 && "Correctness Assumption");
   auto geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT);
-  struct point_4f_t {
-    float xx, yy, zz, radius;
-  };
-  struct normal_vec_3f_t {
-    float xx, yy, zz;
-  };
+
   auto discs = (point_4f_t*)
     rtcSetNewGeometryBuffer(geometry,
                             RTC_BUFFER_TYPE_VERTEX,
@@ -63,7 +76,8 @@ embree_record_t prepare_embree() {
   //rtcSetSceneFlags(scene, RTC_SCENE_FLAG_CONTEXT_FILTER_FUNCTION); // does not seem to be necessary
   auto geometryID = rtcAttachGeometry(scene, geometry);
   rtcCommitScene(scene);
-  return {device, scene, geometry};
+
+  return {device, scene, geometry, locint_type (numpoints, discs, normals)};
 }
 
 static
@@ -185,8 +199,42 @@ void occluded_any_one(benchmark::State& pState) {
   release_embree(embreerec);
 }
 
+static
+void intersect_all_with_local_intersector(benchmark::State& pState) {
+  // prepare
+  auto context = RTCIntersectContext {};
+  rtcInitIntersectContext(&context);
+  auto embreerec = prepare_embree();
+  auto scene = embreerec.scn;
+  auto localintersector = embreerec.locint;
+  // remove the filters
+  rtcSetGeometryOccludedFilterFunction(embreerec.geo, NULL);
+  rtcSetGeometryIntersectFilterFunction(embreerec.geo, NULL);
+  //
+  auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  rayhit.ray.org_x = 0; rayhit.ray.org_y = 0; rayhit.ray.org_z = 0;
+  rayhit.ray.dir_x = 0; rayhit.ray.dir_y = 0; rayhit.ray.dir_z = 1;
+  // benchmark loop
+  for (auto _ : pState) {
+    rayhit.ray.tfar = std::numeric_limits<float>::max();
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+
+    //rtcOccluded1(scene, &context, &rayhit.ray);
+    rtcIntersect1(scene, &context, &rayhit);
+    auto intersects = localintersector.intersect_neighbors(rayhit);
+
+    // Do we need DoNotOptimize here?
+    benchmark::DoNotOptimize(rayhit);
+    benchmark::DoNotOptimize(intersects);
+  }
+  // clean up
+  release_embree(embreerec);
+}
 
 BENCHMARK(intersect_all)->UseRealTime();
 BENCHMARK(occluded_all)->UseRealTime();
 BENCHMARK(intersect_first)->UseRealTime();
 BENCHMARK(occluded_any_one)->UseRealTime();
+BENCHMARK(intersect_all_with_local_intersector)->UseRealTime();
+

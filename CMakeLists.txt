@@ -4,7 +4,6 @@ cmake_minimum_required(VERSION 3.11 FATAL_ERROR)
 #set(ENV{CXX} "/usr/bin/clang++-6.0")
 #set(ENV{CXX} "/usr/bin/clang")
 # REMARK: setting ENV{CXX} only works when the project function/macro is called afterwards!
-## TODO: Which setting overrides the other? ENV or CACHE?
 
 project(
   rti-superbuild
@@ -49,7 +48,8 @@ message(STATUS "CMAKE_BUILD_TYPE == ${CMAKE_BUILD_TYPE}")
 #set(CMAKE_CXX_FLAGS "-Wall -Wextra -pedantic")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 # link time optimizations (-flto) creates errors with clang on ubuntu
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native") #"-DNDEBUG
+#set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native") #"-DNDEBUG
+set(CMAKE_CXX_FLAGS_RELEASE "-Ofast -march=native -DNDEBUG") #"-DNDEBUG
 #set(CMAKE_CXX_FLAGS_RELEASE "-O")
 #set(CMAKE_CXX_FLAGS_RELEASE "-pg -O") # arguments for gprof
 #set(CMAKE_CXX_FLAGS_RELEASE "-O -fprofile-arcs -ftest-coverage") # arguments for gcov

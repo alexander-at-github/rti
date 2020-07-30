@@ -38,7 +38,7 @@ TEST(cosine_direction_double, plot_w_cstdlib_rng) {
     //<< set ticslevel 0.5
     //<< "set view 0,0 \n"
     //<< "set view 90,0 \n"
-    << "set view 60,30 \n"
+    << "set view 60,15 \n"
     << "set autoscale \n"
     << "set parametric \n"
     << "set palette color \n"

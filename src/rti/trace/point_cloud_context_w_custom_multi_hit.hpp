@@ -1,0 +1,160 @@
+#pragma once
+
+#include <vector>
+#include <set>
+
+#include <embree3/rtcore.h>
+
+#include "rti/geo/point_cloud_disc_geometry.hpp"
+#include "rti/particle/i_particle.hpp"
+#include "rti/reflection/i_reflection_model.hpp"
+#include "rti/reflection/specular.hpp"
+#include "rti/trace/dummy_counter.hpp"
+#include "rti/trace/absc_context.hpp"
+#include "rti/trace/i_hit_accumulator.hpp"
+#include "rti/trace/local_intersector.hpp"
+
+// This class needs to be used according to a protocol! See base class rti::trace::absc_context
+
+namespace rti { namespace trace {
+  template<typename numeric_type>
+  class point_cloud_context_w_custom_multi_hit : public rti::trace::absc_context<numeric_type> {
+
+  private:
+    // geometry related data
+    bool geoNotIntersected = true;
+    numeric_type geoFirstHitTFar = 0;
+    numeric_type geoTFarMax = 0;
+    rti::util::pair<rti::util::triple<numeric_type> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    // boundary related data
+    bool boundNotIntersected = true;
+    numeric_type boundFirstHitTFar = 0;
+    rti::util::pair<rti::util::triple<numeric_type> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    // other data
+  private:
+    unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID;
+    rti::geo::point_cloud_disc_geometry<numeric_type>& mGeometry;
+    rti::reflection::i_reflection_model<numeric_type>& mReflectionModel;
+    rti::trace::i_hit_accumulator<numeric_type>& mHitAccumulator;
+    unsigned int mBoundaryID = RTC_INVALID_GEOMETRY_ID;
+    rti::geo::i_boundary<numeric_type>& mBoundary;
+    rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
+
+    rti::particle::i_particle<numeric_type>& particle;
+
+    rti::trace::local_intersector<numeric_type> localintersector {};
+
+  public:
+    point_cloud_context_w_custom_multi_hit(unsigned int pGeometryID,
+            rti::geo::point_cloud_disc_geometry<numeric_type>& pGeometry,
+            rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
+            rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,
+            unsigned int pBoundaryID,
+            rti::geo::i_boundary<numeric_type>& pBoundary,
+            rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
+            rti::rng::i_rng& pRng,
+            rti::rng::i_rng::i_state& pRngState,
+            rti::particle::i_particle<numeric_type>& particle) :
+      rti::trace::absc_context<numeric_type>(false, geoRayout, 0, pRng, pRngState),// initialize to some values
+      mGeometryID(pGeometryID),
+      mGeometry(pGeometry),
+      mReflectionModel(pReflectionModel),
+      mHitAccumulator(pHitAccumulator),
+      mBoundaryID(pBoundaryID),
+      mBoundary(pBoundary),
+      mBoundaryReflectionModel(pBoundaryReflectionModel),
+      particle(particle) {}
+
+  public:
+    static
+    void register_intersect_filter_funs(rti::geo::i_geometry<numeric_type>& pGeometry,
+                                        rti::geo::i_boundary<numeric_type>& pBoundary)
+    {
+      // The following cast characterizes a precondition to this function
+      auto pPCGeoPointer = dynamic_cast<rti::geo::point_cloud_disc_geometry<numeric_type>*> (&pGeometry);
+      auto& pPCGeo = *pPCGeoPointer;
+      RLOG_DEBUG << "register_intersect_filter_funs()" << std::endl;
+      // Don't do anything
+    }
+
+  public:
+    void intersect1(RTCScene& pScene, RTCRayHit& pRayHit) override final
+    {
+      // prepare
+      pRayHit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+      pRayHit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+
+      // Embree intersect
+      // performing ray queries in a scene is thread-safe
+      rtcIntersect1(pScene, &(this->mContextCWrapper.mRtcContext), &pRayHit);
+
+      this->tfar = pRayHit.ray.tfar;
+
+      if (pRayHit.hit.geomID == RTC_INVALID_GEOMETRY_ID) {
+        // no hit
+        this->reflect = false;
+        RLOG_TRACE << "-h";
+        return;
+      }
+      // else
+      // a hit
+      if (pRayHit.hit.geomID == this->mBoundaryID) {
+        RLOG_DEBUG << "Ray hit boundary" << std::endl;
+        this->boundRayout = this->mBoundaryReflectionModel.use(
+          pRayHit.ray, pRayHit.hit, this->mBoundary, this->rng, this->rngstate);
+        this->rayout = this->boundRayout;
+        this->reflect = true;
+        RLOG_TRACE << "b";
+        return;
+      }
+      // else
+      if (pRayHit.hit.geomID == this->mGeometryID) {
+        // ray hit the geometry
+        RLOG_DEBUG << "Ray hit primitive with ID " << pRayHit.hit.primID << std::endl;
+
+        // If the dot product of the ray direction and the surface normal is greater than zero, then
+        // we hit the back face of the disc.
+        auto const& ray = pRayHit.ray;
+        auto const& hit = pRayHit.hit;
+        if (rti::util::dot_product(rti::util::triple<numeric_type> {ray.dir_x, ray.dir_y, ray.dir_z},
+                                   this->mGeometry.get_normal(hit.primID)) > 0) {
+          // Hit from the back
+          this->reflect = false;
+          RLOG_TRACE << "a";
+          return;
+          // TODO: One could consider to let hits with very small values in tfar through.
+        }
+
+        auto sticking = particle.process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
+        this->geoRayout = this->mReflectionModel.use(
+          pRayHit.ray, pRayHit.hit, this->mGeometry, this->rng, this->rngstate);
+        this->rayout = this->geoRayout;
+        auto valuetodrop = this->rayWeight * sticking;
+        this->mHitAccumulator.use(pRayHit.hit.primID, valuetodrop);
+        this->rayWeight -= valuetodrop;
+      } else {
+        assert(false && "Assumption");
+      }
+
+      this->rejection_control_check_weight_reweight_or_kill();
+      if (this->reflect) {
+        RLOG_TRACE << "r";
+      } else {
+        RLOG_TRACE << "-r";
+      }
+    }
+
+    void init() override final
+    {
+      // RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT flag uses an optimized traversal
+      // algorithm for incoherent rays (default).
+      // this->mRtcContext.flags = RTC_INTERSECT_CONTEXT_FLAG_INCOHERENT;
+      rtcInitIntersectContext(&this->mContextCWrapper.mRtcContext);
+    }
+
+    bool compute_exposed_areas_by_sampling() override final
+    {
+      return true;
+    }
+  };
+}}

@@ -39,6 +39,8 @@ namespace rti { namespace geo {
     std::unique_ptr<rti::trace::absc_context<numeric_type> >
     get_new_context(
       unsigned int pGeometryID,
+      // TODO: Change. Actually the the rti::geo::<geometry> object is alrady saved as a
+      // member variable here. Use it instead of passing a parameter.
       rti::geo::i_geometry<numeric_type>& pGeometry,
       rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
       rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,

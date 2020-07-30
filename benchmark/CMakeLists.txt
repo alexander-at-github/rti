@@ -10,6 +10,7 @@ project(
 #message(STATUS "[test/CMakeLists.txt] GBENCH_BIN_DIR == ${GBENCH_BIN_DIR}")
 #message(STATUS "[test/CMakeLists.txt] GBENCH_INST_DIR == ${GBENCH_INST_DIR}")
 #message(STATUS "[test/CMakeLists.txt] BOOST_ROOT == ${BOOST_ROOT}")
+message(STATUS "[test/CMakeLists.txt] RTI_SRC_DIR == ${RTI_SRC_DIR}")
 
 # One needs to set the RPATH, otherwise the installed executable does not have dynamic
 # link libraries set correctly.
@@ -32,10 +33,13 @@ target_sources(benchmark
   rti/dummy_benchmark.cpp
   # TODO: add files here
   rti/intersect_vs_occluded_all.cpp
+  other/cpp-sign.cpp
+  #other/function-call.cpp
   )
-# target_include_directories(benchmark
-#   PRIVATE
-#   )
+target_include_directories(benchmark
+  PRIVATE
+  ${RTI_SRC_DIR}
+  )
 target_link_libraries(benchmark
   PRIVATE
   benchmark::benchmark
