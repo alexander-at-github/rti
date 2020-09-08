@@ -226,6 +226,7 @@ namespace rti { namespace util {
     return rr;
   }
 
+  inline // Hack: Because the function is not used we need to avoid multiple defnitions for G-Test
   void trim_in_place(std::string& str)
   {
     str.erase(0, str.find_first_not_of(' '));
