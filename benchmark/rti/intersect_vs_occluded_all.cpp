@@ -5,6 +5,8 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
+#include <random>
+
 #include "rti/trace/local_intersector.hpp"
 
 struct point_4f_t {
@@ -24,16 +26,26 @@ using embree_record_t = struct {
 };
 
 static
-void occluded_filter(const struct RTCFilterFunctionNArguments* args) {
+void occluded_filter(const struct RTCFilterFunctionNArguments* args)
+{
   auto valid = args->valid; // a pointer
   valid[0] = 0; // set invalid; causes continuation of ray
   //std::cerr << "Occluded filter. primID == " << (reinterpret_cast<RTCHit*> (args->hit))->primID << std::endl;
 }
 
 static
-void intersect_filter(const struct RTCFilterFunctionNArguments* args) {
+void intersect_filter(const struct RTCFilterFunctionNArguments* args)
+{
   auto valid = args->valid; // a pointer
   valid[0] = 0; // set invalid; causes continuation of ray
+}
+
+static
+float get_random_pertubation()
+{
+  auto static generator = std::mt19937 (std::random_device{}());
+  auto static distribution = std::uniform_real_distribution<float> (-0.1, 0.1);
+  return distribution(generator);
 }
 
 static
@@ -63,9 +75,9 @@ embree_record_t prepare_embree() {
                             sizeof(normal_vec_3f_t),
                             numpoints);
   for (size_t idx = 0; idx < numpoints; ++idx) {
-    discs[idx].xx = 0; discs[idx].yy = 0; discs[idx].zz = 100 - idx*10;
+    discs[idx].xx = get_random_pertubation(); discs[idx].yy = get_random_pertubation(); discs[idx].zz = 100 - idx*10 + get_random_pertubation();
     discs[idx].radius = 1;
-    normals[idx].xx = 0; normals[idx].yy = 0; normals[idx].zz = -1;
+    normals[idx].xx = get_random_pertubation(); normals[idx].yy = get_random_pertubation(); normals[idx].zz = -1;
   }
   rtcSetGeometryOccludedFilterFunction(geometry, &occluded_filter);
   rtcSetGeometryIntersectFilterFunction(geometry, &intersect_filter);
@@ -223,6 +235,7 @@ void intersect_all_with_local_intersector(benchmark::State& pState) {
     //rtcOccluded1(scene, &context, &rayhit.ray);
     rtcIntersect1(scene, &context, &rayhit);
     auto intersects = localintersector.intersect_neighbors(rayhit);
+    //std::cout << intersects.size() << std::endl;
 
     // Do we need DoNotOptimize here?
     benchmark::DoNotOptimize(rayhit);

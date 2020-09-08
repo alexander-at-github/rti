@@ -2,6 +2,8 @@
 
 #include <embree3/rtcore.h>
 
+#include <cmath>
+
 #include "rti/util/utils.hpp"
 
 namespace rti { namespace trace {
@@ -37,26 +39,40 @@ namespace rti { namespace trace {
         auto dorg = rti::util::triple<numeric_type> {discs[idx].xx, discs[idx].yy, discs[idx].zz};
         auto dnorm = rti::util::triple<numeric_type> {normals[idx].xx, normals[idx].yy, normals[idx].zz};
 
-        auto prodOfDirections = rti::util::dot_product<numeric_type>(rorg, dorg);
+        //std::cerr << "rdir: " << rdir[0] << rdir[1] << rdir[2] << std::endl;
+        //std::cerr << "dnorm: " << dnorm[0] << dnorm[1] << dnorm[2] << std::endl;
+        auto prodOfDirections = rti::util::dot_product<numeric_type>(rdir, dnorm);
+        //std::cerr << prodOfDirections << std::endl;
         auto eps = (numeric_type) 1e-4;
-        if (prodOfDirections < eps) {
+        if (std::fabs(prodOfDirections) < eps) {
+        //if (prodOfDirections < eps) {
           // Ray is parallel to disc surface
+          //std::cerr << "parallel" << std::endl;
           continue;
         }
         
         auto rorg2dorg = rti::util::diff(dorg, rorg);
+        //std::cerr << "rorg2dorg: " << rorg2dorg[0] << " "
+        //          << rorg2dorg[1] << " " << rorg2dorg[2] << std::endl;
         auto distanceToHitPoint = rti::util::dot_product(rorg2dorg, dnorm) / prodOfDirections;
+        //std::cerr << "distanceToHitPoint: " << distanceToHitPoint << std::endl;
         // copy ray direction
         auto rdirC = rti::util::triple<numeric_type> {rdir[0], rdir[1], rdir[2]};
         auto rorg2HitPoint = rti::util::sum(rorg, rti::util::scale(distanceToHitPoint, rdirC));
+        //std::cerr << "rorg2HitPoint: " << rorg2HitPoint[0] << " "
+        //          << rorg2HitPoint[1] << " " << rorg2HitPoint[2] << std::endl;
         auto dorg2HitPoint = rti::util::diff(rorg2HitPoint, rorg2dorg);
 
+        //std::cerr << "dorg2HitPOint: " << dorg2HitPoint[0] << " "
+        //          << dorg2HitPoint[1] << " " << dorg2HitPoint[2] << std::endl;
+        
         auto distSqrd = dorg2HitPoint[0] * dorg2HitPoint[0] +
           dorg2HitPoint[1] * dorg2HitPoint[1] +
           dorg2HitPoint[2] * dorg2HitPoint[2];
 
         auto radiusSqrd = discs[idx].radius * discs[idx].radius;
         if (radiusSqrd > distSqrd) {
+          //std::cerr << "Push back" << std::endl;
           result.push_back(idx);
         }
       }
