@@ -79,16 +79,16 @@ namespace rti { namespace util {
     return 1-epsilon <= length && length <= 1+epsilon;
   }
 
-    // This function modifies its argument when called
-    template<typename Ty>
-    void normalize(triple<Ty>& pV)
-    {
-      Ty thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
-      pV[0] /= thrdNorm;
-      pV[1] /= thrdNorm;
-      pV[2] /= thrdNorm;
-      assert( is_normalized(pV) && "Postcondition" );
-    }
+  // This function modifies its argument when called
+  template<typename Ty>
+  void normalize(triple<Ty>& pV)
+  {
+    Ty thrdNorm = std::sqrt(pV[0] * pV[0] + pV[1] * pV[1] + pV[2] * pV[2]);
+    pV[0] /= thrdNorm;
+    pV[1] /= thrdNorm;
+    pV[2] /= thrdNorm;
+    assert( is_normalized(pV) && "Postcondition" );
+  }
 
   // Compute normal of a triangle
   template<typename Ty>
@@ -232,4 +232,54 @@ namespace rti { namespace util {
     str.erase(0, str.find_first_not_of(' '));
     str.erase(str.find_last_not_of(' '));
   }
+
+  template<typename numeric_type>
+  bool aprox_equal(numeric_type p1, numeric_type p2)
+  {
+    using itype = double;
+    auto epsilon = (itype) 1e-9;
+    auto diff = (itype) p1 - (itype) p2;
+    return epsilon >= diff;
+  }
+
+  template<typename numeric_type>
+  void normal_to_abs(triple<numeric_type>& nn)
+  {
+    nn[0] = std::abs(nn[0]);
+    nn[1] = std::abs(nn[1]);
+    nn[2] = std::abs(nn[2]);
+  }
+
+  template<typename numeric_type>
+  bool
+  normals_direction_parallel
+  (triple<numeric_type> n1, triple<numeric_type> n2)
+  {
+    normalize(n1);
+    normal_to_abs(n1);
+    normalize(n2);
+    normal_to_abs(n2);
+    return
+      aprox_equal(n1[0], n2[0]) &&
+      aprox_equal(n1[1], n2[1]) &&
+      aprox_equal(n1[2], n2[2]);
+  }
+
+  template<typename numeric_type>
+  bool
+  normal_perpenticular_to_plain
+  (triple<numeric_type> normal, triple<triple<numeric_type> > plain)
+  {
+    auto pn = compute_normal(plain);
+    return normals_direction_parallel(normal, pn);
+  }
+    
+  template<typename numeric_type>
+  bool
+  plains_parallel
+  (triple<triple<numeric_type> > p1, triple<triple<numeric_type> > p2)
+  {
+    return normal_perpenticular_to_plain(compute_normal(p1), p2);
+  }
+
 }}
