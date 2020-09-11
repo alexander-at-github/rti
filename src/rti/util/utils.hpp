@@ -189,7 +189,7 @@ namespace rti { namespace util {
   // the same result.
   template<typename Ty> static
   rti::util::triple<rti::util::triple<Ty> >
-  get_orthonormal_basis(const rti::util::triple<Ty> pVector) {
+  get_orthonormal_basis(const rti::util::triple<Ty>& pVector) {
     rti::util::triple<rti::util::triple<Ty> > rr;
     rr[0] = pVector;
 
@@ -234,7 +234,7 @@ namespace rti { namespace util {
   }
 
   template<typename numeric_type>
-  bool aprox_equal(numeric_type p1, numeric_type p2)
+  bool aprox_equal(numeric_type& p1, numeric_type& p2)
   {
     using itype = double;
     auto epsilon = (itype) 1e-9;
@@ -268,7 +268,7 @@ namespace rti { namespace util {
   template<typename numeric_type>
   bool
   normal_perpenticular_to_plain
-  (triple<numeric_type> normal, triple<triple<numeric_type> > plain)
+  (triple<numeric_type>& normal, triple<triple<numeric_type> >& plain)
   {
     auto pn = compute_normal(plain);
     return normals_direction_parallel(normal, pn);
@@ -277,7 +277,7 @@ namespace rti { namespace util {
   template<typename numeric_type>
   bool
   plains_parallel
-  (triple<triple<numeric_type> > p1, triple<triple<numeric_type> > p2)
+  (triple<triple<numeric_type> >& p1, triple<triple<numeric_type> >& p2)
   {
     return normal_perpenticular_to_plain(compute_normal(p1), p2);
   }
