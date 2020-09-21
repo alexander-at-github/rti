@@ -9,7 +9,7 @@ project (
   )
 
 find_package (
-  embree 3.6 REQUIRED
+  embree 3 REQUIRED
   PATHS ${EMBREE_DIR}
   NO_DEFAULT_PATH
   )
