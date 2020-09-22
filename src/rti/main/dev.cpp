@@ -202,32 +202,27 @@ int main(int argc, char* argv[]) {
   // Compute bounding box
   auto bdBox = geoFactory->get_geometry().get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z axis.
-  auto epsilon = 1; //0.1; // -0.1;
+  auto epsilon = 0.1; // -0.1;
   if (bdBox[0][2] > bdBox[1][2]) {
     bdBox[0][2] += epsilon;
   } else {
     bdBox[1][2] += epsilon;
   }
-  std::cerr << "ALTERING BOUNDING BOX" << std::endl;
-  assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
-  epsilon = 5;
-  bdBox[0][0] -= epsilon;
-  bdBox[1][0] += epsilon;
-  bdBox[0][1] -= epsilon;
-  bdBox[1][1] += epsilon;
+  // std::cerr << "ALTERING BOUNDING BOX" << std::endl;
+  // assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
+  // epsilon = 5;
+  // bdBox[0][0] -= epsilon;
+  // bdBox[1][0] += epsilon;
+  // bdBox[0][1] -= epsilon;
+  // bdBox[1][1] += epsilon;
+  //
   // std::cerr << "[main] bdBox: ";
   // for (auto const& bb : bdBox)
   //   for (auto const& cc : bb)
   //     std::cerr << cc << " ";
   // std::cerr << std::endl;
 
-  // Prepare boundary
-  auto bdBoxAltered = bdBox;
-  // bdBoxAltered[0][0] -= 0.1; // x
-  // bdBoxAltered[0][1] -= 0.1; // y
-  // bdBoxAltered[1][0] += 0.1; // x
-  // bdBoxAltered[1][1] += 0.1; // y
-  auto boundary = rti::geo::boundary_x_y<numeric_type> {device, bdBoxAltered};
+  auto boundary = rti::geo::boundary_x_y<numeric_type> {device, bdBox};
 
   // Prepare source
   auto zmax = std::max(bdBox[0][2], bdBox[1][2]);
