@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vtkCellArray.h>
+#include <vtkCellData.h>
 #include <vtkDoubleArray.h>
 #include <vtkLine.h>
 #include <vtkPoints.h>

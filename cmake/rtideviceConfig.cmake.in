@@ -6,7 +6,7 @@ set(VTK_DIR @VTK_DIR@)
 
 set (BUILD_SHARED_LIBS_BACKUP ${BUILD_SHARED_LIBS})
 find_package (
-  embree 3.6 REQUIRED
+  embree 3 REQUIRED
   PATHS ${EMBREE_DIR}
   NO_DEFAULT_PATH
   )
@@ -19,4 +19,4 @@ find_package (
   OpenMP REQUIRED
   )
 
-include(${CMAKE_CURRENT_LIST_DIR}/librtideviceTargets.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/rtideviceTargets.cmake)

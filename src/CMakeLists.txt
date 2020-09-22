@@ -7,6 +7,8 @@ project (
   VERSION 0.1
   LANGUAGES CXX
   )
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs) # provides CMAKE_INSTALL_<dir> variables
 
 find_package (
   embree 3 REQUIRED
@@ -21,78 +23,61 @@ find_package (
 find_package (
   OpenMP REQUIRED
   )
-
-# One needs to set the RPATH, otherwise the installed executable does not have dynamic
-# link libraries set correctly.
+  
+# For using the library with the development executable one needs to set the RPATH,
+# otherwise the installed executable does not have dynamic link libraries set correctly.
 # CMAKE_INSTALL_RPATH_USE_LINK_PATH needs to be set before the executables are added.
 set (
   CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE
   )
 
-### Create library
 add_library (
-  librtidevice "rti/device_instantiations.cpp"
-  )
+  rtidevice INTERFACE)
 target_include_directories (
-  librtidevice
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-  PUBLIC
+  rtidevice
+  INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   ${EMBREE_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
-  $<INSTALL_INTERFACE:include>
   )
-#target_compile_features (
-#  librtidevice
-#  PRIVATE
-#  cxx_std_11
-#  )
 target_link_libraries (
-  librtidevice
-  PUBLIC
+  rtidevice
+  INTERFACE
   OpenMP::OpenMP_CXX
   ${EMBREE_LIBRARIES}
   ${VTK_LIBRARIES}
   )
-
-###### TMP
-#SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -pg")
-#SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -pg")
-
-### Export the library
-include(GNUInstallDirs)
-# GNUInstallDirs provides CMAKE_INSTALL_<dir> variables
+target_compile_features (
+  rtidevice
+  INTERFACE
+  cxx_std_11
+  )
 install (
-  TARGETS librtidevice
-  EXPORT librtidevice-export
+  TARGETS rtidevice
+  EXPORT rtidevice-export
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   )
 install (
-  EXPORT librtidevice-export
-  FILE librtideviceTargets.cmake
-  NAMESPACE librtidevice::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/librtidevice
+  EXPORT rtidevice-export
+  FILE rtideviceTargets.cmake
+  NAMESPACE rtidevice::
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rtidevice
   )
-install (
-  FILES "rti/device.hpp"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rti
-  )
-install (
-  FILES "rti/particle/i_particle.hpp" "rti/particle/i_particle_factory.hpp"
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rti/particle
-  )
-
-### Create a Config file for the library for other CMake projects to use find_package()
-include(CMakePackageConfigHelpers)
 configure_package_config_file (
-  ${CMAKE_SOURCE_DIR}/../cmake/librtideviceConfig.cmake.in
-  ${CMAKE_BINARY_DIR}/cmake/librtideviceConfig.cmake
-  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/librtidevice
+  ${CMAKE_SOURCE_DIR}/../cmake/rtideviceConfig.cmake.in
+  ${CMAKE_BINARY_DIR}/cmake/rtideviceConfig.cmake
+  INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rtidevice
   )
 install (
-  FILES ${CMAKE_BINARY_DIR}/cmake/librtideviceConfig.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/librtidevice
+  FILES ${CMAKE_BINARY_DIR}/cmake/rtideviceConfig.cmake
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/rtidevice
+  )
+install (
+  DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  FILES_MATCHING PATTERN "*.hpp"
   )
 
 ##################
@@ -101,24 +86,10 @@ install (
 add_executable (
   rti "rti/main_rt.cpp"
   )
-target_include_directories (
-  rti
-  PRIVATE
-  ${CMAKE_CURRENT_LIST_DIR}
-  ${EMBREE_INCLUDE_DIRS}
-  ${VTK_INCLUDE_DIRS}
-  )
-target_compile_features (
-  rti
-  PRIVATE
-  cxx_std_11
-  )
 target_link_libraries (
   rti
   PRIVATE
-  OpenMP::OpenMP_CXX
-  ${EMBREE_LIBRARIES}
-  ${VTK_LIBRARIES}
+  rtidevice
   )
 install (
   TARGETS rti
