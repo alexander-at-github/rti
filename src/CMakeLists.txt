@@ -84,7 +84,7 @@ install (
 ### Dev Executable
 ##################
 add_executable (
-  rti "rti/main_rt.cpp"
+  rti "rti/main/dev.cpp"
   )
 target_link_libraries (
   rti

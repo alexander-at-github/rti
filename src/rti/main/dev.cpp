@@ -46,7 +46,7 @@
 #include "rti/util/utils.hpp"
 
 namespace rti {
-  namespace main_rt {
+  namespace main {
 
     std::unique_ptr<rti::util::clo::manager> init(int argc, char* argv[]) {
       // Setup command line arguments parser
@@ -138,14 +138,14 @@ int main(int argc, char* argv[]) {
   // double because Embree can work only with floats internally.
   using numeric_type = float;
 
-  auto optMan = rti::main_rt::init(argc, argv);
+  auto optMan = rti::main::init(argc, argv);
   auto infilename = optMan->get_string_option_value("INPUT_FILE");
   auto outfilename = optMan->get_string_option_value("OUTPUT_FILE");
 
   // Enable huge page support.
   auto device_config = "hugepages=1";
   auto device = rtcNewDevice(device_config);
-  rti::main_rt::print_rtc_device_info(device);
+  rti::main::print_rtc_device_info(device);
 
   auto stickingCDefault = 0.8f; // float // default value
   auto stickingC = stickingCDefault;
@@ -300,7 +300,7 @@ int main(int argc, char* argv[]) {
     std::cerr << "cmdstr == " << cmdstr << std::endl;
     geoFactory->write_to_file(*result.hitAccumulator, outfilename,
                               {{"running-time[ns]", std::to_string(result.timeNanoseconds)},
-                               {"git-hash", rti::main_rt::get_git_hash()},
+                               {"git-hash", rti::main::get_git_hash()},
                                {"cmd", cmdstr},
                                // the following line does not really give you the most derived type. FIX
                                {"geo-factory-name", typeid(geoFactory.get()).name()},

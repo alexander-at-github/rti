@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
-#include <pmmintrin.h>
 #include <xmmintrin.h>
+#include <pmmintrin.h>
 
 #include <embree3/rtcore.h>
 
