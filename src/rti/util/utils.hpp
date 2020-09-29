@@ -128,12 +128,18 @@ namespace rti { namespace util {
   }
 
   template<typename Ty>
+  static Ty distance(rti::util::triple<Ty> p1, rti::util::triple<Ty> p2)
+  {
+    auto d1 = p1[0] - p2[0];
+    auto d2 = p1[1] - p2[1];
+    auto d3 = p1[2] - p2[2];
+    return std::sqrt(d1*d1 + d2*d2 + d3*d3);
+  }
+    
+  template<typename Ty>
   static Ty distance(rti::util::pair<rti::util::triple<Ty> > pPnts)
   {
-    auto p1 = pPnts[0][0] - pPnts[1][0];
-    auto p2 = pPnts[0][1] - pPnts[1][1];
-    auto p3 = pPnts[0][2] - pPnts[1][2];
-    return std::sqrt(p1*p1 + p2*p2 + p3*p3);
+    return distance(pPnts[0], pPnts[1]);
   }
 
   template<typename Ty>

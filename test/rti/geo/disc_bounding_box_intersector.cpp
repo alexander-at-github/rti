@@ -17,6 +17,20 @@ protected:
   rti::geo::disc_bounding_box_intersector dbbi {boundingbox};
 };
 
+class disc_bounding_box_intersector_test_3 : public ::testing::Test {
+protected:
+  rti::util::pair<rti::util::pair<float> > boundingbox
+    {rti::util::pair<float> {-100, -100}, rti::util::pair<float> {0, 0}};
+  rti::geo::disc_bounding_box_intersector dbbi {boundingbox};
+};
+
+class disc_bounding_box_intersector_test_4 : public ::testing::Test {
+protected:
+  rti::util::pair<rti::util::pair<float> > boundingbox
+    {rti::util::pair<float> {-2, -4}, rti::util::pair<float> {8, 1}};
+  rti::geo::disc_bounding_box_intersector dbbi {boundingbox};
+};
+
 TEST_F(disc_bounding_box_intersector_test_1, disc_fully_inside_r_1) {
   auto radius = 1.0f;
   auto disc = rti::util::quadruple<float> {0, 0, 0, radius};
@@ -171,8 +185,11 @@ TEST_F(disc_bounding_box_intersector_test_2, disc_half_inside_x_direction_right)
   auto disc = rti::util::quadruple<float> {8, -1, 0, radius};
   auto normal = rti::util::triple<float> {0, 1, 1};
   auto area_inside = dbbi.area_inside(disc, normal);
+  //std::cerr << "area_inside == " << area_inside << std::endl;
   ASSERT_EQ(area_inside, 0.5 * radius * radius * (float) rti::util::pi());
 }
+
+
 
 TEST_F(disc_bounding_box_intersector_test_2, disc_fully_inside_x_direction_right) {
   auto radius = 1.0f;
@@ -223,6 +240,148 @@ TEST_F(disc_bounding_box_intersector_test_2, disc_mostly_inside_tilted_y_directi
   // std::cerr << "computed value == " << area_inside << std::endl;
   // std::cerr << "correct value == " << correct_value << std::endl;
   ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-6);
+}
+
+TEST_F(disc_bounding_box_intersector_test_2, corner_top_right) {
+  auto radius = 1.0f;
+  auto disc = rti::util::quadruple<float> {8, 1, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.25f * radius * radius * (float) rti::util::pi();;
+  //std::cerr << "area_inside == " << area_inside << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-6);
+}
+
+TEST_F(disc_bounding_box_intersector_test_2, corner_bottom_right) {
+  auto radius = 1.0f;
+  auto disc = rti::util::quadruple<float> {8, -4, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.25f * radius * radius * (float) rti::util::pi();;
+  //std::cerr << "area_inside == " << area_inside << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-6);
+}
+
+TEST_F(disc_bounding_box_intersector_test_2, corner_bottom_left) {
+  auto radius = 1.0f;
+  auto disc = rti::util::quadruple<float> {-2, -4, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.25f * radius * radius * (float) rti::util::pi();;
+  //std::cerr << "area_inside == " << area_inside << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-6);
+}
+
+TEST_F(disc_bounding_box_intersector_test_2, corner_top_left) {
+  auto radius = 1.0f;
+  auto disc = rti::util::quadruple<float> {-2, 1, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.25f * radius * radius * (float) rti::util::pi();;
+  //std::cerr << "area_inside == " << area_inside << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-6);
+}
+
+
+
+TEST_F(disc_bounding_box_intersector_test_3, corner_most_simple) {
+  auto radius = 1.0f;
+  auto disc = rti::util::quadruple<float> {0, 0, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = radius * radius * (float) rti::util::pi() / 4;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-6);
+}
+
+TEST_F(disc_bounding_box_intersector_test_3, corner_complex) {
+  auto radius = 8.0f;
+  auto disc = rti::util::quadruple<float> {-1, -4, 0, radius};
+  auto normal = rti::util::triple<float> {-1, -1, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 94.140364f;
+  //auto correct_value = 94.144061f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+
+
+
+TEST_F(disc_bounding_box_intersector_test_4, top_right_corner_1) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {9.35, 1.5, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.349293f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+
+TEST_F(disc_bounding_box_intersector_test_4, top_right_corner_2) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {9.35, 0.5, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.978276f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+
+TEST_F(disc_bounding_box_intersector_test_4, top_right_corner_3) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {7.65, 1.5, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 2.673503f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+
+TEST_F(disc_bounding_box_intersector_test_4, top_right_corner_4) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {7.65, 0.5, 0, radius};
+  auto normal = rti::util::triple<float> {0, 0, 1};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 5.002261f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+
+TEST_F(disc_bounding_box_intersector_test_4, bottom_right_corner) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {7.65, -4.33, 1, radius};
+  auto normal = rti::util::triple<float> {-0.79, 0.43, 0.11};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 1.381609f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+TEST_F(disc_bounding_box_intersector_test_4, bottom_left_corner) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {-1.82, -4.3, 2, radius};
+  auto normal = rti::util::triple<float> {-0.84, -0.53, -0.21};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 0.806725f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
+}
+TEST_F(disc_bounding_box_intersector_test_4, top_left_corner) {
+  auto radius = 2.0f;
+  auto disc = rti::util::quadruple<float> {-2.12, 1.43, 3, radius};
+  auto normal = rti::util::triple<float> {-0.65, 0.47, -0.84};
+  auto area_inside = dbbi.area_inside(disc, normal);
+  auto correct_value = 1.422461f;
+  std::cerr << "computed value == " << area_inside << std::endl;
+  std::cerr << "correct_value == " << correct_value << std::endl;
+  ASSERT_TRUE(std::abs(area_inside - correct_value) < 1e-3);
 }
 
 // TEST(test_suite_name, test_name) {
