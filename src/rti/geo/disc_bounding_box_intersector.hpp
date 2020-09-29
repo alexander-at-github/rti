@@ -115,6 +115,15 @@ namespace rti::geo {
       rti::util::pair<bool> bbaccess;
     };
 
+    ntriple
+    compute_intersection_point_from_plain_and_x_y
+    (ntriple& ppoint, ntriple& pnormal, numeric_type& xx, numeric_type& yy)
+    {
+      auto& p = ppoint;
+      auto& n = pnormal;
+      return {xx, yy, (n[0]*p[0] + n[1]*p[1] + n[2]*p[2] - n[0]*xx - n[1]*yy)/n[2]};
+    }
+
     numeric_type
     compute_area_outside_given_closest_approach
     (nquadruple& disc, ntriple& dnormal, rti::util::quadruple<transferobj_t> aobj)
@@ -207,18 +216,34 @@ namespace rti::geo {
           // bounding box, we have to first reflect along the X axis and then swap the
           // X and Y values.
           if (reflectX1) {
+            // Reflect Y axis; See comments in fill_bboxtransforms()
+            bbp1point[1] *= -1;
+            bbp1normal[1] *= -1;
+
             bbp1point[0] *= -1;
             bbp1normal[0] *= -1;
           }
           if (reflectX2) {
+            // Reflect Y axis; See comments in fill_bboxtransforms()
+            bbp2point[1] *= -1;
+            bbp2normal[1] *= -1;
+
             bbp2point[0] *= -1;
             bbp2normal[0] *= -1;
           }
           if (swapXY1) {
+            // Reflect Y axis; See comments in fill_bboxtransforms()
+            bbp1point[1] *= -1;
+            bbp1normal[1] *= -1;
+            
             rti::util::swap(bbp1point[0], bbp1point[1]);
             rti::util::swap(bbp1normal[0], bbp1normal[1]);
           }
           if (swapXY2) {
+            // Reflect Y axis; See comments in fill_bboxtransforms()
+            bbp2point[1] *= -1;
+            bbp2normal[1] *= -1;
+
             rti::util::swap(bbp2point[0], bbp2point[1]);
             rti::util::swap(bbp2normal[0], bbp2normal[1]);
           }
@@ -241,17 +266,24 @@ namespace rti::geo {
           if (vec_same_direction(idir2, bbp1normal)) {
             idir2 = rti::util::inv(idir2);
           }
+
+          // bbp2point contains a point on the corner of the bounding box which (possibly)
+          // is located in the disc.
+          // That is, bbp2point contains the x and y coordinate of the intersection point.
+          // When we compute the z axis we will have the point where the two plains of the bounding box
+          // and the plain of the disc intersect.
+          auto& xinter = bbp2point[0];
+          auto& yinter = bbp2point[1];
+          auto intersectionpoint = compute_intersection_point_from_plain_and_x_y(dpoint, dnormal, xinter, yinter);
           
-          auto ipoint1 = find_one_intersection_point(idir1, dnormal, dpoint, bbp1normal, bbp1point);
-          auto ipoint2 = find_one_intersection_point(idir2, dnormal, dpoint, bbp2normal, bbp2point);
+          // auto ipoint1 = find_one_intersection_point(idir1, dnormal, dpoint, bbp1normal, bbp1point);
+          // auto ipoint2 = find_one_intersection_point(idir2, dnormal, dpoint, bbp2normal, bbp2point);
+          auto& ipoint1 = intersectionpoint;
+          auto& ipoint2 = intersectionpoint;
+
           std::cerr << "idir1 == " << idir1[0] << " " << idir1[1] << " " << idir1[2] << std::endl;
           std::cerr << "idir2 == " << idir2[0] << " " << idir2[1] << " " << idir2[2] << std::endl;
-          // We actually know the x and y coordinates of the intersection point. It is saved
-          // in bbt1.high.xx and bbt1.high.yy. We just would need to comput the z-value.
-          // TODO: improve
-          std::cout << "TODO: improve the following call." << std::endl;
-          auto intersectionpoint = compute_intersection_point(ipoint1, idir1, ipoint2, idir2);
-          //
+          auto intersectionpoint_ = compute_intersection_point(ipoint1, idir1, ipoint2, idir2);
           
           if (rti::util::distance(dpoint, intersectionpoint) >= radius) {
             // No overlap
@@ -386,6 +418,11 @@ namespace rti::geo {
       auto* currentP = &bboxtransforms[swapXY][reflectX];
       rti::util::swap(currentP->low.xx , currentP->low.yy);
       rti::util::swap(currentP->high.xx, currentP->high.yy);
+      // We also reflect along the Y axis. This makes the top right corner of the
+      // transformed bounding box correspond to the corners (in the original
+      // bounding box) in clock wise order.
+      currentP->low.yy *= -1;
+      currentP->high.yy *= -1;
 
       swapXY = false;
       reflectX = true;
@@ -393,6 +430,11 @@ namespace rti::geo {
       currentP = &bboxtransforms[swapXY][reflectX];
       currentP->low.xx  = -currentP->low.xx;
       currentP->high.xx = -currentP->high.xx;
+      // We also reflect along the Y axis. This makes the top right corner of the
+      // transformed bounding box correspond to the corners (in the original
+      // bounding box) in clock wise order.
+      currentP->low.yy *= -1;
+      currentP->high.yy *= -1;
 
       swapXY = true;
       reflectX = true;
@@ -403,7 +445,9 @@ namespace rti::geo {
       rti::util::swap(currentP->high.xx, currentP->high.yy);
       currentP->low.xx  = -currentP->low.xx;
       currentP->high.xx = -currentP->high.xx;
-
+      // Here we do not have to reflect the Y axis (like in the two cases above), cause
+      // we would have to do it twice which cancles it out.
+      
       fix_bboxtransforms(bbox, bboxtransforms);
     }
 
