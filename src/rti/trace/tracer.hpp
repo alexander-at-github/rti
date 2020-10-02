@@ -7,8 +7,10 @@
 #include <embree3/rtcore.h>
 
 #include "rti/geo/absc_point_cloud_geometry.hpp"
+#include "rti/geo/disc_bounding_box_intersector.hpp"
 #include "rti/geo/i_boundary.hpp"
 #include "rti/geo/i_geometry.hpp"
+#include "rti/geo/point_cloud_disc_factory.hpp"
 #include "rti/io/vtp_writer.hpp"
 #include "rti/particle/i_particle.hpp"
 #include "rti/particle/i_particle_factory.hpp"
@@ -32,7 +34,7 @@ namespace rti { namespace trace {
   class tracer {
 
   public:
-    tracer(rti::geo::i_factory<numeric_type>& pFactory,
+    tracer(rti::geo::point_cloud_disc_factory<numeric_type,  rti::trace::point_cloud_context<numeric_type> >& pFactory,
            rti::geo::i_boundary<numeric_type>& pBoundary,
            rti::ray::i_source& pSource,
            size_t pNumRays,
@@ -183,7 +185,7 @@ namespace rti { namespace trace {
     {
       // Prepare a data structure for the result.
       auto result = rti::trace::result<numeric_type> {};
-      auto& geo = mFactory.get_geometry();
+      auto& geo = *dynamic_cast<rti::geo::absc_point_cloud_geometry<numeric_type>* > (&mFactory.get_geometry());
       result.inputFilePath = geo.get_input_file_path();
       result.geometryClassName = typeid(geo).name();
 
@@ -352,20 +354,22 @@ namespace rti { namespace trace {
           } while (reflect);
         }
         RLOG_TRACE << "before area calc" << std::endl << std::flush;
-        if (rtiContext->compute_exposed_areas_by_sampling()) {
-          std::cerr
-            << "###############"
-            << "### WARNING ### Computing exposed area by sampling does not work"
-            << "###############" << std::endl;
-          // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
-          // rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
-          // rtcSetGeometryIntersectFilterFunction(boundary, nullptr);
-          // rtcCommitGeometry(geometry);
-          // rtcCommitGeometry(boundary);
-          // compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
-        } else {
-          use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
-        }
+        // if (rtiContext->compute_exposed_areas_by_sampling()) {
+        //   std::cerr
+        //     << "###############"
+        //     << "### WARNING ### Computing exposed area by sampling does not work"
+        //     << "###############" << std::endl;
+        //   // // Embree Documentation: "Passing NULL as function pointer disables the registered callback function."
+        //   // rtcSetGeometryIntersectFilterFunction(geometry, nullptr);
+        //   // rtcSetGeometryIntersectFilterFunction(boundary, nullptr);
+        //   // rtcCommitGeometry(geometry);
+        //   // rtcCommitGeometry(boundary);
+        //   // compute_exposed_areas_by_sampling(geo, scene, hitAccumulator, geometryID, *rng, *rngSeed1);
+        // } else {
+        //   use_entire_areas_of_primitives_as_exposed(geo, hitAccumulator);
+        // }
+        auto discareas = compute_disc_areas(geo, mBoundary);
+        hitAccumulator.set_exposed_areas(discareas);
         RLOG_TRACE << "after area calc" << std::endl << std::flush;
       }
       // Assertion: hitAccumulator is reduced to one instance by openmp reduction
@@ -393,7 +397,41 @@ namespace rti { namespace trace {
 
       return result;
     }
+
   private:
+
+    std::vector<numeric_type>
+    compute_disc_areas
+    (rti::geo::absc_point_cloud_geometry<numeric_type>& geo,
+     rti::geo::i_boundary<numeric_type>& boundary)
+    {
+      auto xmin = std::numeric_limits<numeric_type>::max();
+      auto ymin = std::numeric_limits<numeric_type>::max();
+      auto xmax = std::numeric_limits<numeric_type>::lowest();
+      auto ymax = std::numeric_limits<numeric_type>::lowest();
+      for (auto const& vv : boundary.get_vertices()) {
+        if (vv[0] < xmin) xmin = vv[0];
+        if (vv[0] > xmax) xmax = vv[0];
+        if (vv[1] < ymin) ymin = vv[1];
+        if (vv[1] > ymax) ymax = vv[1];
+      }
+      for (auto const& vv : boundary.get_vertices()) {
+        assert( (vv[0] == xmin || vv[0] == xmax) && "Bounding box assumption");
+        assert( (vv[1] == ymin || vv[1] == ymax) && "Bounding box assumption");
+      }
+      auto dbbi = rti::geo::disc_bounding_box_intersector(xmin, ymin, xmax, ymax);
+      auto numofprimitives = geo.get_num_primitives();
+      auto areas = std::vector<numeric_type> (numofprimitives, 0);
+      #pragma omp for
+      for (size_t idx = 0; idx < numofprimitives; ++idx) {
+        areas[idx] = dbbi.area_inside(geo.get_prim_ref(idx), geo.get_normal_ref(idx));
+      }
+      return areas;
+    }
+
+    
+  private:
+    
     rti::geo::i_factory<numeric_type>& mFactory;
     rti::geo::i_boundary<numeric_type>& mBoundary;
     rti::ray::i_source& mSource;

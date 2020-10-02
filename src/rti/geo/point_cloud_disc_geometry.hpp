@@ -31,10 +31,20 @@ namespace rti { namespace geo {
       return "prim_to_string() not implemented";
     }
 
+    rti::util::quadruple<Ty>& get_prim_ref(unsigned int pPrimID) override final
+    {
+      return *reinterpret_cast<rti::util::quadruple<Ty>* > (&this->mVVBuffer[pPrimID]);
+    }
+
     rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) override final
     {
       auto pnt = this->mVVBuffer[pPrimID];
       return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
+    }
+
+    rti::util::triple<Ty>& get_normal_ref(unsigned int pPrimID) override final
+    {
+      return *reinterpret_cast<rti::util::triple<Ty>* > (&this->mNNBuffer[pPrimID]);
     }
 
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final

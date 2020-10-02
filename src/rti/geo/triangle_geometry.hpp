@@ -120,6 +120,13 @@ namespace rti { namespace geo {
       return this->mGeometry;
     }
 
+    rti::util::triple<Ty>& get_normal_ref(unsigned int pPrimID) override final
+    {
+      assert(this->mNNBuffer.size() == this->mNumTriangles &&
+             pPrimID <= this->mNumTriangles && "Assumption");
+      return reinterpret_cast<rti::util::triple<Ty> > (this->mNNBuffer[pPrimID]);
+    }
+    
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final
     {
       // auto& tri = this->mTTBuffer[pPrimID];

@@ -246,12 +246,12 @@ namespace rti { namespace trace {
       return result;
     }
 
-    void set_exposed_areas(std::vector<internal_numeric_type>& areas) override final
+    void set_exposed_areas(std::vector<numeric_type>& areas) override final
     {
       exposedareas = areas;
     }
 
-    std::vector<internal_numeric_type> get_exposed_areas() override final
+    std::vector<numeric_type> get_exposed_areas() override final
     {
       return exposedareas;
     }
@@ -270,7 +270,7 @@ namespace rti { namespace trace {
     std::vector<internal_numeric_type> mAcc;
     std::vector<size_t> mCnts;
     size_t mTotalCnts;
-    std::vector<internal_numeric_type> exposedareas;
+    std::vector<numeric_type> exposedareas;
 
     // actuall - for now - mAcc und mS1s do the same thing!
     // We might want to remove one of them later.

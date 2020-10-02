@@ -50,6 +50,10 @@ namespace rti { namespace geo {
       assert(false && "Not implemented");
     }
 
+    rti::util::triple<Ty>& get_normal_ref(unsigned int pPrimID) override final {
+      return mNormals[pPrimID];
+    }
+
     rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final {
       return mNormals[pPrimID];
     }

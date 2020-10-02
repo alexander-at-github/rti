@@ -22,12 +22,19 @@ namespace rti::geo {
   public:
 
     disc_bounding_box_intersector
-    (rti::util::pair<rti::util::pair<numeric_type> > boundingbox) :
-      bbox ({{boundingbox[0][0], boundingbox[0][1]}, {boundingbox[1][0], boundingbox[1][1]}})
+    (numeric_type xmin, numeric_type ymin, numeric_type xmax, numeric_type ymax) :
+      bbox({{xmin, ymin}, {xmax, ymax}})
     {
       fill_bboxtransforms(bbox, bboxtransforms);
       assert_invariants();
     }
+      
+    disc_bounding_box_intersector
+    (rti::util::pair<rti::util::pair<numeric_type> > boundingbox) :
+      disc_bounding_box_intersector(boundingbox[0][0],
+                                    boundingbox[0][1],
+                                    boundingbox[1][0],
+                                    boundingbox[1][1]) {}
 
     // This function is thread-safe
     numeric_type
