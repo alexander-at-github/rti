@@ -2,9 +2,9 @@
 
 #include <limits>
 
-#include "rti/geo/i_geometry.hpp"
-#include "rti/io/i_point_cloud_reader.hpp"
-#include "rti/util/utils.hpp"
+#include "i_geometry.hpp"
+#include "../io/i_point_cloud_reader.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace geo {
 

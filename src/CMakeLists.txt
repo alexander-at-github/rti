@@ -23,7 +23,7 @@ find_package (
 find_package (
   OpenMP REQUIRED
   )
-  
+
 # For using the library with the development executable one needs to set the RPATH,
 # otherwise the installed executable does not have dynamic link libraries set correctly.
 # CMAKE_INSTALL_RPATH_USE_LINK_PATH needs to be set before the executables are added.
@@ -36,7 +36,7 @@ add_library (
 target_include_directories (
   rtidevice
   INTERFACE
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+  #$<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   ${EMBREE_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}

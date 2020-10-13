@@ -1,6 +1,8 @@
 #pragma once
 
-#include "rti/util/utils.hpp"
+#include <map>
+
+#include "../util/utils.hpp"
 
 namespace rti::geo {
   class disc_bounding_box_intersector {

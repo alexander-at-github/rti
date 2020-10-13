@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/reflection/i_reflection_model.hpp"
+#include "i_reflection_model.hpp"
 
 namespace rti { namespace reflection {
   template<typename Ty>

@@ -3,9 +3,9 @@
 #include <cassert>
 #include <sstream>
 
-#include "rti/geo/absc_point_cloud_geometry.hpp"
-#include "rti/io/i_point_cloud_reader.hpp"
-#include "rti/util/utils.hpp"
+#include "absc_point_cloud_geometry.hpp"
+#include "../io/i_point_cloud_reader.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty>

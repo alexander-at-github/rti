@@ -2,11 +2,11 @@
 
 #include <type_traits>
 
-#include "rti/geo/i_factory.hpp"
-#include "rti/geo/point_cloud_disc_geometry.hpp"
-//#include "rti/io/vtp_point_cloud_reader.hpp"
-#include "rti/io/vtp_writer.hpp"
-#include "rti/trace/point_cloud_context.hpp"
+#include "i_factory.hpp"
+#include "point_cloud_disc_geometry.hpp"
+//#include "../io/vtp_point_cloud_reader.hpp"
+#include "../io/vtp_writer.hpp"
+#include "../trace/point_cloud_context.hpp"
 
 namespace rti { namespace geo {
   template<typename numeric_type, typename context_type>

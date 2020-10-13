@@ -10,17 +10,17 @@
 #include <embree3/rtcore.h>
 
 
-#include "rti/geo/boundary_x_y.hpp"
-#include "rti/geo/point_cloud_disc_factory.hpp"
-//#include "rti/particle/i_particle.hpp"
-#include "rti/particle/i_particle_factory.hpp"
-#include "rti/ray/cosine_direction.hpp"
-#include "rti/ray/disc_origin_z.hpp"
-#include "rti/ray/rectangle_origin_z.hpp"
-#include "rti/ray/source.hpp"
-#include "rti/trace/point_cloud_context.hpp"
-#include "rti/trace/tracer.hpp"
-#include "rti/util/utils.hpp"
+#include "geo/boundary_x_y.hpp"
+#include "geo/point_cloud_disc_factory.hpp"
+//#include "particle/i_particle.hpp"
+#include "particle/i_particle_factory.hpp"
+#include "ray/cosine_direction.hpp"
+#include "ray/disc_origin_z.hpp"
+#include "ray/rectangle_origin_z.hpp"
+#include "ray/source.hpp"
+#include "trace/point_cloud_context.hpp"
+#include "trace/tracer.hpp"
+#include "util/utils.hpp"
 
 namespace rti {
   template<typename numeric_type>

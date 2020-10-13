@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "rti/rng/i_rng.hpp"
-#include "rti/util/utils.hpp"
+#include "../rng/i_rng.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace ray {
   template<typename Ty>

@@ -5,11 +5,11 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/reflection/i_reflection_model.hpp"
-#include "rti/reflection/specular.hpp"
-#include "rti/trace/dummy_counter.hpp"
-#include "rti/trace/absc_context.hpp"
-#include "rti/trace/i_hit_accumulator.hpp"
+#include "../reflection/i_reflection_model.hpp"
+#include "../reflection/specular.hpp"
+#include "dummy_counter.hpp"
+#include "absc_context.hpp"
+#include "i_hit_accumulator.hpp"
 
 // This class needs to be used according to a protocol! See base class rti::trace::absc_context
 

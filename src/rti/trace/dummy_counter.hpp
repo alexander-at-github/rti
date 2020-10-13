@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/trace/i_hit_counter.hpp"
+#include "i_hit_counter.hpp"
 
 namespace rti { namespace trace {
   class dummy_counter : public rti::trace::i_hit_counter {

@@ -6,7 +6,7 @@
 // CAUSES SEGMENTATION FAULT WHEN USED IN MULTIPLE THREADS.
 //
 
-#include "rti/util/utils.hpp"
+#include "utils.hpp"
 
 namespace rti { namespace util {
 //

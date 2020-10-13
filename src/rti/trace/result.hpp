@@ -1,9 +1,9 @@
 #pragma once
 
-#include "rti/trace/i_hit_accumulator.hpp"
+#include "i_hit_accumulator.hpp"
 // include ostream overload template to provide out stream functionality
 // by means of the print function.
-#include "rti/util/ostream_overload_template.hpp"
+#include "../util/ostream_overload_template.hpp"
 
 namespace rti { namespace trace {
   // import name from ostream_overload_template.hpp into local namespace

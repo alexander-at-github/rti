@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rti/ray/i_origin.hpp"
-#include "rti/util/utils.hpp"
+#include "i_origin.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace ray {
 

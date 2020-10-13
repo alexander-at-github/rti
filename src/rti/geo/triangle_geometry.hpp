@@ -4,10 +4,10 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/io/i_triangle_reader.hpp"
-#include "rti/geo/i_geometry.hpp"
-#include "rti/util/logger.hpp"
-#include "rti/util/utils.hpp"
+#include "../io/i_triangle_reader.hpp"
+#include "i_geometry.hpp"
+#include "../util/logger.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty>

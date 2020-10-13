@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/util/ostream_overload_template.hpp"
+#include "../util/ostream_overload_template.hpp"
 
 namespace rti { namespace trace {
   using rti::util::operator<<;

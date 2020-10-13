@@ -1,8 +1,8 @@
 #pragma once
 
-#include "rti/geo/absc_point_cloud_geometry.hpp"
-#include "rti/io/i_point_cloud_reader.hpp"
-#include "rti/util/utils.hpp"
+#include "absc_point_cloud_geometry.hpp"
+#include "../io/i_point_cloud_reader.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   // The type Ty is supposed to be a numeric type - float or double.

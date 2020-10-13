@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "rti/rng/i_rng.hpp"
+#include "i_rng.hpp"
 
 namespace rti { namespace rng {
   class mt64_rng : public rti::rng::i_rng {

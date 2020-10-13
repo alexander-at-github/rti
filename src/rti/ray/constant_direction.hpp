@@ -1,6 +1,6 @@
 #pragma once
 
-#include"rti/ray/i_direction.hpp"
+#include "i_direction.hpp"
 
 namespace rti { namespace ray {
   template<typename numeric_type>

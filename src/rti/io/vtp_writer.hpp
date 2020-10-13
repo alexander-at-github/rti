@@ -12,11 +12,11 @@
 #include <vtkUnsignedIntArray.h>
 #include <vtkXMLPolyDataWriter.h>
 
-#include "rti/geo/i_boundary.hpp"
-#include "rti/geo/point_cloud_sphere_geometry.hpp"
-#include "rti/geo/point_cloud_disc_geometry.hpp"
-#include "rti/geo/triangle_geometry.hpp"
-#include "rti/trace/i_hit_accumulator.hpp"
+#include "../geo/i_boundary.hpp"
+#include "../geo/point_cloud_sphere_geometry.hpp"
+#include "../geo/point_cloud_disc_geometry.hpp"
+#include "../geo/triangle_geometry.hpp"
+#include "../trace/i_hit_accumulator.hpp"
 
 namespace rti { namespace io {
   template<typename Ty>

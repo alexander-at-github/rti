@@ -1,8 +1,8 @@
 #pragma once
 
-#include "rti/ray/cos_hemi.hpp"
-#include "rti/ray/i_direction.hpp"
-#include "rti/util/utils.hpp"
+#include "cos_hemi.hpp"
+#include "i_direction.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace ray {
   template<typename numeric_type>

@@ -6,28 +6,28 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/geo/absc_point_cloud_geometry.hpp"
-#include "rti/geo/disc_bounding_box_intersector.hpp"
-#include "rti/geo/i_boundary.hpp"
-#include "rti/geo/i_geometry.hpp"
-#include "rti/geo/point_cloud_disc_factory.hpp"
-#include "rti/io/vtp_writer.hpp"
-#include "rti/particle/i_particle.hpp"
-#include "rti/particle/i_particle_factory.hpp"
-#include "rti/ray/constant_direction.hpp"
-#include "rti/ray/disc_origin.hpp"
-#include "rti/ray/i_source.hpp"
-#include "rti/reflection/diffuse.hpp"
-//#include "rti/reflection/specular.hpp"
-#include "rti/rng/cstdlib_rng.hpp"
-#include "rti/rng/mt64_rng.hpp"
-#include "rti/trace/dummy_counter.hpp"
-#include "rti/trace/hit_accumulator.hpp"
-#include "rti/trace/point_cloud_context.hpp"
-#include "rti/trace/result.hpp"
-#include "rti/util/logger.hpp"
-#include "rti/util/ray_logger.hpp"
-#include "rti/util/timer.hpp"
+#include "../geo/absc_point_cloud_geometry.hpp"
+#include "../geo/disc_bounding_box_intersector.hpp"
+#include "../geo/i_boundary.hpp"
+#include "../geo/i_geometry.hpp"
+#include "../geo/point_cloud_disc_factory.hpp"
+#include "../io/vtp_writer.hpp"
+#include "../particle/i_particle.hpp"
+#include "../particle/i_particle_factory.hpp"
+#include "../ray/constant_direction.hpp"
+#include "../ray/disc_origin.hpp"
+#include "../ray/i_source.hpp"
+#include "../reflection/diffuse.hpp"
+//#include "../reflection/specular.hpp"
+#include "../rng/cstdlib_rng.hpp"
+#include "../rng/mt64_rng.hpp"
+#include "dummy_counter.hpp"
+#include "hit_accumulator.hpp"
+#include "point_cloud_context.hpp"
+#include "result.hpp"
+#include "../util/logger.hpp"
+#include "../util/ray_logger.hpp"
+#include "../util/timer.hpp"
 
 namespace rti { namespace trace {
   template<typename numeric_type>
@@ -331,6 +331,12 @@ namespace rti { namespace trace {
             // reinterpret_cast<__m128&>(rayhit.ray) = _mm_load_ps(vara);
             // reinterpret_cast<__m128&>(rayhit.ray.dir_x) = _mm_load_ps(varb);
 
+            // For the store-forwarding stall also see the following link:
+            // https://stackoverflow.com/questions/49265634/what-is-the-difference-between-loadu-ps-and-set-ps-when-using-unformatted-data
+            // OPTIMIZATION: It might be better to change the memory layout of the rayout variable
+            // such that tnear (a constant) is saved right in front of rayout. Then we can use two
+            // __m128d _mm_store_sd (__m128d a, __m128d b) to write 128 bits in two chunks of 64 bits
+            // into the destination.
             reinterpret_cast<__m128&>(rayhit.ray) =
               _mm_set_ps(tnear,
                          (float) rtiContext->rayout[0][2],

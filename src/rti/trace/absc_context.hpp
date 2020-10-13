@@ -2,8 +2,8 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/rng/i_rng.hpp"
-#include "rti/util/utils.hpp"
+#include "../rng/i_rng.hpp"
+#include "../util/utils.hpp"
 
 // This class needs to be used according to the following protocol. If one does not
 // follow the protocol, then the behaviour is undefined.

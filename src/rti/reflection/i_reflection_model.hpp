@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/rng/i_rng.hpp"
+#include "../rng/i_rng.hpp"
 
 namespace rti { namespace reflection {
   template<typename Ty>

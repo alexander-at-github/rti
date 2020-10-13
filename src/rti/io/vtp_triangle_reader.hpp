@@ -10,7 +10,7 @@
 #include <vtksys/SystemTools.hxx>
 #include <vtkXMLPolyDataReader.h>
 
-#include "rti/io/i_triangle_reader.hpp"
+#include "i_triangle_reader.hpp"
 
 namespace rti { namespace io {
   template<typename numeric_type>

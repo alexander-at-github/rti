@@ -1,11 +1,11 @@
 #pragma once
 
-#include "rti/geo/i_boundary.hpp"
-#include "rti/geo/i_geometry.hpp"
-#include "rti/particle/i_particle.hpp"
-#include "rti/reflection/i_reflection_model.hpp"
-#include "rti/trace/absc_context.hpp"
-#include "rti/trace/i_hit_accumulator.hpp"
+#include "i_boundary.hpp"
+#include "i_geometry.hpp"
+#include "../particle/i_particle.hpp"
+#include "../reflection/i_reflection_model.hpp"
+#include "../trace/absc_context.hpp"
+#include "../trace/i_hit_accumulator.hpp"
 
 namespace rti { namespace geo {
   template<typename numeric_type>

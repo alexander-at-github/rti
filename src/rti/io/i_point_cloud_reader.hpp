@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/util/utils.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace io {
   template <typename Ty>

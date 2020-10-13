@@ -2,9 +2,9 @@
 
 #include <x86intrin.h> // vector instruction instrinsics
 
-#include "rti/ray/i_direction.hpp"
-#include "rti/ray/i_origin.hpp"
-#include "rti/ray/i_source.hpp"
+#include "i_direction.hpp"
+#include "i_origin.hpp"
+#include "i_source.hpp"
 
 namespace rti { namespace ray {
   template<typename Ty>

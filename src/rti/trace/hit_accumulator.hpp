@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/trace/i_hit_accumulator.hpp"
+#include "i_hit_accumulator.hpp"
 
 namespace rti { namespace trace {
   template<typename numeric_type>

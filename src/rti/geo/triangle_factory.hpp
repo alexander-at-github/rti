@@ -2,13 +2,13 @@
 
 #include <memory>
 
-#include "rti/geo/i_boundary.hpp"
-#include "rti/geo/i_factory.hpp"
-#include "rti/geo/triangle_geometry.hpp"
-#include "rti/io/i_triangle_reader.hpp"
-#include "rti/io/vtp_writer.hpp"
-// #include "rti/trace/triangle_context.hpp"
-// #include "rti/trace/triangle_context_simplified.hpp"
+#include "i_boundary.hpp"
+#include "i_factory.hpp"
+#include "triangle_geometry.hpp"
+#include "../io/i_triangle_reader.hpp"
+#include "../io/vtp_writer.hpp"
+// #include "../trace/triangle_context.hpp"
+// #include "../trace/triangle_context_simplified.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty, typename ContextType>

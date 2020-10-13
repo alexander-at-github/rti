@@ -15,8 +15,8 @@
 #include <vtkXMLPolyDataReader.h>
 #include <vtkXMLUnstructuredGridReader.h>
 
-#include "rti/io/i_triangle_reader.hpp"
-#include "rti/util/utils.hpp"
+#include "../i_triangle_reader.hpp"
+#include "../../util/utils.hpp"
 
 // There is an example at https://vtk.org/doc/nightly/html/classvtkCellIterator.html
 //

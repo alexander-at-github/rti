@@ -1,7 +1,7 @@
 #pragma once
 
-#include "rti/geo/i_abs_geometry.hpp"
-#include "rti/util/utils.hpp"
+#include "i_abs_geometry.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   // Interface

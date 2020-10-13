@@ -10,8 +10,8 @@
 #include <vtksys/SystemTools.hxx>
 #include <vtkXMLPolyDataReader.h>
 
-#include "rti/io/i_point_cloud_reader.hpp"
-#include "rti/util/utils.hpp"
+#include "i_point_cloud_reader.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace io {
   // The parameter numeric_type is intended to be instantiated as a numeric type.

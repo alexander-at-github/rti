@@ -4,9 +4,9 @@
 
 #include <embree3/rtcore.h>
 
-#include "rti/geo/i_boundary.hpp"
-#include "rti/util/logger.hpp"
-#include "rti/util/utils.hpp"
+#include "i_boundary.hpp"
+#include "../util/logger.hpp"
+#include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty>

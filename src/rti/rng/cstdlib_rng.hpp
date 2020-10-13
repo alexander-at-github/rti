@@ -1,6 +1,6 @@
 #pragma once
 
-#include "rti/rng/i_rng.hpp"
+#include "i_rng.hpp"
 
 namespace rti { namespace rng {
   class cstdlib_rng : public rti::rng::i_rng {

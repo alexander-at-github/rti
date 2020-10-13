@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "rti/particle/i_particle.hpp"
+#include "i_particle.hpp"
 
 namespace rti { namespace particle {
   template<typename numeric_type>
