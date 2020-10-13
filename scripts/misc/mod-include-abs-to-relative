@@ -1,0 +1,21 @@
+#! /usr/bin/env bash
+
+for dir in */; do
+  # remove last character which is the trailing slash
+  dir=${dir%?}
+  echo "### ${dir}"
+  for file in ${dir}/*.hpp; do
+    echo "## ${file}"
+    # sed --in-place=.sed.back.1 's/#include "rti\/${dir}\///g' $file
+    # sed --in-place=.sed.back.2 's/#include "rti\//..\//g' $file
+    
+    # sed "s/#include \"rti\/${dir}\//#include \"/g" $file > ${file}.tmp
+    # less ${file}.tmp
+    # sed 's/#include "rti\//#include "..\//g' ${file}.tmp | less
+    # rm ${file}.tmp
+
+    sed --in-place=.sed.back.1 "s/#include \"rti\/${dir}\//#include \"/g" ${file}
+    sed --in-place=.sed.back.2 's/#include "rti\//#include "..\//g' ${file}
+
+  done
+done

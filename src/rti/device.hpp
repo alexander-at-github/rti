@@ -33,24 +33,24 @@ namespace rti {
       init_memory_flags();
     }
 
-    void set_points(std::vector<std::array<numeric_type, 3> > points)
+    void set_points(std::vector<std::array<numeric_type, 3> > points_)
     {
-      points = points;
+      points = points_;
     }
 
-    void set_normals(std::vector<std::array<numeric_type, 3> > normals)
+    void set_normals(std::vector<std::array<numeric_type, 3> > normals_)
     {
-      normals = normals;
+      normals = normals_;
     }
 
-    void set_grid_spacing(std::vector<numeric_type> spacing)
+    void set_grid_spacing(std::vector<numeric_type> spacing_)
     {
-      spacing = spacing;
+      spacing = spacing_;
     }
 
-    void set_number_of_rays(size_t numberOfRays)
+    void set_number_of_rays(size_t numberOfRays_)
     {
-      numberOfRays = numberOfRays;
+      numberOfRays = numberOfRays_;
     }
 
     // The register_particle_factory() function takes ownership of the particle.
@@ -61,9 +61,9 @@ namespace rti {
     //   (b) instance.register_particle_factory(std::unique_ptr<rti::particle::i_particle_factory>
     //         (new concrete::factory_class(\*constructor-arguments*\)))
     void register_particle_factory
-    (std::unique_ptr<rti::particle::i_particle_factory<numeric_type> > particlefactory)
+    (std::unique_ptr<rti::particle::i_particle_factory<numeric_type> > pf)
     {
-      particlefactory = std::move(particlefactory);
+      particlefactory = std::move(pf);
     }
 
     void run()
