@@ -10,7 +10,7 @@ namespace rti { namespace geo {
   private:
     
     using numeric_type = float;
-    // In this code it is helpful that ntriple and nquadruple are arrays with condecutive values because
+    // In this code it is helpful that ntriple and nquadruple are arrays with consecutive values because
     // of Embree (c-style) compatibility reasons.
     using ntriple = std::array<numeric_type, 3>;
     using nquadruple = std::array<numeric_type, 4>;
