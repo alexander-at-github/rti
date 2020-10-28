@@ -4,23 +4,25 @@
 #include <sstream>
 
 #include "absc_point_cloud_geometry.hpp"
+#include "disc_neighborhood.hpp"
 #include "../io/i_point_cloud_reader.hpp"
+#include "../util/timer.hpp"
 #include "../util/utils.hpp"
 
 namespace rti { namespace geo {
-  template<typename Ty>
-  class point_cloud_disc_geometry : public rti::geo::absc_point_cloud_geometry<Ty> {
+  template<typename numeric_type>
+  class point_cloud_disc_geometry : public rti::geo::absc_point_cloud_geometry<numeric_type> {
   public:
 
-    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<Ty>& pGReader) :
-      rti::geo::absc_point_cloud_geometry<Ty>(pDevice, pGReader) {
+    point_cloud_disc_geometry(RTCDevice& pDevice, rti::io::i_point_cloud_reader<numeric_type>& pGReader) :
+      rti::geo::absc_point_cloud_geometry<numeric_type>(pDevice, pGReader) {
       init_this(pDevice, pGReader);
     }
 
     point_cloud_disc_geometry(RTCDevice& device,
-                              std::vector<rti::util::quadruple<Ty> > points,
-                              std::vector<rti::util::triple<Ty> > normals) :
-      rti::geo::absc_point_cloud_geometry<Ty>(device) {
+                              std::vector<rti::util::quadruple<numeric_type> > points,
+                              std::vector<rti::util::triple<numeric_type> > normals) :
+      rti::geo::absc_point_cloud_geometry<numeric_type>(device) {
       init_this(device, points, normals);
     }
 
@@ -30,29 +32,29 @@ namespace rti { namespace geo {
       return "prim_to_string() not implemented";
     }
 
-    rti::util::quadruple<Ty>& get_prim_ref(unsigned int pPrimID) override final
+    rti::util::quadruple<numeric_type>& get_prim_ref(unsigned int pPrimID) override final
     {
-      return *reinterpret_cast<rti::util::quadruple<Ty>* > (&this->mVVBuffer[pPrimID]);
+      return *reinterpret_cast<rti::util::quadruple<numeric_type>* > (&this->mVVBuffer[pPrimID]);
     }
 
-    rti::util::quadruple<Ty> get_prim(unsigned int pPrimID) override final
+    rti::util::quadruple<numeric_type> get_prim(unsigned int pPrimID) override final
     {
       auto pnt = this->mVVBuffer[pPrimID];
       return {pnt.xx, pnt.yy, pnt.zz, pnt.radius};
     }
 
-    rti::util::triple<Ty>& get_normal_ref(unsigned int pPrimID) override final
+    rti::util::triple<numeric_type>& get_normal_ref(unsigned int pPrimID) override final
     {
-      return *reinterpret_cast<rti::util::triple<Ty>* > (&this->mNNBuffer[pPrimID]);
+      return *reinterpret_cast<rti::util::triple<numeric_type>* > (&this->mNNBuffer[pPrimID]);
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final
+    rti::util::triple<numeric_type> get_normal(unsigned int pPrimID) override final
     {
       auto nml = this->mNNBuffer[pPrimID];
-      return {(Ty) nml.xx, (Ty) nml.yy, (Ty) nml.zz};
+      return {(numeric_type) nml.xx, (numeric_type) nml.yy, (numeric_type) nml.zz};
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int pPrimID) override final {
+    rti::util::triple<numeric_type> get_new_origin(RTCRay& pRay, unsigned int pPrimID) override final {
       //auto epsilon = 1e-12; // magic number; less than 1e-3 does definitely not work
       auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
       auto yy = pRay.org_y + pRay.dir_y * pRay.tfar;
@@ -62,10 +64,10 @@ namespace rti { namespace geo {
       // xx += normal[0] * epsilon;
       // yy += normal[1] * epsilon;
       // zz += normal[2] * epsilon;
-      return {(Ty) xx, (Ty) yy, (Ty) zz};
+      return {(numeric_type) xx, (numeric_type) yy, (numeric_type) zz};
     }
 
-    Ty get_area(unsigned int primID) override final
+    numeric_type get_area(unsigned int primID) override final
     {
       auto radius = this->mVVBuffer[primID].radius;
       return radius * radius * rti::util::pi();
@@ -81,7 +83,7 @@ namespace rti { namespace geo {
     };
     normal_vec_3f_t* mNNBuffer = nullptr;
 
-    void init_this(RTCDevice& device, rti::io::i_point_cloud_reader<Ty>& preader)
+    void init_this(RTCDevice& device, rti::io::i_point_cloud_reader<numeric_type>& preader)
     {
       auto points = preader.get_points();
       auto normals = preader.get_normals();
@@ -89,10 +91,12 @@ namespace rti { namespace geo {
     }
 
     void init_this(RTCDevice& device,
-                   std::vector<rti::util::quadruple<Ty> > points,
-                   std::vector<rti::util::triple<Ty> > normals)
+                   std::vector<rti::util::quadruple<numeric_type> > points,
+                   std::vector<rti::util::triple<numeric_type> > normals)
     {
-      assert(rti::util::each_normalized<Ty>(normals) && "Condition: surface normals are normalized violated");
+      std::cout << "HERE" << std::endl;
+      
+      assert(rti::util::each_normalized<numeric_type>(normals) && "Condition: surface normals are normalized violated");
       assert(normals.size() == points.size() && "Number of surface normals not consistent with number of points");
       // "Points with per vertex radii are supported with sphere, ray-oriented
       // discs, and normal-oriented discs geometric represetntations. Such point
@@ -142,6 +146,11 @@ namespace rti { namespace geo {
       // information, u and v are set to zero."
       // Source: https://www.embree.org/api.html#rtc_geometry_type_point
 
+      auto nummax = std::numeric_limits<numeric_type>::max();
+      auto nummin = std::numeric_limits<numeric_type>::lowest();
+      auto min = rti::util::triple<numeric_type> {nummax, nummax, nummax};
+      auto max = rti::util::triple<numeric_type> {nummin, nummin, nummin};
+      
       this->mGeometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT); // using a ray facing disc
 
       this->mNumPoints = points.size();
@@ -155,7 +164,7 @@ namespace rti { namespace geo {
                                 this->mNumPoints);
 
       for (size_t idx = 0; idx < this->mNumPoints; ++idx) {
-        rti::util::quadruple<Ty>& qudtrpl = points[idx];
+        rti::util::quadruple<numeric_type>& qudtrpl = points[idx];
         // Here we have to cast to float because:
         // "RTC_GEOMETRY_TYPE_POINT:
         // [...] the normal buffer stores a single precision normal per control
@@ -165,6 +174,13 @@ namespace rti { namespace geo {
         this->mVVBuffer[idx].yy = (float) qudtrpl[1];
         this->mVVBuffer[idx].zz = (float) qudtrpl[2];
         this->mVVBuffer[idx].radius = (float) qudtrpl[3];
+        if (qudtrpl[0] < min[0]){ min[0] = qudtrpl[0]; }
+        if (qudtrpl[1] < min[1]){ min[1] = qudtrpl[1]; }
+        if (qudtrpl[2] < min[2]){ min[2] = qudtrpl[2]; }
+        if (qudtrpl[0] > max[0]){ max[0] = qudtrpl[0]; }
+        if (qudtrpl[1] > max[1]){ max[1] = qudtrpl[1]; }
+        if (qudtrpl[2] > max[2]){ max[2] = qudtrpl[2]; }
+        
       }
       this->mNNBuffer = (normal_vec_3f_t*)
         rtcSetNewGeometryBuffer(this->mGeometry,
@@ -182,6 +198,17 @@ namespace rti { namespace geo {
       rtcCommitGeometry(this->mGeometry);
       assert (RTC_ERROR_NONE == rtcGetDeviceError(device) &&
               "Embree device error after rtcSetNewGeometryBuffer()");
+
+      std::cout << "Creating neighborhood ... " << std::flush;
+      auto timer = rti::util::timer {};
+      // discnbhd.setup_neighborhood_naive(points);
+      discnbhd.setup_neighborhood(points, min, max);
+      auto elapsed = timer.elapsed_seconds();
+      std::cout << " took " << elapsed << " seconds" << std::endl;
     }
+
+  private:
+
+    rti::geo::disc_neighborhood<numeric_type> discnbhd;
   };
 }}

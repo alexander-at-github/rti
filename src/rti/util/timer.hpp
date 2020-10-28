@@ -13,7 +13,7 @@ namespace rti { namespace util {
       mStartTime = time_stamp_now();
     }
 
-    double elapsed_secounds() const {
+    double elapsed_seconds() const {
       return double(time_stamp_now() - mStartTime) * 1e-9;
     }
 

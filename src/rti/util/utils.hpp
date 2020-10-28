@@ -129,6 +129,15 @@ namespace rti { namespace util {
   }
 
   template<typename Ty>
+  static Ty squrd_distance(rti::util::quadruple<Ty> const& p1, rti::util::quadruple<Ty> const& p2)
+  {
+    auto dx = p1[0] - p2[0];
+    auto dy = p1[1] - p2[1];
+    auto dz = p1[2] - p2[2];
+    return dx*dx + dy*dy + dz*dz;
+  }
+
+  template<typename Ty>
   static Ty distance(rti::util::triple<Ty> p1, rti::util::triple<Ty> p2)
   {
     auto d1 = p1[0] - p2[0];
