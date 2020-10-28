@@ -1,7 +1,15 @@
 #pragma once
 
-#include <cmath>
+// Debug
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+#include <sys/stat.h>
+
+
 #include <chrono>
+#include <cmath>
+#include <iostream>
 #include <omp.h>
 
 #include <embree3/rtcore.h>
@@ -68,7 +76,7 @@ namespace rti { namespace trace {
       if (omp_get_thread_num() != 0) {
         return;
       }
-      auto barlength = 60u;
+      auto barlength = 30u;
       auto barstartsymbol = '[';
       auto fillsymbol = '#';
       auto emptysymbol = '-';
@@ -82,7 +90,7 @@ namespace rti { namespace trace {
           std::string(percentagestringformatlength - percentagestring.length(), ' ') +
           percentagestring + "%";
         auto bar =
-          "Monte Carlo Progress: " + std::string(1, barstartsymbol) +
+          "" + std::string(1, barstartsymbol) +
           std::string(filllength, fillsymbol) + std::string(std::max(0, (int) barlength - (int) filllength), emptysymbol) +
           std::string(1, barendsymbol) + " " + percentagestring ;
         RLOG_PROGRESS << "\r" << bar;
@@ -309,7 +317,7 @@ namespace rti { namespace trace {
               << ")" << std::endl;
 
             rayhit.ray.tfar = std::numeric_limits<numeric_type>::max();
-
+            
             // Runn the intersection
             rtiContext->intersect1(scene, rayhit);
 
@@ -359,7 +367,6 @@ namespace rti { namespace trace {
             // }
           } while (reflect);
         }
-        RLOG_TRACE << "before area calc" << std::endl << std::flush;
         // if (rtiContext->compute_exposed_areas_by_sampling()) {
         //   std::cerr
         //     << "###############"
@@ -376,7 +383,6 @@ namespace rti { namespace trace {
         // }
         auto discareas = compute_disc_areas(geo, mBoundary);
         hitAccumulator.set_exposed_areas(discareas);
-        RLOG_TRACE << "after area calc" << std::endl << std::flush;
       }
       // Assertion: hitAccumulator is reduced to one instance by openmp reduction
 
@@ -399,6 +405,68 @@ namespace rti { namespace trace {
         auto raysrclogfilename = "raysrclog.vtp";
         std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
         rti::io::vtp_writer<float>::write(raysrclog, raysrclogfilename);
+      }
+
+      { // Debug
+        std::cout << "[Alex] V 4" << std::endl;
+        auto dirpath = std::string {"/home/alexanders/vtk/outputs/current/"};
+        auto fileidx = 0u;
+        auto file1path = std::string {};
+        while (true) {
+          file1path = dirpath + "result-file-" + std::to_string(fileidx) + ".vtp";
+          if (rti::util::file_exists(file1path)) {
+            fileidx += 1;
+            continue;
+          }
+          break;
+        }
+        auto file2path = dirpath + "bounding-box-" + std::to_string(fileidx) + ".vtp";
+        assert( ! rti::util::file_exists(file1path) && ! rti::util::file_exists(file2path) && "Assumption");
+        std::cout << "Writing file " << file1path << std::endl;
+        auto metadata =  std::vector<rti::util::pair<std::string> > {};
+        rti::io::vtp_writer<float>::write(geo, hitAccumulator, file1path, metadata);
+        std::cout << "Writing bounding box to " << file2path << std::endl;
+        rti::io::vtp_writer<numeric_type>::write(mBoundary, file2path);
+
+        
+        // auto time = std::time(nullptr);
+        // auto loctime = *std::localtime(&time);
+        // // auto strstr = std::istringstream {};
+        // // strstr << std::put_time(&loctime, "%F_%H-%M-%S");
+        // char timestr [64];
+        // // timestr.reserve(32); // magic number
+        // // std::cout << timestr.capacity() << std::endl;
+        // auto success = strftime(&timestr[0], 64, "%F_%H-%M-%S", &loctime);
+        // if ( ! success) {
+        //   std::cout << "Error creating file name" << std::endl;
+        // }
+        
+        // std::cout << "[Alex] timestr == " << timestr << std::endl;
+        // auto dirpath = std::string {"/home/alexanders/vtk/outputs/"};
+        // // if (filesystem::exists(dirpath)) {
+        // //   std::cerr << "Error unique output directory " << dirpath
+        // //             << " for Alex's VTK files already exists." << std::endl;
+        // // }
+        // // fs::create_directories(dirpath);
+        
+        // // auto path = "/home/alexanders/vtk/outputs/result-file.vtp";
+        // auto path = dirpath + "result-file-" + timestr + ".vtp";
+        // if (rti::util::file_exists(path)) {
+        //   std::cerr << "Error: file " << path << " already exists" << std::endl;
+        // } else {
+        //   std::cout << "Writing file " << path << std::endl;
+        //   auto metadata =  std::vector<rti::util::pair<std::string> > {};
+        //   rti::io::vtp_writer<float>::write(geo, hitAccumulator, path, metadata);
+        // }
+        
+        // path = dirpath + "bounding-box-" + timestr + ".vtp";
+        // if (rti::util::file_exists(path)) {
+        //   std::cerr << "Error: file " << path << " already exists" << std::endl;
+        // } else {
+        //   // auto path = "/home/alexanders/vtk/outputs/bounding-box.vtp";
+        //   std::cout << "Writing bounding box to " << path << std::endl;
+        //   rti::io::vtp_writer<numeric_type>::write(mBoundary, path);
+        // }
       }
 
       return result;

@@ -4,7 +4,7 @@
 
 #include "../util/utils.hpp"
 
-namespace rti::geo {
+namespace rti { namespace geo {
   class disc_bounding_box_intersector {
     
   private:
@@ -470,4 +470,4 @@ namespace rti::geo {
     bbtype bbox;
     std::map<bool, std::map<bool, bbtype> > bboxtransforms;
   };
-}
+}}

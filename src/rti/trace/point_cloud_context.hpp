@@ -22,11 +22,11 @@ namespace rti { namespace trace {
     bool geoNotIntersected = true;
     numeric_type geoFirstHitTFar = 0;
     numeric_type geoTFarMax = 0;
-    rti::util::pair<rti::util::triple<numeric_type> > geoRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    rti::util::pair<rti::util::triple<numeric_type> > geoRayout;
     // boundary related data
     bool boundNotIntersected = true;
     numeric_type boundFirstHitTFar = 0;
-    rti::util::pair<rti::util::triple<numeric_type> > boundRayout {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    rti::util::pair<rti::util::triple<numeric_type> > boundRayout;
     // other data
   private:
     unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID;
@@ -58,6 +58,10 @@ namespace rti { namespace trace {
             rti::rng::i_rng::i_state& pRngState,
             rti::particle::i_particle<numeric_type>& particle) :
       rti::trace::absc_context<numeric_type>(false, geoRayout, 0, pRng, pRngState), // initialize to some values
+      geoRayout({rti::util::triple<numeric_type> { 0.0,  0.0,  0.0},
+                 rti::util::triple<numeric_type> { 0.0,  0.0,  0.0}}),
+      boundRayout({rti::util::triple<numeric_type> { 0.0,  0.0,  0.0},
+                   rti::util::triple<numeric_type> { 0.0,  0.0,  0.0}}),
       mGeometryID(pGeometryID),
       mGeometry(pGeometry),
       mReflectionModel(pReflectionModel),
@@ -155,9 +159,10 @@ namespace rti { namespace trace {
         // set tfar
         rticontextptr->geoFirstHitTFar = rayptr->tfar;
         // determine epsilon:
-        // Set epsilon equal to 0.5 times the radius of the first disc which is hit by the ray.
+        // Set epsilon equal to 2 times the radius of the first disc which is hit by the ray.
         // the fourth element of the primitive is the radius
-        auto epsilon = 0.5 * geometry.get_prim(hitptr->primID)[3];
+        // auto epsilon = 0.5 * geometry.get_prim(hitptr->primID)[3];
+        auto epsilon = 5 * geometry.get_prim(hitptr->primID)[3];
         rticontextptr->geoTFarMax = rayptr->tfar + epsilon;
         RLOG_DEBUG << "filter_fun_geometry(): geoTFarMax set to " << rticontextptr->geoTFarMax << std::endl;
         rticontextptr->geoNotIntersected = false;

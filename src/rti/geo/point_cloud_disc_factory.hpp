@@ -56,7 +56,7 @@ namespace rti { namespace geo {
          pReflectionModel,
          pHitAccumulator, pBoundaryID, pBoundary,
          pBoundaryReflectionModel, pRng, pRngState, particle);
-      return cntxt;
+      return std::move(cntxt);
     }
 
     void write_to_file(rti::trace::i_hit_accumulator<numeric_type>& pHA,

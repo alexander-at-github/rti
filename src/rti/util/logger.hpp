@@ -12,7 +12,7 @@ namespace rti { namespace util {
 //#define RLOG_LEVEL_DEBUG
 //#define RLOG_LEVEL_WARNING
 //#define RLOG_LEVEL_ERROR
-//#define RLOG_LEVEL_PROGRESS
+#define RLOG_LEVEL_PROGRESS
 
   // Set the logging destination here
   static std::ostream& sLStream = std::cerr;

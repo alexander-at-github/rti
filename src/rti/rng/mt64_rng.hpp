@@ -38,11 +38,13 @@ namespace rti { namespace rng {
       return (uint64_t) castStatePtr->mMT(); // call operator()() function on the mersenne twister
     }
 
-    constexpr uint64_t min() const override final {
+    // constexpr
+    uint64_t min() const override final {
       return std::mt19937_64::min();
     }
 
-    constexpr uint64_t max() const override final {
+    // constexpr
+    uint64_t max() const override final {
       return std::mt19937_64::max();
     }
   };

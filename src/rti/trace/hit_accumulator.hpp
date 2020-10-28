@@ -18,7 +18,8 @@ namespace rti { namespace trace {
       mS1s(pSize, 0),
       mS2s(pSize, 0),
       mS3s(pSize,0),
-      mS4s(pSize,0) {}
+      mS4s(pSize,0) {
+    }
 
     hit_accumulator(hit_accumulator<numeric_type> const& pA) :
       mAcc(pA.mAcc), // copy construct the vector member
@@ -28,7 +29,8 @@ namespace rti { namespace trace {
       mS1s(pA.mS1s),
       mS2s(pA.mS2s),
       mS3s(pA.mS3s),
-      mS4s(pA.mS4s) {}
+      mS4s(pA.mS4s) {
+    }
 
     hit_accumulator(hit_accumulator<numeric_type> const&& pA) :
       mAcc(std::move(pA.mAcc)), // move the vector member
@@ -38,7 +40,8 @@ namespace rti { namespace trace {
       mS1s(std::move(pA.mS1s)),
       mS2s(std::move(pA.mS2s)),
       mS3s(std::move(pA.mS3s)),
-      mS4s(std::move(pA.mS4s)) {}
+      mS4s(std::move(pA.mS4s)) {
+    }
 
     // A copy constructor which can accumulate values from two instances
     hit_accumulator(hit_accumulator<numeric_type> const& pA1,
@@ -124,7 +127,6 @@ namespace rti { namespace trace {
     // Member Functions
     void use(unsigned int pPrimID, numeric_type value) override final {
       assert(pPrimID < mAcc.size() && "primitive ID is out of bounds");
-      //std::cout << "ha.use(): pPrimID == " << pPrimID << " value == " << value << std::endl;
       mAcc[pPrimID] += (internal_numeric_type) value;
       mCnts[pPrimID] += 1;
       mTotalCnts += 1;

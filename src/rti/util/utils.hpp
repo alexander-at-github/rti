@@ -5,6 +5,7 @@
 #include <cmath>
 #include <functional>
 #include <iostream>
+#include <sys/stat.h>
 #include <vector>
 
 namespace rti { namespace util {
@@ -287,6 +288,12 @@ namespace rti { namespace util {
   (triple<triple<numeric_type> >& p1, triple<triple<numeric_type> >& p2)
   {
     return normal_perpenticular_to_plain(compute_normal(p1), p2);
+  }
+
+  bool file_exists(std::string& str)
+  {
+    struct stat buffer;   
+    return stat(str.c_str(), &buffer) == 0; 
   }
 
 }}

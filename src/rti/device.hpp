@@ -12,6 +12,7 @@
 
 #include "geo/boundary_x_y.hpp"
 #include "geo/point_cloud_disc_factory.hpp"
+#include "io/vtp_writer.hpp"
 //#include "particle/i_particle.hpp"
 #include "particle/i_particle_factory.hpp"
 #include "ray/cosine_direction.hpp"
@@ -73,12 +74,17 @@ namespace rti {
       }
       auto device_config = "hugepages=1";
       auto device = rtcNewDevice(device_config);
-      auto pointsandradii = combine_points_with_grid_spacing();
+      auto pointsandradii = combine_points_with_grid_spacing_and_compute_max_disc_radius();
       auto geometryFactory =
         rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context<numeric_type> >
         (device, pointsandradii, normals);
       auto bdbox = geometryFactory.get_geometry().get_bounding_box();
-      bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, 0.1);
+      // increase by 5% of the z-achsis
+      // auto bdboxEps =  0.01 * std::abs(bdbox[1][2] - bdbox[0][2]);
+      // auto bdboxEps = maxDscRad * 2;
+      auto bdboxEps = maxDscRad * 1;
+      std::cout << "[Alex] Using bdboxEpx == " << bdboxEps << std::endl;
+      bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, bdboxEps);
       //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 8);
       auto origin = create_rectangular_source_from_bounding_box(bdbox);
       // auto origin = create_circular_source_from_bounding_box(bdbox);
@@ -89,13 +95,17 @@ namespace rti {
       auto tracer = rti::trace::tracer<numeric_type>
         {geometryFactory, boundary, source, numberOfRays, *(particlefactory)};
       auto traceresult = tracer.run();
-      mcestimates = extract_mc_estimates(traceresult);
+      // mcestimates = extract_mc_estimates(traceresult);
+      // normalize_mc_estimates();
+      mcestimates = extract_mc_estimates_normalized(traceresult);
       hitcnts = extract_hit_cnts(traceresult);
       assert(mcestimates.size() == hitcnts.size() && "Correctness Assumption");
       rtcReleaseDevice(device);
-      { // Debug
-        //rti::io::vtp_writer<numeric_type>::write(boundary, "bounding-box.vtp");
-      }
+      // { // Debug
+      //   auto path = "/home/alexanders/vtk/outputs/bounding-box.vtp";
+      //   std::cout << "Writing bounding box to " << path << std::endl;
+      //   rti::io::vtp_writer<numeric_type>::write(boundary, path);
+      // }
     }
 
     std::vector<numeric_type> get_mc_estimates()
@@ -111,10 +121,30 @@ namespace rti {
   private:
     //// Auxiliary functions
 
+    void normalize_mc_estimates()
+    {
+      std::cout << "[Alex] normalizing_mc_estimates()" << std::endl;
+      auto sum = 0.0;
+      auto max = 0.0;
+      for (auto const& ee : mcestimates) {
+        sum += ee;
+        if (ee > max) {
+          max = ee;
+        }
+      }
+      for (auto& ee : mcestimates) {
+        // ee /= sum;
+        ee /= max;
+      }
+    }
+    
     void init_memory_flags()
     {
-      _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-      _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+      #pragma omp parallel
+      {
+        _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+        _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+      }
     }
 
     bool particle_factory_is_not_set()
@@ -127,31 +157,65 @@ namespace rti {
     {
       return traceresult.hitAccumulator->get_cnts();
     }
+    
+    std::vector<numeric_type>
+    extract_mc_estimates_normalized(rti::trace::result<numeric_type>& traceresult)
+    {
+      auto& hitacc = traceresult.hitAccumulator;
+      auto values = hitacc->get_values();
+      auto areas = hitacc->get_exposed_areas();
 
+      auto mcestimates = std::vector<numeric_type> {};
+      mcestimates.reserve(values.size());
+      
+      auto maxv = 0.0;
+      assert (values.size() == areas.size() && "Correctness Assertion");
+      // Account for area and find max value
+      for (size_t idx = 0; idx < values.size(); ++idx) {
+        auto vv = values[idx] / areas[idx];
+        mcestimates.push_back(vv);
+        if (maxv < vv) {
+          maxv = vv;
+        }
+      }
+      std::cout << "[Alex] normalizing_mc_estimates()" << std::endl;
+      for (auto& vv : mcestimates) {
+        vv /= maxv;
+      }
+      return mcestimates;
+    }
+    
     std::vector<numeric_type>
     extract_mc_estimates(rti::trace::result<numeric_type>& traceresult)
     {
       auto& hitacc = traceresult.hitAccumulator;
-      auto sums = hitacc->get_values();
-      auto cntssum = hitacc->get_cnts_sum();
+      auto values = hitacc->get_values();
+      auto areas = hitacc->get_exposed_areas();
       auto mcestimates = std::vector<numeric_type> {};
-      mcestimates.reserve(sums.size());
-      for (size_t idx = 0; idx < sums.size(); ++idx) {
-        mcestimates.push_back(sums[idx] / cntssum);
+      mcestimates.reserve(values.size());
+      assert (values.size() == areas.size() && "Correctness Assertion");
+      // Account for area and find max value
+      for (size_t idx = 0; idx < values.size(); ++idx) {
+        auto vv = values[idx] / areas[idx];
+        mcestimates.push_back(vv);
       }
       return mcestimates;
     }
 
     std::vector<rti::util::quadruple<numeric_type> >
-    combine_points_with_grid_spacing()
+    combine_points_with_grid_spacing_and_compute_max_disc_radius()
     {
       auto result = std::vector<rti::util::quadruple<numeric_type> > {};
       assert(points.size() == spacing.size() && "Assumption");
+      maxDscRad = 0.0;
       result.reserve(points.size());
       for (size_t idx = 0; idx < points.size(); ++idx) {
         auto tri = points[idx];
         auto sca = spacing[idx];
         result.push_back({tri[0], tri[1], tri[2], sca});
+        if (maxDscRad < sca) {
+          maxDscRad = sca;
+        }
       }
       return result;
     }
@@ -230,5 +294,6 @@ namespace rti {
     std::vector<size_t> hitcnts;
     std::unique_ptr<rti::particle::i_particle_factory<numeric_type> > particlefactory;
     size_t numberOfRays = 1024;
+    float maxDscRad = 0.0;
   };
 }

@@ -26,7 +26,6 @@ namespace rti { namespace geo {
 
     std::string prim_to_string(unsigned int pPrimID) override final
     {
-      auto strs = std::stringstream {};
       assert(false && "Not implemented");
       return "prim_to_string() not implemented";
     }
