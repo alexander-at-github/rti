@@ -138,7 +138,8 @@ namespace rti { namespace geo {
       if (s1c.size() > 0 && s2c.size() > 0) {
         for (size_t ci1 = 0; ci1 < s1c.size(); ++ci1) {
           for (size_t ci2 = ci1; ci2 < s2c.size(); ++ci2) {
-            assert(std::abs(pointdata[s1c[ci1]][diridx] - pointdata[s2c[ci2]][diridx]) <= (2*(s1maxrad + s2maxrad)) && "Correctness Assertion");
+            assert(std::abs(pointdata[s1c[ci1]][diridx] - pointdata[s2c[ci2]][diridx]) <= (2*(s1maxrad + s2maxrad)) &&
+                   "Correctness Assertion");
             if ( check_dist(pointdata, s1c[ci1], s2c[ci2], diridx) ) {
               nbhd[s1c[ci1]].push_back(s1c[ci1]);
               nbhd[s2c[ci2]].push_back(s2c[ci2]);
@@ -146,7 +147,6 @@ namespace rti { namespace geo {
           }
         }
       }
-
       // Recurse
       if (s1.size() > 1) {
         auto news1max = max;
