@@ -65,7 +65,8 @@ namespace rti {
       optMan->addCmlParam(rti::util::clo::bool_option
         {"DISCS", {"--discs"}, "sets discs as surface primitives"});
       optMan->addCmlParam(rti::util::clo::string_option
-        {"STICKING_COEFFICIENT", {"--sticking-coefficient", "--sticking-c", "--sticking", "-s"}, "specifies the sticking coefficient of the surface", false});
+        {"STICKING_COEFFICIENT", {"--sticking-coefficient", "--sticking-c", "--sticking", "-s"},
+         "specifies the sticking coefficient of the surface", false});
       optMan->addCmlParam(rti::util::clo::bool_option
         {"SINGLE_HIT", {"--single-hit", "--single"}, "sets single-hit intersections for the ray tracer"});
       bool succ = optMan->parse_args(argc, argv);
@@ -137,147 +138,97 @@ int main(int argc, char* argv[]) {
   // We are using floats. There would actually not be any benefit of using
   // double because Embree can work only with floats internally.
   using numeric_type = float;
+  using namespace rti;
 
-  auto optMan = rti::main::init(argc, argv);
-  auto infilename = optMan->get_string_option_value("INPUT_FILE");
-  auto outfilename = optMan->get_string_option_value("OUTPUT_FILE");
+  auto cmlopts = main::init(argc, argv);
+  auto infilename = cmlopts->get_string_option_value("INPUT_FILE");
+  auto outfilename = cmlopts->get_string_option_value("OUTPUT_FILE");
 
   // Enable huge page support.
   auto device_config = "hugepages=1";
   auto device = rtcNewDevice(device_config);
-  rti::main::print_rtc_device_info(device);
+  main::print_rtc_device_info(device);
 
-  auto stickingCDefault = 0.8f; // float // default value
+  auto stickingCDefault = 0.8f;
   auto stickingC = stickingCDefault;
   try {
-    stickingC = static_cast<float> (std::stod(optMan->get_string_option_value("STICKING_COEFFICIENT")));
+    stickingC = static_cast<float> (std::stod(cmlopts->get_string_option_value("STICKING_COEFFICIENT")));
   } catch (...) {}
   if ( ! (0 < stickingC && stickingC <= 1)) {
     std::cout << "Warning: sticking coefficient has been reset to sane value." << std::endl;
     stickingC = 1.0f; // reset to sane value
   }
   std::cout << "sticking coefficient == " << stickingC << std::endl;
+  
   // Handle input file
   if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtk") {
     std::cout
       << "Recognized \".vtk\" input file file extension. "
-      << "Please convert the input file to vtu (e.g., using Paraview) and rerun "
+      << "Please convert the input file to vtp (e.g., using Paraview) and rerun "
       << argv[0] << " with the new file." << std::endl;
     std::cout << "terminating" << std::endl;
     exit(EXIT_FAILURE);
   }
-  // create variable
-  //auto geoFactory = std::unique_ptr<rti::geo::i_factory<numeric_type> > (nullptr);
-  auto geoFactory = std::unique_ptr<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context<numeric_type> > > (nullptr);
-  
-  if (optMan->get_bool_option_value("TRIANGLES")) {
-    std::cerr << "Triangles not supported" << std::endl;
+  if (cmlopts->get_bool_option_value("TRIANGLES")) {
+    std::cerr << "Triangles this version of " << argv[0] << " not supported " << std::endl;
     exit(EXIT_FAILURE);
-    // RLOG_DEBUG << "recognized cmd line option TRIANGLES" << std::endl;
-    // if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtp") {
-    //   RLOG_DEBUG << "recognized .vtp file" << std::endl;
-    //   auto reader = rti::io::vtp_triangle_reader<numeric_type> {infilename};
-    //   geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader);
-    // } else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
-    //   RLOG_DEBUG << "recognized .vtu file" << std::endl;
-    //   auto reader = rti::io::christoph::vtu_triangle_reader<numeric_type> {infilename};
-    //   geoFactory = std::make_unique<rti::geo::triangle_factory<numeric_type, rti::trace::triangle_context_simplified<numeric_type> > > (device, reader);
-    // }
-  } else { // Default
-  //} else if (optMan->get_bool_option_value("DISCS")) {
-    RLOG_DEBUG << "using DISCS (default option)" << std::endl;
-    if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtp") {
-      RLOG_DEBUG << "recognized .vtp file" << std::endl;
-      auto reader = rti::io::vtp_point_cloud_reader<numeric_type> {infilename};
-      if (optMan->get_bool_option_value("SINGLE_HIT")) {
-        std::cerr << "Single-hit not supported" << std::endl;
-        exit(EXIT_FAILURE);
-        // RLOG_INFO << "Using single-hit" << std::endl;
-        // geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context_simplified<numeric_type> > > (device, reader);
-      } else {
-        RLOG_INFO << "Using multi-hit" << std::endl;
-        geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context<numeric_type> > > (device, reader);
-      }
-    } else if (vtksys::SystemTools::GetFilenameLastExtension(infilename) == ".vtu") {
-      RLOG_DEBUG << "recognized .vtu file" << std::endl;
-      std::cerr << "VTU files not supported" << std::endl;
-      exit(EXIT_FAILURE);
-      // auto reader = rti::io::xaver::vtu_point_cloud_reader<numeric_type> {infilename};
-      // geoFactory = std::make_unique<rti::geo::point_cloud_disc_factory<numeric_type, rti::trace::point_cloud_context_simplified<numeric_type> > > (device, reader);
-    }
   }
-
+  auto reader = io::vtp_point_cloud_reader<numeric_type> {infilename};
+  auto geometry = geo::point_cloud_disc_geometry<numeric_type> {device, reader};
+  
   // Compute bounding box
-  auto bdBox = geoFactory->get_geometry().get_bounding_box();
+  auto bdbox = geometry.get_bounding_box();
   // Increase the size of the bounding box by an epsilon on the z axis.
-  auto epsilon = 0.1; // -0.1;
-  if (bdBox[0][2] > bdBox[1][2]) {
-    bdBox[0][2] += epsilon;
-  } else {
-    bdBox[1][2] += epsilon;
-  }
-  // std::cerr << "ALTERING BOUNDING BOX" << std::endl;
-  // assert(bdBox[0][0] <= bdBox[1][0] && bdBox[0][1] <= bdBox[1][1]);
-  // epsilon = 5;
-  // bdBox[0][0] -= epsilon;
-  // bdBox[1][0] += epsilon;
-  // bdBox[0][1] -= epsilon;
-  // bdBox[1][1] += epsilon;
-  //
-  // std::cerr << "[main] bdBox: ";
-  // for (auto const& bb : bdBox)
-  //   for (auto const& cc : bb)
-  //     std::cerr << cc << " ";
-  // std::cerr << std::endl;
+  assert(bdbox[0][2] <= bdbox[1][2] && "Assumption");
+  auto epsilon = 0.1 * (bdbox[1][2] - bdbox[0][2]); // -0.1;
+  bdbox[1][2] += epsilon;
 
-  auto boundary = rti::geo::boundary_x_y<numeric_type> {device, bdBox};
-
+  auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox};
   // Prepare source
-  auto zmax = std::max(bdBox[0][2], bdBox[1][2]);
-  auto originC1 = rti::util::pair<numeric_type> {bdBox[0][0], bdBox[0][1]};
-  auto originC2 = rti::util::pair<numeric_type> {bdBox[1][0], bdBox[1][1]};
+  auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
+  auto originC1 = util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};
+  auto originC2 = util::pair<numeric_type> {bdbox[1][0], bdbox[1][1]};
 
   // ASSUMPTION: the source is on a plain above (positive values) the structure
   // such that z == c for some constant c. (That is in accordance with the silvaco
   // verification instances.)
   //
-  auto origin = rti::ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
-  // auto origin = rti::ray::disc_origin_z<numeric_type> {(originC1[0] + originC2[0])/2,
-  //                                                      (originC1[1] + originC2[1])/2,
-  //                                                      zmax,
-  //                                                      (originC2[0] - originC1[0])/2};
+  auto origin = ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
 
   // Cosine direction in the opposite direction of the z-axis
-  auto direction = rti::ray::cosine_direction<numeric_type> {
-    {rti::util::triple<numeric_type> {0.f, 0.f, -1.f},
-     rti::util::triple<numeric_type> {0.f, 1.f,  0.f},
-     rti::util::triple<numeric_type> {1.f, 0.f,  0.f}}};
-  auto source = rti::ray::source<numeric_type> {origin, direction};
+  auto direction = ray::cosine_direction<numeric_type> {
+    {util::triple<numeric_type> {0.f, 0.f, -1.f},
+     util::triple<numeric_type> {0.f, 1.f,  0.f},
+     util::triple<numeric_type> {1.f, 0.f,  0.f}}};
+  auto source = ray::source<numeric_type> {origin, direction};
 
-  auto numraysstr = optMan->get_string_option_value("NUM_RAYS");
   auto numrays = 128 * 1024ull; // default value // magic number
+  auto numraysstr = cmlopts->get_string_option_value("NUM_RAYS");
   try {
     numrays = std::stoull(numraysstr);
   } catch (...) {}
 
   // Create particle and particle factory
-  class particle_t : public rti::particle::i_particle<numeric_type> {
+  class particle_t : public particle::i_particle<numeric_type> {
     numeric_type sticking;
     public:
     particle_t(numeric_type sticking) : sticking(sticking) {}
-    numeric_type process_hit(size_t primID, std::array<numeric_type, 3> direction) override final { return sticking; }
+    numeric_type process_hit(size_t primID, std::array<numeric_type, 3> direction) override final {
+      return sticking;
+    }
     void init_new() override final { return; }
   };
-  class particle_factory : public rti::particle::i_particle_factory<numeric_type> {
+  class particle_factory : public particle::i_particle_factory<numeric_type> {
     numeric_type sticking;
     public:
     particle_factory(numeric_type sticking) : sticking(sticking) {}
-    std::unique_ptr<rti::particle::i_particle<numeric_type> > create() override final { return std::make_unique<particle_t> (sticking); }
+    std::unique_ptr<particle::i_particle<numeric_type> > create() override final {
+      return std::make_unique<particle_t> (sticking);
+    }
   };
   auto particlefactory = particle_factory ((numeric_type) stickingC);
-  //auto particlefactory = nullptr;
 
-  auto tracer = rti::trace::tracer<numeric_type> {*geoFactory, boundary, source, numrays, particlefactory};
+  auto tracer = trace::tracer<numeric_type> {geometry, boundary, source, numrays, particlefactory};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
@@ -298,32 +249,35 @@ int main(int argc, char* argv[]) {
       GetFilenameWithoutExtension(outfilename).append(".bounding-box.vtp");
 
     std::cout << "Writing output to " << outfilename << std::endl << std::flush;
-    auto cmdstr = rti::util::foldl<std::string, std::string>
+    auto cmdstr = util::foldl<std::string, std::string>
       ([](auto p1, auto const p2){return (p1+=" ")+=p2;}, "", std::vector<std::string> (argv, argv+argc));
     std::cerr << "cmdstr == " << cmdstr << std::endl;
-    geoFactory->write_to_file(*result.hitAccumulator, outfilename,
-                              {{"running-time[ns]", std::to_string(result.timeNanoseconds)},
-                               {"git-hash", rti::main::get_git_hash()},
-                               {"cmd", cmdstr},
-                               // the following line does not really give you the most derived type. FIX
-                               {"geo-factory-name", typeid(geoFactory.get()).name()},
-                               {"geo-name", typeid(geoFactory->get_geometry()).name()}});
+    auto geoname = typeid(&geometry).name();    
+    io::vtp_writer<numeric_type>::write
+      (geometry, 
+       *result.hitAccumulator,
+       outfilename,
+       // std::vector<rti::util::pair<std::string> >
+       {{"running-time[ns]", std::to_string(result.timeNanoseconds)},
+        {"git-hash", main::get_git_hash()},
+        {"cmd", cmdstr},
+        {"geo-name", geoname}});
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
-    rti::io::vtp_writer<numeric_type>::write(boundary, bbfilename);
+    io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 
     auto raylog = RAYLOG_GET_PTR();
     if (raylog != nullptr) {
       auto raylogfilename = vtksys::SystemTools::
         GetFilenameWithoutExtension(outfilename).append(".ray-log.vtp");
       std::cout << "Writing ray log to " << raylogfilename << std::endl;
-      rti::io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
+      io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
     }
     auto raysrclog = RAYSRCLOG_GET_PTR();
     if (raysrclog != nullptr) {
       auto raysrclogfilename = vtksys::SystemTools::
         GetFilenameWithoutExtension(outfilename).append(".ray-src-log.vtp");
       std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
-      rti::io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
+      io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
     }
   }
 
@@ -331,3 +285,4 @@ int main(int argc, char* argv[]) {
 
   return EXIT_SUCCESS;
 }
+

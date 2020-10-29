@@ -24,10 +24,27 @@ namespace rti { namespace io {
   public:
 
     static
+    void write(rti::geo::point_cloud_disc_geometry<Ty>& pGeometry,
+               rti::trace::i_hit_accumulator<Ty>& pHA,
+               std::string pOutfilename,
+               std::vector<rti::util::pair<std::string> > pMetadata) {
+      // Precondition:
+      assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
+              "hit count accumulator does not fit the given geometry");
+      auto polydata = get_polydata(pGeometry);
+      add_hit_values_to_points(polydata, pHA);
+      add_exposed_area(polydata, pHA);
+      try_add_hit_counts_to_points(polydata, pHA);
+      try_add_statistical_data(polydata, pHA);
+      add_metadata(polydata, pMetadata);
+      write(polydata, pOutfilename);
+    }
+    
+    static
     void write(rti::geo::absc_point_cloud_geometry<Ty>& pGeometry,
                rti::trace::i_hit_accumulator<Ty>& pHA,
                std::string pOutfilename,
-               std::vector<rti::util::pair<std::string> >& pMetadata) {
+               std::vector<rti::util::pair<std::string> > pMetadata) {
       // Precondition:
       assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
               "hit count accumulator does not fit the given geometry");
@@ -44,7 +61,7 @@ namespace rti { namespace io {
     void write(rti::geo::triangle_geometry<Ty>& pGeometry,
                rti::trace::i_hit_accumulator<Ty>& pHA,
                std::string pOutfilename,
-               std::vector<rti::util::pair<std::string> >& pMetadata) {
+               std::vector<rti::util::pair<std::string> > pMetadata) {
       // Precondition:
       assert (pGeometry.get_num_primitives() == pHA.get_values().size() &&
               "hit count accumulator does not fit the given geometry");
@@ -284,6 +301,41 @@ namespace rti { namespace io {
       return polydata;
     }
 
+    static
+    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::point_cloud_disc_geometry<Ty>& pGeometry) {
+      auto points = vtkSmartPointer<vtkPoints>::New();
+      auto cells = vtkSmartPointer<vtkCellArray>::New();
+
+      auto numpoints = pGeometry.get_num_primitives();
+      //auto normals = std::vector<rti::util::triple<Ty> > {numpoints};
+      auto normals = vtkSmartPointer<vtkDoubleArray>::New();
+      normals->SetNumberOfComponents(3); // 3 dimensions
+      normals->SetNumberOfTuples(numpoints);
+      //auto radii = std::vector<Ty> {numpoints};
+      auto radii = vtkSmartPointer<vtkDoubleArray>::New();
+      radii->SetNumberOfComponents(1); // 1 dimensions
+      radii->SetNumberOfTuples(numpoints);
+      for (size_t idx = 0; idx < numpoints; ++idx) {
+        auto point = pGeometry.get_prim(idx);
+        auto normal = pGeometry.get_normal(idx);
+        auto writePointId = points->InsertNextPoint(point[0], point[1], point[2]);
+        cells->InsertNextCell(1, &writePointId); // one cell for writePointId
+        //normals.push_back(normal);
+        normals->SetTuple(idx, normal.data());
+        //radii.push_back(point[3]);
+        // the radius is saved as the 4th element of the point (which is an array)
+        radii->SetTuple(idx, &point[3]);
+      }
+      auto polydata = vtkSmartPointer<vtkPolyData>::New();
+      polydata->SetPoints(points);
+      polydata->SetVerts(cells);
+      polydata->GetCellData()->SetNormals(normals);
+      radii->SetName(radiusStr);
+      polydata->GetCellData()->AddArray(radii);
+
+      return polydata;
+    }
+    
     static
     vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::i_boundary<Ty>& pBoundary) {
       auto pointsOut = vtkSmartPointer<vtkPoints>::New();
