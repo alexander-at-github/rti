@@ -16,6 +16,7 @@
 
 #include "dummy_counter.hpp"
 #include "hit_accumulator.hpp"
+#include "local_intersector.hpp"
 //#include "point_cloud_context.hpp"
 #include "result.hpp"
 //#include "../geo/absc_point_cloud_geometry.hpp"
@@ -144,7 +145,7 @@ namespace rti { namespace trace {
         // thread-local particle
         auto particle = particlefactory.create();
         // probabilistic weight
-        auto rayweight = 1.f;
+        auto rayweight = (numeric_type) 1;
 
         auto rtccontext = RTCIntersectContext {};
         rtcInitIntersectContext(&rtccontext);
@@ -218,6 +219,7 @@ namespace rti { namespace trace {
             auto sticking = particle->process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
             auto valuetodrop = rayweight * sticking;
             hitAccumulator.use(rayhit.hit.primID, valuetodrop);
+            check_for_additional_intersections(rayhit.ray, rayhit.hit.primID, hitAccumulator, valuetodrop);
             rayweight -= valuetodrop;
             reflect = mc::rejection_control<numeric_type>::check_weight_reweight_or_kill
               (rayweight, lastinitRW, *rng, *rngstate2);
@@ -285,36 +287,70 @@ namespace rti { namespace trace {
         io::vtp_writer<float>::write(raysrclog, raysrclogfilename);
       }
 
-      { // Debug
-        std::cout << "[Alex] V 5" << std::endl;
-        auto dirpath = std::string {"/home/alexanders/vtk/outputs/current/"};
-        auto fileidx = 0u;
-        auto file1path = std::string {};
-        while (true) {
-          file1path = dirpath + "result-file-" + std::to_string(fileidx) + ".vtp";
-          if (util::file_exists(file1path)) {
-            fileidx += 1;
-            continue;
-          }
-          break;
-        }
-        auto file2path = dirpath + "bounding-box-" + std::to_string(fileidx) + ".vtp";
-        assert( ! util::file_exists(file1path) && ! util::file_exists(file2path) && "Assumption");
-        std::cout << "Writing file " << file1path << std::endl;
-        auto metadata =  std::vector<util::pair<std::string> > {};
-        io::vtp_writer<float>::write(mGeometry, hitAccumulator, file1path, metadata);
-        std::cout << "Writing bounding box to " << file2path << std::endl;
-        io::vtp_writer<numeric_type>::write(mBoundary, file2path);
-      }
+      // { // Debug
+      //   std::cout << "[Alex] V 5" << std::endl;
+      //   auto dirpath = std::string {"/home/alexanders/vtk/outputs/current/"};
+      //   auto fileidx = 0u;
+      //   auto file1path = std::string {};
+      //   while (true) {
+      //     file1path = dirpath + "result-file-" + std::to_string(fileidx) + ".vtp";
+      //     if (util::file_exists(file1path)) {
+      //       fileidx += 1;
+      //       continue;
+      //     }
+      //     break;
+      //   }
+      //   auto file2path = dirpath + "bounding-box-" + std::to_string(fileidx) + ".vtp";
+      //   assert( ! util::file_exists(file1path) && ! util::file_exists(file2path) && "Assumption");
+      //   std::cout << "Writing file " << file1path << std::endl;
+      //   auto metadata =  std::vector<util::pair<std::string> > {};
+      //   io::vtp_writer<float>::write(mGeometry, hitAccumulator, file1path, metadata);
+      //   std::cout << "Writing bounding box to " << file2path << std::endl;
+      //   io::vtp_writer<numeric_type>::write(mBoundary, file2path);
+      // }
 
       return result;
     }
 
   private:
 
-    constexpr float get_init_ray_weight()
+    constexpr numeric_type get_init_ray_weight()
     {
       return 1;
+    }
+
+    void check_for_additional_intersections
+    (RTCRay& ray,
+     unsigned int hit1id,
+     trace::hit_accumulator<numeric_type>& hitAcc,
+     numeric_type valuetodrop)
+    {
+      // std::cout << "neighborhoodsize == " << mGeometry.get_neighbors(hit1id).size() << std::endl;
+
+      auto& disc = mGeometry.get_prim_ref(hit1id);
+      // std::cout << "disc " << hit1id << " == " << disc[0] << " " << disc[1] << " " << disc[2] << " " << disc[3] << std::endl;
+
+      // { // Debug
+      //   std::cerr << "## Debug" << std::endl;
+      //   local_intersector::does_intersect(ray, disc, mGeometry.get_normal_ref(hit1id));
+      //   std::cerr << "## Debug" << std::endl;
+      // }
+      
+      auto cnt = 0u;
+      for (auto const& id : mGeometry.get_neighbors(hit1id)) {
+        // std::cout << "using prim id " << id << std::endl;
+        // auto& printdisc = mGeometry.get_prim_ref(id);
+        // std::cout << "printdisc == " << printdisc[0] << " " << printdisc[1] << " " << printdisc[2] << " " << printdisc[3] << std::endl;
+
+        auto const& disc = mGeometry.get_prim_ref(id);
+        auto const& dnormal = mGeometry.get_normal_ref(id);
+        auto intersect = local_intersector::does_intersect(ray, disc, dnormal);
+        if ( intersect ) {
+          hitAcc.use(id, valuetodrop);
+          cnt += 1;
+        }
+      }
+      // std::cout << " hits == " << cnt << std::endl;
     }
       
     std::vector<numeric_type>

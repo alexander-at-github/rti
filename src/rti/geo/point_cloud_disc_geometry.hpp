@@ -112,6 +112,11 @@ namespace rti { namespace geo {
       pOs << ")";
     }
 
+    std::vector<size_t>& get_neighbors(unsigned int id)
+    {
+      return discnbhd.get_neighbors(id);
+    }
+
   private:
 
     void init_this

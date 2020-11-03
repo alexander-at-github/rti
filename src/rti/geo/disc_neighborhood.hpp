@@ -13,7 +13,7 @@ namespace rti { namespace geo {
     {
       nbhd.clear();
       nbhd.resize(points.size(), std::vector<size_t> {});
-      construct_neighborhood_naive_2(points);
+      construct_neighborhood_naive_1(points);
     }
 
 
@@ -25,6 +25,11 @@ namespace rti { namespace geo {
       nbhd.clear();
       nbhd.resize(points.size(), std::vector<size_t> {});
       construct_neighborhood_2(points, min, max);
+    }
+
+    std::vector<size_t>& get_neighbors(size_t id)
+    {
+      return nbhd[id];
     }
 
   private:
@@ -106,7 +111,7 @@ namespace rti { namespace geo {
             s1r2maxr = radius;
           }
         }
-        if (ee[diridx] + radius + s2maxrad < pivot) {
+        if (ee[diridx] + radius + s2maxrad <= pivot) {
           continue;
         }
         s1c.push_back(s1[idx]);
@@ -126,7 +131,7 @@ namespace rti { namespace geo {
             s2r2maxr = radius;
           }
         }
-        if (ee[diridx] - radius - s1maxrad > pivot) {
+        if (ee[diridx] - radius - s1maxrad >= pivot) {
           continue;
         }
         s2c.push_back(s2[idx]);
@@ -137,12 +142,12 @@ namespace rti { namespace geo {
       // Iterate over pairs of candidates
       if (s1c.size() > 0 && s2c.size() > 0) {
         for (size_t ci1 = 0; ci1 < s1c.size(); ++ci1) {
-          for (size_t ci2 = ci1; ci2 < s2c.size(); ++ci2) {
+          for (size_t ci2 = 0; ci2 < s2c.size(); ++ci2) {
             assert(std::abs(pointdata[s1c[ci1]][diridx] - pointdata[s2c[ci2]][diridx]) <= (2*(s1maxrad + s2maxrad)) &&
                    "Correctness Assertion");
             if ( check_dist(pointdata, s1c[ci1], s2c[ci2], diridx) ) {
-              nbhd[s1c[ci1]].push_back(s1c[ci1]);
-              nbhd[s2c[ci2]].push_back(s2c[ci2]);
+              nbhd[s1c[ci1]].push_back(s2c[ci2]);
+              nbhd[s2c[ci2]].push_back(s1c[ci1]);
             }
           }
         }
@@ -166,6 +171,7 @@ namespace rti { namespace geo {
     size_t const& i2,
     int const& diridx)
     {
+      assert (0 <= diridx && diridx <= 2 && "Assumption");
       auto& p1 = pointdata[i1];
       auto& r1 = p1[3];
       auto& p2 = pointdata[i2];
@@ -175,10 +181,10 @@ namespace rti { namespace geo {
       if (std::abs(p2[diridx] - p1[diridx]) >= sr) {
         return false;
       }
-      if (std::abs(p1[diridx + 1 % 3] - p2[diridx + 1 % 3]) >= sr) {
+      if (std::abs(p1[(diridx + 1) % 3] - p2[(diridx + 1) % 3]) >= sr) {
         return false;
       }
-      if (std::abs(p1[diridx + 2 % 3] - p2[diridx + 2 % 3]) >= sr) {
+      if (std::abs(p1[(diridx + 2) % 3] - p2[(diridx + 2) % 3]) >= sr) {
         return false;
       }
       // Check distance
@@ -203,10 +209,10 @@ namespace rti { namespace geo {
           auto& p2 = points[idx2];
           auto& r2 = p2[3];
           auto sr = r1 + r2;
-          // auto distance = rti::util::distance<numeric_type>({p1[0], p1[1], p1[2]}, {p2[0], p2[1], p2[2]});
-          // if (distance < r1+r2) {
-          auto squrddist = rti::util::squrd_distance(p1, p2);
-          if (squrddist < sr * sr) {
+          auto distance = rti::util::distance<numeric_type>({p1[0], p1[1], p1[2]}, {p2[0], p2[1], p2[2]});
+          if (distance < r1+r2) {
+          // auto squrddist = rti::util::squrd_distance(p1, p2);
+          // if (squrddist < sr * sr) {
             nbhd[idx1].push_back(idx2);
             nbhd[idx2].push_back(idx1);
           }
