@@ -36,8 +36,9 @@ find_package(Boost REQUIRED COMPONENTS system filesystem iostreams
 add_executable(tests "")
 target_sources(tests
   PRIVATE
-  #rti/ray/rectangle_origin_z.cpp
-  #rti/ray/cosine_direction.cpp
+  rti/ray/rectangle_origin_z.cpp
+  rti/ray/cosine_direction.cpp
+  rti/ray/power_cosine_direction_z.cpp
   rti/geo/disc_bounding_box_intersector.cpp
   )
 target_include_directories(tests

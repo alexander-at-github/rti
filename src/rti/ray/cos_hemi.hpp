@@ -18,11 +18,6 @@ namespace rti { namespace ray {
       Ty epsilon = 1e-6;
       for (auto vec : pBasis) {
         Ty length = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
-        if ( ! (1 - epsilon <= length && length <= 1 + epsilon) ) {
-          std::cerr
-            << "Assertion error is about to happen with length == "
-            << length << std::endl;
-        }
         assert(1 - epsilon <= length && length <= 1 + epsilon &&
                "Precondition: pBasis is normal");
       }
