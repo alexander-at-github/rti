@@ -299,6 +299,7 @@ namespace rti { namespace util {
     return normal_perpenticular_to_plain(compute_normal(p1), p2);
   }
 
+  inline
   bool file_exists(std::string& str)
   {
     struct stat buffer;   

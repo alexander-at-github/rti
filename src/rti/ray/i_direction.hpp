@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "../util/utils.hpp"
+#include "../rng/i_rng.hpp"
 
 namespace rti { namespace ray {
   template<typename Ty>
