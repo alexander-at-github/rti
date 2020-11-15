@@ -38,6 +38,7 @@ target_sources(tests
   PRIVATE
   rti/ray/rectangle_origin_z.cpp
   rti/ray/cosine_direction.cpp
+  rti/ray/cosine_direction_z.cpp
   rti/ray/power_cosine_direction_z.cpp
   rti/geo/disc_bounding_box_intersector.cpp
   )

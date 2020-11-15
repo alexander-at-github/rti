@@ -4,16 +4,15 @@
 #include <gtest/gtest.h>
 #include <gnuplot-iostream.h>
 
-#include "rti/ray/power_cosine_direction_z.hpp"
+#include "rti/ray/cosine_direction_z.hpp"
 #include "rti/rng/cstdlib_rng.hpp"
 #include "rti/util/utils.hpp"
 
-TEST(power_cosine_direction_z_float, plot_w_cstdlib_rng) {
+TEST(cosine_direction_z_float, plot_w_cstdlib_rng) {
   using numeric_type = float;
   using namespace rti;
 
-  auto exp = 20.0f;
-  auto cdir = ray::power_cosine_direction_z<numeric_type> (exp);
+  auto cdir = ray::cosine_direction_z<numeric_type> {};
   auto rng = rng::cstdlib_rng {};
   auto rngstate = rng::cstdlib_rng::state {1234567890};
 
@@ -28,7 +27,7 @@ TEST(power_cosine_direction_z_float, plot_w_cstdlib_rng) {
 
   auto gpstr = std::stringstream {};
   gpstr
-    << "set title 'Samples on a hemisphere weighted by the cos^{" << exp << "}"
+    << "set title 'Samples on a hemisphere weighted by the cosine"
     << " of the zenith angle' \n"
     //<< "set dgrid3d 128, 128, 1 \n"
     //<< "set pm3d \n"

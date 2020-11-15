@@ -31,7 +31,8 @@
 #include "../particle/i_particle.hpp"
 #include "../particle/i_particle_factory.hpp"
 #include "../ray/constant_origin.hpp"
-#include "../ray/cosine_direction.hpp"
+//#include "../ray/cosine_direction.hpp"
+#include "../ray/cosine_direction_z.hpp"
 #include "../ray/disc_origin_x.hpp"
 #include "../ray/disc_origin_z.hpp"
 #include "../ray/source.hpp"
@@ -196,10 +197,11 @@ int main(int argc, char* argv[]) {
   auto origin = ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
 
   // Cosine direction in the opposite direction of the z-axis
-  auto direction = ray::cosine_direction<numeric_type> {
-    {util::triple<numeric_type> {0.f, 0.f, -1.f},
-     util::triple<numeric_type> {0.f, 1.f,  0.f},
-     util::triple<numeric_type> {1.f, 0.f,  0.f}}};
+  // auto direction = ray::cosine_direction<numeric_type> {
+  //   {util::triple<numeric_type> {0.f, 0.f, -1.f},
+  //    util::triple<numeric_type> {0.f, 1.f,  0.f},
+  //    util::triple<numeric_type> {1.f, 0.f,  0.f}}};
+  auto direction = ray::cosine_direction_z<numeric_type> {};
   auto source = ray::source<numeric_type> {origin, direction};
 
   auto numrays = 128 * 1024ull; // default value // magic number

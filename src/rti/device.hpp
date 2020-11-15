@@ -15,7 +15,8 @@
 #include "io/vtp_writer.hpp"
 //#include "particle/i_particle.hpp"
 #include "particle/i_particle_factory.hpp"
-#include "ray/cosine_direction.hpp"
+//#include "ray/cosine_direction.hpp"
+#include "ray/cosine_direction_z.hpp"
 #include "ray/disc_origin_z.hpp"
 #include "ray/rectangle_origin_z.hpp"
 #include "ray/source.hpp"
@@ -88,7 +89,8 @@ namespace rti {
       // auto origin = create_circular_source_from_bounding_box(bdbox);
       //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 0.5);
       auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox};
-      auto direction = ray::cosine_direction<numeric_type>::construct_in_opposite_direction_of_z_axis();
+      // auto direction = ray::cosine_direction<numeric_type>::construct_in_opposite_direction_of_z_axis();
+      auto direction = ray::cosine_direction_z<numeric_type> {};
       auto source = ray::source<numeric_type> {origin, direction};
       auto tracer = trace::tracer<numeric_type>
         {geometry, boundary, source, numberOfRays, *(particlefactory)};
