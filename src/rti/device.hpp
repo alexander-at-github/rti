@@ -52,7 +52,7 @@ namespace rti {
 
     void set_number_of_rays(size_t numberOfRays_)
     {
-      numberOfRays = numberOfRays_;
+      numofrays = numberOfRays_;
     }
 
     // The register_particle_factory() function takes ownership of the particle.
@@ -92,8 +92,9 @@ namespace rti {
       // auto direction = ray::cosine_direction<numeric_type>::construct_in_opposite_direction_of_z_axis();
       auto direction = ray::cosine_direction_z<numeric_type> {};
       auto source = ray::source<numeric_type> {origin, direction};
+      auto reflections = reflection::diffuse<numeric_type> {};
       auto tracer = trace::tracer<numeric_type>
-        {geometry, boundary, source, numberOfRays, *(particlefactory)};
+        {geometry, boundary, source, reflections, numofrays, *(particlefactory)};
       auto traceresult = tracer.run();
       // mcestimates = extract_mc_estimates(traceresult);
       // normalize_mc_estimates();
@@ -293,7 +294,7 @@ namespace rti {
     std::vector<numeric_type> mcestimates;
     std::vector<size_t> hitcnts;
     std::unique_ptr<particle::i_particle_factory<numeric_type> > particlefactory;
-    size_t numberOfRays = 1024;
+    size_t numofrays = 1024;
     float maxDscRad = 0.0;
   };
 }

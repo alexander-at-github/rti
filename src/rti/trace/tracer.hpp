@@ -32,6 +32,7 @@
 #include "../ray/disc_origin.hpp"
 #include "../ray/i_source.hpp"
 #include "../reflection/diffuse.hpp"
+#include "../reflection/i_reflection_model.hpp"
 //#include "../reflection/specular.hpp"
 #include "../rng/cstdlib_rng.hpp"
 #include "../rng/mt64_rng.hpp"
@@ -50,11 +51,13 @@ namespace rti { namespace trace {
     (geo::point_cloud_disc_geometry<numeric_type>& pGeometry,
      geo::i_boundary<numeric_type>& pBoundary,
      ray::i_source& pSource,
+     reflection::i_reflection_model<numeric_type>& pReflection,
      size_t pNumRays,
      particle::i_particle_factory<numeric_type>& particlefactory) :
       mGeometry(pGeometry),
       mBoundary(pBoundary),
       mSource(pSource),
+      mReflection(pReflection),
       mNumRays(pNumRays),
       particlefactory(particlefactory)
     {
@@ -104,7 +107,6 @@ namespace rti { namespace trace {
 
       result.numRays = mNumRays;
 
-      auto reflectionModel = reflection::diffuse<numeric_type> {};
       auto boundaryReflection = reflection::specular<numeric_type> {};
 
       auto geohitc = 0ull;
@@ -185,6 +187,10 @@ namespace rti { namespace trace {
             // else
             // A hit
             if (rayhit.hit.geomID == boundaryID) {
+
+              // CONTINUE HERE
+              
+              
               // Ray hit the boundary
               reflect = true;
               auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, *rng, *rngstate2);
@@ -226,7 +232,7 @@ namespace rti { namespace trace {
             if ( ! reflect ) {
               break;
             }
-            auto orgdir = reflectionModel.use (rayhit.ray, rayhit.hit, mGeometry, *rng, *rngstate2);
+            auto orgdir = mReflection.use (rayhit.ray, rayhit.hit, mGeometry, *rng, *rngstate2);
             // TODO: optimize
             rayhit.ray.org_x = orgdir[0][0];
             rayhit.ray.org_y = orgdir[0][1];
@@ -419,6 +425,7 @@ namespace rti { namespace trace {
     geo::point_cloud_disc_geometry<numeric_type>& mGeometry;
     geo::i_boundary<numeric_type>& mBoundary;
     ray::i_source& mSource;
+    reflection::i_reflection_model<numeric_type>& mReflection;
     size_t mNumRays;
     particle::i_particle_factory<numeric_type>& particlefactory;
   };

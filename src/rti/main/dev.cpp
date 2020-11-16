@@ -203,7 +203,8 @@ int main(int argc, char* argv[]) {
   //    util::triple<numeric_type> {1.f, 0.f,  0.f}}};
   auto direction = ray::cosine_direction_z<numeric_type> {};
   auto source = ray::source<numeric_type> {origin, direction};
-
+  auto reflections = reflection::diffuse<numeric_type> {};
+  
   auto numrays = 128 * 1024ull; // default value // magic number
   auto numraysstr = cmlopts->get_string_option_value("NUM_RAYS");
   try {
@@ -230,7 +231,8 @@ int main(int argc, char* argv[]) {
   };
   auto particlefactory = particle_factory ((numeric_type) stickingC);
 
-  auto tracer = trace::tracer<numeric_type> {geometry, boundary, source, numrays, particlefactory};
+  auto tracer = trace::tracer<numeric_type>
+    {geometry, boundary, source, reflections, numrays, particlefactory};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
