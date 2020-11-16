@@ -6,10 +6,16 @@ namespace rti { namespace reflection {
   template<typename Ty>
   class specular : public rti::reflection::i_reflection_model<Ty> {
   public:
+
     rti::util::pair<rti::util::triple<Ty> >
     use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::meta_geometry<Ty>& pGeometry,
         rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
+      return use(pRayIn, pHitIn, pGeometry);
+    }
 
+    static
+    rti::util::pair<rti::util::triple<Ty> >
+    use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::meta_geometry<Ty>& pGeometry) {
       auto primID = pHitIn.primID;
       auto normal = pGeometry.get_normal(primID);
       // Instead of querying the geometry object for the surface normal one could used

@@ -193,7 +193,7 @@ namespace rti { namespace trace {
               // auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, *rng, *rngstate2);
               
               reflect = true;
-              auto orgdir = mBoundary.process_hit(rayhit.ray, rayhit.hit, *rng, *rngstate2);
+              auto orgdir = mBoundary.process_hit(rayhit.ray, rayhit.hit);
               // TODO: optimize
               rayhit.ray.org_x = orgdir[0][0];
               rayhit.ray.org_y = orgdir[0][1];

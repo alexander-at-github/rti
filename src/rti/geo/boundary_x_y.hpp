@@ -5,6 +5,7 @@
 #include <embree3/rtcore.h>
 
 #include "absc_boundary.hpp"
+#include "../reflection/specular.hpp"
 #include "../rng/i_rng.hpp"
 #include "../util/logger.hpp"
 #include "../util/utils.hpp"
@@ -77,7 +78,6 @@ namespace rti { namespace geo {
     std::vector<util::triple<size_t> > get_triangles() override final
     {
       auto result = std::vector<util::triple<size_t> > {mNumTriangles};
-      //std::cerr << "Debug: get_triangles() result.size() == " << result.size() << std::endl;
       for (size_t idx = 0; idx < mNumTriangles; ++idx) {
         result[idx] = get_triangle(idx);
       }
@@ -89,17 +89,77 @@ namespace rti { namespace geo {
       return mNormals;
     }
 
+  public:
+
     util::pair<util::triple<Ty> >
-    process_hit(RTCRay& rayin, RTCHit& hitin, rng::i_rng& rng, rng::i_rng::i_state& rngstate)
+    process_hit(RTCRay& rayin, RTCHit& hitin)
     {
-      assert(false && "not implemented; TODO");
-      return {};
+      auto primID = hitin.primID;
+      auto xx = rayin.org_x + rayin.dir_x * rayin.tfar;
+      auto yy = rayin.org_y + rayin.dir_y * rayin.tfar;
+      auto zz = rayin.org_z + rayin.dir_z * rayin.tfar;
+      auto const eps = 1e-6;
+      if (primID == xMaxTriIdcs[0] || primID == xMaxTriIdcs[1] ||
+          primID == xMinTriIdcs[0] || primID == xMinTriIdcs[1]) {
+        // X boundary
+        assert((std::abs(xx - mBdBox[1][0]) < eps ||
+                std::abs(xx - mBdBox[0][0]) < eps  ) && "Correctness Assertion");
+        if (mXCond == bound_cond::REFLECTIVE) {
+          // reflective equals specular
+          return reflection::specular<Ty>::use(rayin, hitin, *this);
+        } else {
+          assert(mXCond == bound_cond::PERIODIC && "Correctness Assumption");
+          auto newxx = (Ty) 0;
+          if (primID == xMaxTriIdcs[0] || primID == xMaxTriIdcs[1]) {
+            assert(std::abs(xx - mBdBox[1][0]) < eps && "Correctness Assertion");
+            newxx = mBdBox[0][0]; // bounding box, low value, x direction
+          } else if (primID == xMinTriIdcs[0] || primID == xMinTriIdcs[1]) {
+            assert(std::abs(xx - mBdBox[0][0]) < eps && "Correctness Assertion");
+            newxx = mBdBox[1][0]; // bounding box, high value, x direction
+          }
+          return {util::triple<Ty> {newxx, yy, zz}, util::triple<Ty> {rayin.dir_x, rayin.dir_y, rayin.dir_z}};
+        }
+      }
+      if (primID == yMaxTriIdcs[0] || primID == yMaxTriIdcs[1] ||
+          primID == yMinTriIdcs[0] || primID == yMinTriIdcs[1]) {
+        // Y boundary
+        assert((std::abs(yy - mBdBox[1][1]) < eps ||
+                std::abs(yy - mBdBox[0][1]) < eps  ) && "Correctness Assertion");
+        if (mYCond == bound_cond::REFLECTIVE) {
+          // reflective equals specular
+          return reflection::specular<Ty>::use(rayin, hitin, *this);
+        } else {
+          assert(mYCond == bound_cond::PERIODIC && "Correctness Assumption");
+          auto newyy = (Ty) 0;
+          if (primID == yMaxTriIdcs[0] || primID == yMaxTriIdcs[1]) {
+            assert(std::abs(yy - mBdBox[1][1]) < eps && "Correctness Assertion");
+            newyy = mBdBox[0][1]; // bounding box, low value, y direction
+          } else if (primID == yMinTriIdcs[0] || primID == yMinTriIdcs[1]) {
+            assert(std::abs(yy - mBdBox[0][1]) < eps && "Correctness Assertion");
+            newyy = mBdBox[1][1]; // bounding box, high value, y direction
+          }
+          return {util::triple<Ty> {xx, newyy, zz}, util::triple<Ty> {rayin.dir_x, rayin.dir_y, rayin.dir_z}};
+        }
+      }
+      assert(false && "Correctness Assumption");
+      return {util::triple<Ty> {0,0,0}, util::triple<Ty> {0,0,0}};
     }
 
   private:
 
     void init_this()
     {
+      // establish order in mBdBox
+      if (mBdBox[0][0] > mBdBox[1][0]) {
+        util::swap(mBdBox[0][0], mBdBox[1][0]);
+      }
+      if (mBdBox[0][1] > mBdBox[1][1]) {
+        util::swap(mBdBox[0][1], mBdBox[1][1]);
+      }
+      if (mBdBox[0][2] > mBdBox[1][2]) {
+        util::swap(mBdBox[0][2], mBdBox[1][2]);
+      }
+
       this->mGeometry = rtcNewGeometry(mDevice, RTC_GEOMETRY_TYPE_TRIANGLE);
       mNumVertices = 8;
       mNumTriangles = 8;
@@ -134,12 +194,12 @@ namespace rti { namespace geo {
                  << " holds." << std::endl;
 
       // Fill the vertiex
-      auto xmin = std::min(mBdBox[0][0], mBdBox[1][0]);
-      auto xmax = std::max(mBdBox[0][0], mBdBox[1][0]);
-      auto ymin = std::min(mBdBox[0][1], mBdBox[1][1]);
-      auto ymax = std::max(mBdBox[0][1], mBdBox[1][1]);
-      auto zmin = std::min(mBdBox[0][2], mBdBox[1][2]);
-      auto zmax = std::max(mBdBox[0][2], mBdBox[1][2]);
+      auto xmin = mBdBox[0][0]; // std::min(mBdBox[0][0], mBdBox[1][0]);
+      auto xmax = mBdBox[1][0]; // std::max(mBdBox[0][0], mBdBox[1][0]);
+      auto ymin = mBdBox[0][1]; // std::min(mBdBox[0][1], mBdBox[1][1]);
+      auto ymax = mBdBox[1][1]; // std::max(mBdBox[0][1], mBdBox[1][1]);
+      auto zmin = mBdBox[0][2]; // std::min(mBdBox[0][2], mBdBox[1][2]);
+      auto zmax = mBdBox[1][2]; // std::max(mBdBox[0][2], mBdBox[1][2]);
       mVertBuff[0].xx = xmax; mVertBuff[0].yy = ymin; mVertBuff[0].zz = zmin;
       mVertBuff[1].xx = xmax; mVertBuff[1].yy = ymin; mVertBuff[1].zz = zmax;
       mVertBuff[2].xx = xmax; mVertBuff[2].yy = ymax; mVertBuff[2].zz = zmin;
@@ -151,15 +211,19 @@ namespace rti { namespace geo {
       // Fill the triangles
       mTriBuff[0].v0 = 0; mTriBuff[0].v1 = 1; mTriBuff[0].v2 = 2;
       mTriBuff[1].v0 = 3; mTriBuff[1].v1 = 2; mTriBuff[1].v2 = 1;
+      xMaxTriIdcs = {0, 1}; // the plain defining X max
       //
       mTriBuff[2].v0 = 4; mTriBuff[2].v1 = 5; mTriBuff[2].v2 = 0;
       mTriBuff[3].v0 = 1; mTriBuff[3].v1 = 0; mTriBuff[3].v2 = 5;
+      yMinTriIdcs = {2, 3}; // the plain defining Y min
       //
       mTriBuff[4].v0 = 6; mTriBuff[4].v1 = 7; mTriBuff[4].v2 = 4;
       mTriBuff[5].v0 = 5; mTriBuff[5].v1 = 4; mTriBuff[5].v2 = 7;
+      xMinTriIdcs = {4, 5}; // the plain defining X min
       //
       mTriBuff[6].v0 = 2; mTriBuff[6].v1 = 3; mTriBuff[6].v2 = 6;
       mTriBuff[7].v0 = 7; mTriBuff[7].v1 = 6; mTriBuff[7].v2 = 3;
+      yMaxTriIdcs = {6, 7}; // the plain defining Y max
 
       for (size_t idx = 0; idx < mNumTriangles; ++idx) {
         auto triangle = get_triangle_with_coords(idx);
@@ -212,5 +276,9 @@ namespace rti { namespace geo {
 
     const bound_cond mXCond;
     const bound_cond mYCond;
+    util::pair<size_t> xMaxTriIdcs;
+    util::pair<size_t> xMinTriIdcs;
+    util::pair<size_t> yMaxTriIdcs;
+    util::pair<size_t> yMinTriIdcs;
   };
 }}
