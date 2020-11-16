@@ -11,11 +11,11 @@ namespace rti { namespace reflection {
   class diffuse : public rti::reflection::i_reflection_model<Ty> {
   public:
     rti::util::pair<rti::util::triple<Ty> >
-    use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::i_abs_geometry<Ty>& pGeometry,
+    use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::meta_geometry<Ty>& pGeometry,
         rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) override final {
 
       auto primID = pHitIn.primID;
-      // Get an origin for the refelcted ray from the i_geometry implementation
+      // Get an origin for the refelcted ray from the absc_geometry implementation
       auto newOrigin = pGeometry.get_new_origin(pRayIn, primID);
 
       auto normal = pGeometry.get_normal(primID);

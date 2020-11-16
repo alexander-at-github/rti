@@ -1,15 +1,15 @@
 #pragma once
 
-#include "i_abs_geometry.hpp"
+#include "meta_geometry.hpp"
 #include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   // Interface
   template<typename Ty>
-  class i_geometry : public rti::geo::i_abs_geometry<Ty> {
+  class absc_geometry : public rti::geo::meta_geometry<Ty> {
   public:
     // virtual destructor
-    virtual ~i_geometry() {}
+    virtual ~absc_geometry() {}
     //virtual void print(std::ostream& pOs) = 0;
     //virtual RTCDevice& get_rtc_device() = 0;
     //virtual RTCGeometry& get_rtc_geometry() = 0;
@@ -22,4 +22,4 @@ namespace rti { namespace geo {
     // get_primitive returns the values from the underlying Embree primitive (a disc, a sphere, or something else)
     virtual Ty get_area(unsigned int primID) = 0;
   };
-}} // namespace
+}}

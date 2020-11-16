@@ -33,7 +33,7 @@ namespace rti { namespace trace {
     rti::reflection::i_reflection_model<numeric_type>& mReflectionModel;
     rti::trace::i_hit_accumulator<numeric_type>& mHitAccumulator;
     unsigned int mBoundaryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
-    rti::geo::i_boundary<numeric_type>& mBoundary;
+    rti::geo::absc_boundary<numeric_type>& mBoundary;
     rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
 
     rti::particle::i_particle<numeric_type>& particle;
@@ -51,7 +51,7 @@ namespace rti { namespace trace {
             rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
             rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,
             unsigned int pBoundaryID,
-            rti::geo::i_boundary<numeric_type>& pBoundary,
+            rti::geo::absc_boundary<numeric_type>& pBoundary,
             rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState,
@@ -73,8 +73,8 @@ namespace rti { namespace trace {
   public:
 
     static
-    void register_intersect_filter_funs(rti::geo::i_geometry<numeric_type>& pGeometry,
-                                        rti::geo::i_boundary<numeric_type>& pBoundary) {
+    void register_intersect_filter_funs(rti::geo::absc_geometry<numeric_type>& pGeometry,
+                                        rti::geo::absc_boundary<numeric_type>& pBoundary) {
       // The following cast characterizes a precondition to this function
       auto pPCGeoPointer = dynamic_cast<rti::geo::triangle_geometry<numeric_type>*> (&pGeometry);
       auto& pPCGeo = *pPCGeoPointer;

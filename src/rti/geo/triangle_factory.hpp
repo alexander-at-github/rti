@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "i_boundary.hpp"
+#include "absc_boundary.hpp"
 #include "i_factory.hpp"
 #include "triangle_geometry.hpp"
 #include "../io/i_triangle_reader.hpp"
@@ -18,23 +18,23 @@ namespace rti { namespace geo {
                      rti::io::i_triangle_reader<Ty>& pReader) :
       mGeometry(pDevice, pReader) {}
 
-    rti::geo::i_geometry<Ty>& get_geometry() override final
+    rti::geo::absc_geometry<Ty>& get_geometry() override final
     {
       return mGeometry;
     }
 
-    void register_intersect_filter_funs(rti::geo::i_boundary<Ty>& pBoundary) override final
+    void register_intersect_filter_funs(rti::geo::absc_boundary<Ty>& pBoundary) override final
     {
       ContextType::register_intersect_filter_funs(mGeometry, pBoundary);
     }
 
     std::unique_ptr<rti::trace::absc_context<Ty> > get_new_context(
       unsigned int pGeometryID,
-      rti::geo::i_geometry<Ty>& pGeometry,
+      rti::geo::absc_geometry<Ty>& pGeometry,
       rti::reflection::i_reflection_model<Ty>& pReflectionModel,
       rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
       unsigned int pBoundaryID,
-      rti::geo::i_boundary<Ty>& pBoundary,
+      rti::geo::absc_boundary<Ty>& pBoundary,
       rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState,

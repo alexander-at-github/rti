@@ -4,21 +4,40 @@
 
 #include <embree3/rtcore.h>
 
-#include "i_boundary.hpp"
+#include "absc_boundary.hpp"
+#include "../rng/i_rng.hpp"
 #include "../util/logger.hpp"
 #include "../util/utils.hpp"
 
 namespace rti { namespace geo {
+    
+  enum class bound_cond {
+    REFLECTIVE, PERIODIC
+  };
+
   template<typename Ty>
-  class boundary_x_y : public i_boundary<Ty> {
+  class boundary_x_y : public absc_boundary<Ty> {
   public:
 
-    boundary_x_y (RTCDevice& pDevice, rti::util::pair<rti::util::triple<Ty> >& pBdBox) :
+    boundary_x_y
+    (RTCDevice& pDevice,
+     util::pair<util::triple<Ty> >& pBdBox,
+     bound_cond pXCond,
+     bound_cond pYCond) :
       mDevice(pDevice),
-      mBdBox(pBdBox) {
+      mBdBox(pBdBox),
+      mXCond(pXCond),
+      mYCond(pYCond) {
       init_this();
     }
 
+    boundary_x_y
+    (RTCDevice& pDevice,
+     util::pair<util::triple<Ty> >& pBdBox) :
+      boundary_x_y(pDevice, pBdBox, bound_cond::REFLECTIVE, bound_cond::REFLECTIVE) {}
+
+
+    
     RTCDevice& get_rtc_device() override final
     {
       return mDevice;
@@ -34,25 +53,19 @@ namespace rti { namespace geo {
       assert(false && "Not implemented");
     }
 
-    rti::util::triple<Ty>& get_normal_ref(unsigned int pPrimID) override final
+    util::triple<Ty>& get_normal_ref(unsigned int pPrimID) override final
     {
       return mNormals[pPrimID];
     }
 
-    rti::util::triple<Ty> get_normal(unsigned int pPrimID) override final
+    util::triple<Ty> get_normal(unsigned int pPrimID) override final
     {
       return mNormals[pPrimID];
     }
 
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) override final
+    std::vector<util::triple<Ty> > get_vertices() override final
     {
-      assert(false && "Not implemented");
-      return {(Ty) 0, (Ty) 0, (Ty) 0};
-    }
-
-    std::vector<rti::util::triple<Ty> > get_vertices() override final
-    {
-      auto result = std::vector<rti::util::triple<Ty> > {mNumVertices};
+      auto result = std::vector<util::triple<Ty> > {mNumVertices};
       //std::cerr << "Debug: get_vertices() result.size() == " << result.size() << std::endl;
       for (size_t idx = 0; idx < mNumVertices; ++idx) {
         auto vv = mVertBuff[idx];
@@ -61,9 +74,9 @@ namespace rti { namespace geo {
       return result;
     }
 
-    std::vector<rti::util::triple<size_t> > get_triangles() override final
+    std::vector<util::triple<size_t> > get_triangles() override final
     {
-      auto result = std::vector<rti::util::triple<size_t> > {mNumTriangles};
+      auto result = std::vector<util::triple<size_t> > {mNumTriangles};
       //std::cerr << "Debug: get_triangles() result.size() == " << result.size() << std::endl;
       for (size_t idx = 0; idx < mNumTriangles; ++idx) {
         result[idx] = get_triangle(idx);
@@ -71,9 +84,16 @@ namespace rti { namespace geo {
       return result;
     }
 
-    std::vector<rti::util::triple<Ty> > get_triangle_normals() override final
+    std::vector<util::triple<Ty> > get_triangle_normals() override final
     {
       return mNormals;
+    }
+
+    util::pair<util::triple<Ty> >
+    process_hit(RTCRay& rayin, RTCHit& hitin, rng::i_rng& rng, rng::i_rng::i_state& rngstate)
+    {
+      assert(false && "not implemented; TODO");
+      return {};
     }
 
   private:
@@ -93,8 +113,10 @@ namespace rti { namespace geo {
       assert(mVertBuff != nullptr && "Error in acquiring new buffer from Embree");
       auto deverr1 = rtcGetDeviceError(mDevice);
       RLOG_DEBUG << "rtc device error: " << deverr1 << std::endl;
-      RLOG_DEBUG << "where RTC_ERROR_UNKOWN == " << RTC_ERROR_UNKNOWN << " holds." << std::endl;
-      RLOG_DEBUG << "where RTC_ERROR_INVALID_ARGUMENT == " << RTC_ERROR_INVALID_ARGUMENT << " holds." << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_UNKOWN == " << RTC_ERROR_UNKNOWN << " holds."
+                 << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_INVALID_ARGUMENT == " << RTC_ERROR_INVALID_ARGUMENT
+                 << " holds." << std::endl;
       mTriBuff = (triangle_t*) rtcSetNewGeometryBuffer
         (mGeometry,
          RTC_BUFFER_TYPE_INDEX,
@@ -106,8 +128,10 @@ namespace rti { namespace geo {
       //assert(false && "test");
       auto deverr2 = rtcGetDeviceError(mDevice);
       RLOG_DEBUG << "rtc device error: " << deverr2 << std::endl;
-      RLOG_DEBUG << "where RTC_ERROR_UNKOWN == " << RTC_ERROR_UNKNOWN << " holds." << std::endl;
-      RLOG_DEBUG << "where RTC_ERROR_INVALID_ARGUMENT == " << RTC_ERROR_INVALID_ARGUMENT << " holds." << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_UNKOWN == " << RTC_ERROR_UNKNOWN
+                 << " holds." << std::endl;
+      RLOG_DEBUG << "where RTC_ERROR_INVALID_ARGUMENT == " << RTC_ERROR_INVALID_ARGUMENT
+                 << " holds." << std::endl;
 
       // Fill the vertiex
       auto xmin = std::min(mBdBox[0][0], mBdBox[1][0]);
@@ -139,8 +163,8 @@ namespace rti { namespace geo {
 
       for (size_t idx = 0; idx < mNumTriangles; ++idx) {
         auto triangle = get_triangle_with_coords(idx);
-        auto normal = rti::util::compute_normal(triangle);
-        rti::util::normalize(normal);
+        auto normal = util::compute_normal(triangle);
+        util::normalize(normal);
         mNormals.push_back(normal);
       }
       mNormals.shrink_to_fit();
@@ -149,7 +173,7 @@ namespace rti { namespace geo {
               "Embree device error after rtcSetNewGeometryBuffer()");
     }
 
-    rti::util::triple<rti::util::triple<Ty> > get_triangle_with_coords(size_t idx)
+    util::triple<util::triple<Ty> > get_triangle_with_coords(size_t idx)
     {
       auto tt = mTriBuff[idx];
       return {mVertBuff[tt.v0].xx, mVertBuff[tt.v0].yy, mVertBuff[tt.v0].zz,
@@ -157,7 +181,7 @@ namespace rti { namespace geo {
               mVertBuff[tt.v2].xx, mVertBuff[tt.v2].yy, mVertBuff[tt.v2].zz};
     }
 
-    rti::util::triple<size_t> get_triangle(size_t idx)
+    util::triple<size_t> get_triangle(size_t idx)
     {
       auto tt = mTriBuff[idx];
       return {tt.v0, tt.v1, tt.v2};
@@ -181,9 +205,12 @@ namespace rti { namespace geo {
     RTCGeometry mGeometry;
     vertex_f3_t* mVertBuff = nullptr;
     triangle_t* mTriBuff = nullptr;
-    std::vector<rti::util::triple<Ty> > mNormals;
-    rti::util::pair<rti::util::triple<Ty> > mBdBox;
+    std::vector<util::triple<Ty> > mNormals;
+    util::pair<util::triple<Ty> > mBdBox;
     size_t mNumVertices = 0;
     size_t mNumTriangles = 0;
+
+    const bound_cond mXCond;
+    const bound_cond mYCond;
   };
 }}

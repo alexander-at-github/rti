@@ -5,13 +5,13 @@
 #include <embree3/rtcore.h>
 
 #include "../io/i_triangle_reader.hpp"
-#include "i_geometry.hpp"
+#include "absc_geometry.hpp"
 #include "../util/logger.hpp"
 #include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   template<typename Ty>
-  class triangle_geometry : public rti::geo::i_geometry<Ty> {
+  class triangle_geometry : public rti::geo::absc_geometry<Ty> {
   public:
 
     triangle_geometry(RTCDevice& pRTCDevice,
@@ -140,20 +140,6 @@ namespace rti { namespace geo {
       //std::cerr << this->mNNBuffer.size() << " " << this->mNumTriangles << " " << pPrimID << std::endl;
       assert(this->mNNBuffer.size() == this->mNumTriangles && pPrimID <= this->mNumTriangles && "Assumption");
       return this->mNNBuffer[pPrimID];
-    }
-
-    rti::util::triple<Ty> get_new_origin(RTCRay& pRay, unsigned int primID) override final
-    {
-      //auto epsilon = 1e-12; // magic number; less than 1e-3 does definitely not work
-      auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
-      auto yy = pRay.org_y + pRay.dir_y * pRay.tfar;
-      auto zz = pRay.org_z + pRay.dir_z * pRay.tfar;
-      // // add a small epsilon from the surface to be sure to be above the surface
-      // auto normal = get_normal(pPrimID);
-      // xx += normal[0] * epsilon;
-      // yy += normal[1] * epsilon;
-      // zz += normal[2] * epsilon;
-      return {(Ty) xx, (Ty) yy, (Ty) zz};
     }
 
     std::string get_input_file_path() override final

@@ -21,8 +21,8 @@
 #include "result.hpp"
 //#include "../geo/absc_point_cloud_geometry.hpp"
 #include "../geo/disc_bounding_box_intersector.hpp"
-#include "../geo/i_boundary.hpp"
-#include "../geo/i_geometry.hpp"
+#include "../geo/boundary_x_y.hpp"
+#include "../geo/absc_geometry.hpp"
 #include "../geo/point_cloud_disc_factory.hpp"
 #include "../io/vtp_writer.hpp"
 #include "../mc/rejection_control.hpp"
@@ -49,7 +49,7 @@ namespace rti { namespace trace {
     
     tracer
     (geo::point_cloud_disc_geometry<numeric_type>& pGeometry,
-     geo::i_boundary<numeric_type>& pBoundary,
+     geo::boundary_x_y<numeric_type>& pBoundary,
      ray::i_source& pSource,
      reflection::i_reflection_model<numeric_type>& pReflection,
      size_t pNumRays,
@@ -131,7 +131,8 @@ namespace rti { namespace trace {
         reduction(+ : geohitc, nongeohitc) \
         reduction(hit_accumulator_combine : hitAccumulator)
       {
-        // Thread local data goes here, if it is not needed anymore after the execution of the parallel region.
+        // Thread local data goes here, if it is not needed anymore after the execution
+        // of the parallel region.
         alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
         auto seed = (unsigned int) ((omp_get_thread_num() + 1) * 29); // multiply by magic number (prime)
@@ -187,13 +188,12 @@ namespace rti { namespace trace {
             // else
             // A hit
             if (rayhit.hit.geomID == boundaryID) {
-
-              // CONTINUE HERE
+              // // Ray hit the boundary
+              // reflect = true;
+              // auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, *rng, *rngstate2);
               
-              
-              // Ray hit the boundary
               reflect = true;
-              auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, *rng, *rngstate2);
+              auto orgdir = mBoundary.process_hit(rayhit.ray, rayhit.hit, *rng, *rngstate2);
               // TODO: optimize
               rayhit.ray.org_x = orgdir[0][0];
               rayhit.ray.org_y = orgdir[0][1];
@@ -362,7 +362,7 @@ namespace rti { namespace trace {
     std::vector<numeric_type>
     compute_disc_areas
     (geo::point_cloud_disc_geometry<numeric_type>& geometry,
-     geo::i_boundary<numeric_type>& boundary) // this function actually assumes boundary_x_y // TODO: rework
+     geo::boundary_x_y<numeric_type>& boundary)
     {
       // TODO: Instead of comparing introduce a method boundary.get_bounding_box()
       auto xmin = std::numeric_limits<numeric_type>::max();
@@ -423,7 +423,7 @@ namespace rti { namespace trace {
   private:
     
     geo::point_cloud_disc_geometry<numeric_type>& mGeometry;
-    geo::i_boundary<numeric_type>& mBoundary;
+    geo::boundary_x_y<numeric_type>& mBoundary;
     ray::i_source& mSource;
     reflection::i_reflection_model<numeric_type>& mReflection;
     size_t mNumRays;

@@ -26,12 +26,12 @@ namespace rti { namespace geo {
                              std::vector<rti::util::triple<numeric_type> > normals) :
       mGeometry(device, points, normals) {}
 
-    rti::geo::i_geometry<numeric_type>& get_geometry() override final
+    rti::geo::absc_geometry<numeric_type>& get_geometry() override final
     {
       return mGeometry;
     }
 
-    void register_intersect_filter_funs(rti::geo::i_boundary<numeric_type>& pBoundary) override final
+    void register_intersect_filter_funs(rti::geo::absc_boundary<numeric_type>& pBoundary) override final
     {
       context_type::register_intersect_filter_funs(mGeometry, pBoundary);
     }
@@ -39,11 +39,11 @@ namespace rti { namespace geo {
     std::unique_ptr<rti::trace::absc_context<numeric_type> >
     get_new_context(
       unsigned int pGeometryID,
-      rti::geo::i_geometry<numeric_type>& pGeometry,
+      rti::geo::absc_geometry<numeric_type>& pGeometry,
       rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
       rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,
       unsigned int pBoundaryID,
-      rti::geo::i_boundary<numeric_type>& pBoundary,
+      rti::geo::absc_boundary<numeric_type>& pBoundary,
       rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState,

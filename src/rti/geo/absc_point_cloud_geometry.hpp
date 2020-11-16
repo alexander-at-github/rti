@@ -2,7 +2,7 @@
 
 #include <limits>
 
-#include "i_geometry.hpp"
+#include "absc_geometry.hpp"
 #include "../io/i_point_cloud_reader.hpp"
 #include "../util/utils.hpp"
 
@@ -20,11 +20,11 @@ namespace rti { namespace geo {
     };
 
   template<typename numeric_type>
-  class absc_point_cloud_geometry : public rti::geo::i_geometry<numeric_type> {
+  class absc_point_cloud_geometry : public rti::geo::absc_geometry<numeric_type> {
   public:
     // abstract class
     virtual ~absc_point_cloud_geometry() {}
-    // inherits also some virtual function declarations from i_geometry
+    // inherits also some virtual function declarations from absc_geometry
 
     virtual rti::util::quadruple<numeric_type> get_prim(unsigned int pPrimID) = 0;
     virtual rti::util::quadruple<numeric_type>& get_prim_ref(unsigned int pPrimID) = 0;

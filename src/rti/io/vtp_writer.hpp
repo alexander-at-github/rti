@@ -12,7 +12,7 @@
 #include <vtkUnsignedIntArray.h>
 #include <vtkXMLPolyDataWriter.h>
 
-#include "../geo/i_boundary.hpp"
+#include "../geo/absc_boundary.hpp"
 #include "../geo/point_cloud_sphere_geometry.hpp"
 #include "../geo/point_cloud_disc_geometry.hpp"
 #include "../geo/triangle_geometry.hpp"
@@ -75,7 +75,7 @@ namespace rti { namespace io {
     }
 
     static
-    void write(rti::geo::i_boundary<Ty>& pBoundary,
+    void write(rti::geo::absc_boundary<Ty>& pBoundary,
                std::string pOutfilename) {
       auto polydata = get_polydata(pBoundary);
       write(polydata, pOutfilename);
@@ -337,7 +337,7 @@ namespace rti { namespace io {
     }
     
     static
-    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::i_boundary<Ty>& pBoundary) {
+    vtkSmartPointer<vtkPolyData> get_polydata(rti::geo::absc_boundary<Ty>& pBoundary) {
       auto pointsOut = vtkSmartPointer<vtkPoints>::New();
       auto trianglesOut = vtkSmartPointer<vtkCellArray>::New();
       auto normalsOut = vtkSmartPointer<vtkDoubleArray>::New();

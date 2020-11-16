@@ -4,14 +4,14 @@
 #include <sstream>
 
 #include "disc_neighborhood.hpp"
-#include "i_abs_geometry.hpp"
+#include "meta_geometry.hpp"
 #include "../io/i_point_cloud_reader.hpp"
 #include "../util/timer.hpp"
 #include "../util/utils.hpp"
 
 namespace rti { namespace geo {
   template<typename numeric_type>
-  class point_cloud_disc_geometry : public i_abs_geometry<numeric_type> {
+  class point_cloud_disc_geometry : public meta_geometry<numeric_type> {
     
   public:
 
@@ -61,20 +61,6 @@ namespace rti { namespace geo {
     {
       auto nml = mNNBuffer[pPrimID];
       return {(numeric_type) nml.xx, (numeric_type) nml.yy, (numeric_type) nml.zz};
-    }
-
-    util::triple<numeric_type> get_new_origin(RTCRay& pRay, unsigned int pPrimID) override final
-    {
-      //auto epsilon = 1e-12; // magic number; less than 1e-3 does definitely not work
-      auto xx = pRay.org_x + pRay.dir_x * pRay.tfar;
-      auto yy = pRay.org_y + pRay.dir_y * pRay.tfar;
-      auto zz = pRay.org_z + pRay.dir_z * pRay.tfar;
-      // // add a small epsilon from the surface to be sure to be above the surface
-      // auto normal = get_normal(pPrimID);
-      // xx += normal[0] * epsilon;
-      // yy += normal[1] * epsilon;
-      // zz += normal[2] * epsilon;
-      return {(numeric_type) xx, (numeric_type) yy, (numeric_type) zz};
     }
 
     RTCDevice& get_rtc_device() override final

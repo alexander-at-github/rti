@@ -13,7 +13,7 @@ namespace rti { namespace reflection {
     // reflection should happen, then it does not change pRayhit and returns
     // false.
     virtual rti::util::pair<rti::util::triple<Ty> >
-    use(RTCRay& rayin, RTCHit& hitin, rti::geo::i_abs_geometry<Ty>&,
+    use(RTCRay& rayin, RTCHit& hitin, rti::geo::meta_geometry<Ty>&,
         rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) = 0;
   };
 }} // namespace
