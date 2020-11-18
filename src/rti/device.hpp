@@ -17,8 +17,8 @@
 #include "particle/i_particle.hpp"
 #include "ray/i_direction.hpp"
 #include "ray/cosine_direction_z.hpp"
-#include "ray/power_cosine_direction_z.hpp"
 #include "ray/disc_origin_z.hpp"
+#include "ray/power_cosine_direction_z.hpp"
 #include "ray/rectangle_origin_z.hpp"
 #include "ray/source.hpp"
 #include "reflection/i_reflection.hpp"
@@ -74,14 +74,9 @@ namespace rti {
       yCond = cond;
     }
 
-    void set_cosine_source()
+    void set(ray::i_direction<numeric_type>& srcDirection)
     {
-      srcDirection = std::make_unique<ray::cosine_direction_z<numeric_type> > ();
-    }
-
-    void set_power_cosine_source(numeric_type exponent)
-    {
-      srcDirection = std::make_unique<ray::power_cosine_direction_z<numeric_type> > (exponent);
+      direction = srcDirection;
     }
 
     void set(reflection::i_reflection<numeric_type>& reflection_)
@@ -101,7 +96,7 @@ namespace rti {
       //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 8);
       auto origin = create_rectangular_source_from_bounding_box(bdbox);
       auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox, xCond, yCond};
-      auto source = ray::source<numeric_type> {origin, *srcDirection};
+      auto source = ray::source<numeric_type> {origin, direction};
       auto tracer = trace::tracer<numeric_type, particle_type>
         {geometry, boundary, source, reflection, numofrays};
       auto traceresult = tracer.run();
@@ -293,10 +288,10 @@ namespace rti {
     bound_condition xCond = geo::bound_condition::REFLECTIVE;
     bound_condition yCond = geo::bound_condition::REFLECTIVE;
 
-    reflection::diffuse<numeric_type> diffuse;
+    reflection::diffuse<numeric_type> diffuse; // defaut behaviour
     reflection::i_reflection<numeric_type>& reflection = diffuse;
 
-    std::unique_ptr<ray::i_direction<numeric_type> > srcDirection =
-      std::make_unique<ray::cosine_direction_z<numeric_type> > ();
+    ray::cosine_direction_z<numeric_type> cosine; // default behaviour
+    ray::i_direction<numeric_type>& direction = cosine;
   };
 }
