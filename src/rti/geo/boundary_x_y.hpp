@@ -5,6 +5,7 @@
 #include <embree3/rtcore.h>
 
 #include "absc_boundary.hpp"
+#include "bound_condition.hpp"
 #include "../reflection/specular.hpp"
 #include "../rng/i_rng.hpp"
 #include "../util/logger.hpp"
@@ -12,10 +13,6 @@
 
 namespace rti { namespace geo {
     
-  enum class bound_cond {
-    REFLECTIVE, PERIODIC
-  };
-
   template<typename Ty>
   class boundary_x_y : public absc_boundary<Ty> {
   public:
@@ -23,8 +20,8 @@ namespace rti { namespace geo {
     boundary_x_y
     (RTCDevice& pDevice,
      util::pair<util::triple<Ty> >& pBdBox,
-     bound_cond pXCond,
-     bound_cond pYCond) :
+     bound_condition pXCond,
+     bound_condition pYCond) :
       mDevice(pDevice),
       mBdBox(pBdBox),
       mXCond(pXCond),
@@ -35,7 +32,7 @@ namespace rti { namespace geo {
     boundary_x_y
     (RTCDevice& pDevice,
      util::pair<util::triple<Ty> >& pBdBox) :
-      boundary_x_y(pDevice, pBdBox, bound_cond::REFLECTIVE, bound_cond::REFLECTIVE) {}
+      boundary_x_y(pDevice, pBdBox, bound_condition::REFLECTIVE, bound_condition::REFLECTIVE) {}
 
 
     
@@ -104,11 +101,11 @@ namespace rti { namespace geo {
         // X boundary
         assert((std::abs(xx - mBdBox[1][0]) < eps ||
                 std::abs(xx - mBdBox[0][0]) < eps  ) && "Correctness Assertion");
-        if (mXCond == bound_cond::REFLECTIVE) {
+        if (mXCond == bound_condition::REFLECTIVE) {
           // reflective equals specular
           return reflection::specular<Ty>::use(rayin, hitin, *this);
         } else {
-          assert(mXCond == bound_cond::PERIODIC && "Correctness Assumption");
+          assert(mXCond == bound_condition::PERIODIC && "Correctness Assumption");
           auto newxx = (Ty) 0;
           if (primID == xMaxTriIdcs[0] || primID == xMaxTriIdcs[1]) {
             assert(std::abs(xx - mBdBox[1][0]) < eps && "Correctness Assertion");
@@ -125,11 +122,11 @@ namespace rti { namespace geo {
         // Y boundary
         assert((std::abs(yy - mBdBox[1][1]) < eps ||
                 std::abs(yy - mBdBox[0][1]) < eps  ) && "Correctness Assertion");
-        if (mYCond == bound_cond::REFLECTIVE) {
+        if (mYCond == bound_condition::REFLECTIVE) {
           // reflective equals specular
           return reflection::specular<Ty>::use(rayin, hitin, *this);
         } else {
-          assert(mYCond == bound_cond::PERIODIC && "Correctness Assumption");
+          assert(mYCond == bound_condition::PERIODIC && "Correctness Assumption");
           auto newyy = (Ty) 0;
           if (primID == yMaxTriIdcs[0] || primID == yMaxTriIdcs[1]) {
             assert(std::abs(yy - mBdBox[1][1]) < eps && "Correctness Assertion");
@@ -274,8 +271,8 @@ namespace rti { namespace geo {
     size_t mNumVertices = 0;
     size_t mNumTriangles = 0;
 
-    const bound_cond mXCond;
-    const bound_cond mYCond;
+    const bound_condition mXCond;
+    const bound_condition mYCond;
     util::pair<size_t> xMaxTriIdcs;
     util::pair<size_t> xMinTriIdcs;
     util::pair<size_t> yMaxTriIdcs;

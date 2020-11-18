@@ -220,12 +220,12 @@ namespace rti { namespace geo {
       assert (RTC_ERROR_NONE == rtcGetDeviceError(device) &&
               "Embree device error after rtcSetNewGeometryBuffer()");
 
-      std::cout << "Creating neighborhood ... " << std::flush;
-      auto timer = util::timer {};
-      // discnbhd.setup_neighborhood_naive(points);
+      // std::cout << "Creating neighborhood ... " << std::flush;
+      // auto timer = util::timer {};
+      // // discnbhd.setup_neighborhood_naive(points);
       discnbhd.setup_neighborhood(points, mincoords, maxcoords);
-      auto elapsed = timer.elapsed_seconds();
-      std::cout << " took " << elapsed << " seconds" << std::endl;
+      // auto elapsed = timer.elapsed_seconds();
+      // std::cout << " took " << elapsed << " seconds" << std::endl;
     }
 
   private:

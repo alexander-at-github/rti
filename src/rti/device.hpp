@@ -11,12 +11,14 @@
 
 
 #include "geo/boundary_x_y.hpp"
+#include "geo/bound_condition.hpp"
 #include "geo/point_cloud_disc_factory.hpp"
 #include "io/vtp_writer.hpp"
 //#include "particle/i_particle.hpp"
 #include "particle/i_particle_factory.hpp"
-//#include "ray/cosine_direction.hpp"
+#include "ray/i_direction.hpp"
 #include "ray/cosine_direction_z.hpp"
+#include "ray/power_cosine_direction_z.hpp"
 #include "ray/disc_origin_z.hpp"
 #include "ray/rectangle_origin_z.hpp"
 #include "ray/source.hpp"
@@ -25,6 +27,8 @@
 #include "util/utils.hpp"
 
 namespace rti {
+  using ::rti::geo::bound_condition;
+
   template<typename numeric_type>
   class device final {
 
@@ -50,9 +54,29 @@ namespace rti {
       spacing = spacing_;
     }
 
-    void set_number_of_rays(size_t numberOfRays_)
+    void set_number_of_rays(size_t numofrays_)
     {
-      numofrays = numberOfRays_;
+      numofrays = numofrays_;
+    }
+
+    void set_x(bound_condition cond)
+    {
+      xCond = cond;
+    }
+
+    void set_y(bound_condition cond)
+    {
+      yCond = cond;
+    }
+
+    void set_cosine_source()
+    {
+      srcDirection = std::make_unique<ray::cosine_direction_z<numeric_type> > ();
+    }
+
+    void set_power_cosine_source(numeric_type exponent)
+    {
+      srcDirection = std::make_unique<ray::power_cosine_direction_z<numeric_type> > (exponent);
     }
 
     // The register_particle_factory() function takes ownership of the particle.
@@ -78,26 +102,16 @@ namespace rti {
       auto pointsandradii = combine_points_with_grid_spacing_and_compute_max_disc_radius();
       auto geometry = geo::point_cloud_disc_geometry<numeric_type>(device, pointsandradii, normals);
       auto bdbox = geometry.get_bounding_box();
-      // increase by 5% of the z-achsis
-      // auto bdboxEps =  0.01 * std::abs(bdbox[1][2] - bdbox[0][2]);
-      // auto bdboxEps = maxDscRad * 2;
-      auto bdboxEps = maxDscRad * 1;
-      std::cout << "[Alex] Using bdboxEpx == " << bdboxEps << std::endl;
+      auto bdboxEps = maxDscRad;
       bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, bdboxEps);
       //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 8);
       auto origin = create_rectangular_source_from_bounding_box(bdbox);
-      // auto origin = create_circular_source_from_bounding_box(bdbox);
-      //bdbox = increase_size_of_bounding_box_on_x_and_y_axes(bdbox, 0.5);
-      auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox};
-      // auto direction = ray::cosine_direction<numeric_type>::construct_in_opposite_direction_of_z_axis();
-      auto direction = ray::cosine_direction_z<numeric_type> {};
-      auto source = ray::source<numeric_type> {origin, direction};
+      auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox, xCond, yCond};
+      auto source = ray::source<numeric_type> {origin, *srcDirection};
       auto reflections = reflection::diffuse<numeric_type> {};
       auto tracer = trace::tracer<numeric_type>
         {geometry, boundary, source, reflections, numofrays, *(particlefactory)};
       auto traceresult = tracer.run();
-      // mcestimates = extract_mc_estimates(traceresult);
-      // normalize_mc_estimates();
       mcestimates = extract_mc_estimates_normalized(traceresult);
       hitcnts = extract_hit_cnts(traceresult);
       assert(mcestimates.size() == hitcnts.size() && "Correctness Assumption");
@@ -124,7 +138,7 @@ namespace rti {
 
     void normalize_mc_estimates()
     {
-      std::cout << "[Alex] normalizing_mc_estimates()" << std::endl;
+      // std::cout << "[Alex] normalizing_mc_estimates()" << std::endl;
       auto sum = 0.0;
       auto max = 0.0;
       for (auto const& ee : mcestimates) {
@@ -134,7 +148,6 @@ namespace rti {
         }
       }
       for (auto& ee : mcestimates) {
-        // ee /= sum;
         ee /= max;
       }
     }
@@ -179,7 +192,7 @@ namespace rti {
           maxv = vv;
         }
       }
-      std::cout << "[Alex] normalizing_mc_estimates()" << std::endl;
+      // std::cout << "[Alex] normalizing_mc_estimates()" << std::endl;
       for (auto& vv : mcestimates) {
         vv /= maxv;
       }
@@ -257,10 +270,6 @@ namespace rti {
     ray::rectangle_origin_z<numeric_type>
     create_rectangular_source_from_bounding_box(util::pair<util::triple<numeric_type> > bdbox)
     {
-      // std::cout
-      //   << "################################" << std::endl
-      //   << "### Using rectangular source ###" << std::endl
-      //   << "################################" << std::endl;
       auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
       auto originC1 = util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};
       auto originC2 = util::pair<numeric_type> {bdbox[1][0], bdbox[1][1]};
@@ -273,10 +282,6 @@ namespace rti {
     ray::disc_origin_z<numeric_type>
     create_circular_source_from_bounding_box(util::pair<util::triple<numeric_type> > bdbox)
     {
-      // std::cout
-      //   << "#############################" << std::endl
-      //   << "### Using circular source ###" << std::endl
-      //   << "#############################" << std::endl;
       auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
       auto originC1 = util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};
       auto originC2 = util::pair<numeric_type> {bdbox[1][0], bdbox[1][1]};
@@ -296,5 +301,11 @@ namespace rti {
     std::unique_ptr<particle::i_particle_factory<numeric_type> > particlefactory;
     size_t numofrays = 1024;
     float maxDscRad = 0.0;
+
+    bound_condition xCond = geo::bound_condition::REFLECTIVE;
+    bound_condition yCond = geo::bound_condition::REFLECTIVE;
+
+    std::unique_ptr<ray::i_direction<numeric_type> > srcDirection =
+      std::make_unique<ray::cosine_direction_z<numeric_type> > ();
   };
 }

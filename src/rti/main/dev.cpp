@@ -184,7 +184,8 @@ int main(int argc, char* argv[]) {
   auto epsilon = 0.1 * (bdbox[1][2] - bdbox[0][2]); // -0.1;
   bdbox[1][2] += epsilon;
 
-  auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox};
+  auto boundary = geo::boundary_x_y<numeric_type>
+    {device, bdbox, geo::bound_condition::PERIODIC, geo::bound_condition::PERIODIC};
   // Prepare source
   auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
   auto originC1 = util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};

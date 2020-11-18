@@ -24,7 +24,7 @@ namespace rti { namespace geo {
     {
       nbhd.clear();
       nbhd.resize(points.size(), std::vector<size_t> {});
-      construct_neighborhood_2(points, min, max);
+      construct_neighborhood(points, min, max);
     }
 
     std::vector<size_t>& get_neighbors(size_t id)
@@ -34,13 +34,11 @@ namespace rti { namespace geo {
 
   private:
 
-    void construct_neighborhood_2
+    void construct_neighborhood
     (std::vector<rti::util::quadruple<numeric_type> >& points,
      rti::util::triple<numeric_type>& min,
      rti::util::triple<numeric_type>& max)
     {
-      std::cout << "points.size() == " << points.size() << std::endl;
-      std::cout << "Starting devide and conquer neirest neighbor" << std::endl;
       auto diridx = 0;
       auto pivot = (max[diridx] + min[diridx]) / 2;
       auto s1maxrad = (numeric_type) 0;
