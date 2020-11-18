@@ -21,6 +21,7 @@
 #include "ray/disc_origin_z.hpp"
 #include "ray/rectangle_origin_z.hpp"
 #include "ray/source.hpp"
+#include "reflection/i_reflection.hpp"
 #include "reflection/diffuse.hpp"
 #include "trace/point_cloud_context.hpp"
 #include "trace/tracer.hpp"
@@ -83,6 +84,11 @@ namespace rti {
       srcDirection = std::make_unique<ray::power_cosine_direction_z<numeric_type> > (exponent);
     }
 
+    void set(reflection::i_reflection<numeric_type>& reflection_)
+    {
+      reflection = reflection_;
+    }
+
     void run()
     {
       auto device_config = "hugepages=1";
@@ -96,9 +102,8 @@ namespace rti {
       auto origin = create_rectangular_source_from_bounding_box(bdbox);
       auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox, xCond, yCond};
       auto source = ray::source<numeric_type> {origin, *srcDirection};
-      auto reflections = reflection::diffuse<numeric_type> {};
       auto tracer = trace::tracer<numeric_type, particle_type>
-        {geometry, boundary, source, reflections, numofrays};
+        {geometry, boundary, source, reflection, numofrays};
       auto traceresult = tracer.run();
       mcestimates = extract_mc_estimates_normalized(traceresult);
       hitcnts = extract_hit_cnts(traceresult);
@@ -287,6 +292,9 @@ namespace rti {
 
     bound_condition xCond = geo::bound_condition::REFLECTIVE;
     bound_condition yCond = geo::bound_condition::REFLECTIVE;
+
+    reflection::diffuse<numeric_type> diffuse;
+    reflection::i_reflection<numeric_type>& reflection = diffuse;
 
     std::unique_ptr<ray::i_direction<numeric_type> > srcDirection =
       std::make_unique<ray::cosine_direction_z<numeric_type> > ();
