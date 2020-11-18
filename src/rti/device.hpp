@@ -14,23 +14,27 @@
 #include "geo/bound_condition.hpp"
 #include "geo/point_cloud_disc_factory.hpp"
 #include "io/vtp_writer.hpp"
-//#include "particle/i_particle.hpp"
-#include "particle/i_particle_factory.hpp"
+#include "particle/i_particle.hpp"
 #include "ray/i_direction.hpp"
 #include "ray/cosine_direction_z.hpp"
 #include "ray/power_cosine_direction_z.hpp"
 #include "ray/disc_origin_z.hpp"
 #include "ray/rectangle_origin_z.hpp"
 #include "ray/source.hpp"
+#include "reflection/diffuse.hpp"
 #include "trace/point_cloud_context.hpp"
 #include "trace/tracer.hpp"
 #include "util/utils.hpp"
 
 namespace rti {
   using ::rti::geo::bound_condition;
+  using ::rti::particle::i_particle;
 
-  template<typename numeric_type>
+  template<typename numeric_type, typename particle_type>
   class device final {
+
+    static_assert(std::is_base_of<i_particle<numeric_type>, particle_type>::value,
+                  "Precondition");
 
   public:
 
@@ -79,28 +83,12 @@ namespace rti {
       srcDirection = std::make_unique<ray::power_cosine_direction_z<numeric_type> > (exponent);
     }
 
-    // The register_particle_factory() function takes ownership of the particle.
-    // That is, you cannot use the unique_ptr after passing it into this function.
-    // Call this function in one of two ways:
-    //   (a) auto factory = std::make_unique<concrete::factory_class> (\*constructor-arguments*\)
-    //       instance.register_particel_factory(std::move(factory))
-    //   (b) instance.register_particle_factory(std::unique_ptr<particle::i_particle_factory>
-    //         (new concrete::factory_class(\*constructor-arguments*\)))
-    void register_particle_factory
-    (std::unique_ptr<particle::i_particle_factory<numeric_type> > pf)
-    {
-      particlefactory = std::move(pf);
-    }
-
     void run()
     {
-      if (particle_factory_is_not_set()) {
-        return;
-      }
       auto device_config = "hugepages=1";
       auto device = rtcNewDevice(device_config);
       auto pointsandradii = combine_points_with_grid_spacing_and_compute_max_disc_radius();
-      auto geometry = geo::point_cloud_disc_geometry<numeric_type>(device, pointsandradii, normals);
+      auto geometry = geo::point_cloud_disc_geometry<numeric_type>{device, pointsandradii, normals};
       auto bdbox = geometry.get_bounding_box();
       auto bdboxEps = maxDscRad;
       bdbox = increase_size_of_bounding_box_by_eps_on_z_axis(bdbox, bdboxEps);
@@ -109,8 +97,8 @@ namespace rti {
       auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox, xCond, yCond};
       auto source = ray::source<numeric_type> {origin, *srcDirection};
       auto reflections = reflection::diffuse<numeric_type> {};
-      auto tracer = trace::tracer<numeric_type>
-        {geometry, boundary, source, reflections, numofrays, *(particlefactory)};
+      auto tracer = trace::tracer<numeric_type, particle_type>
+        {geometry, boundary, source, reflections, numofrays};
       auto traceresult = tracer.run();
       mcestimates = extract_mc_estimates_normalized(traceresult);
       hitcnts = extract_hit_cnts(traceresult);
@@ -159,11 +147,6 @@ namespace rti {
         _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
         _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
       }
-    }
-
-    bool particle_factory_is_not_set()
-    {
-      return (! particlefactory);
     }
 
     std::vector<size_t>
@@ -298,9 +281,9 @@ namespace rti {
     std::vector<numeric_type> spacing;
     std::vector<numeric_type> mcestimates;
     std::vector<size_t> hitcnts;
-    std::unique_ptr<particle::i_particle_factory<numeric_type> > particlefactory;
+
     size_t numofrays = 1024;
-    float maxDscRad = 0.0;
+    numeric_type maxDscRad = 0.0;
 
     bound_condition xCond = geo::bound_condition::REFLECTIVE;
     bound_condition yCond = geo::bound_condition::REFLECTIVE;

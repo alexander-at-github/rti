@@ -29,14 +29,13 @@
 #include "../io/vtp_writer.hpp"
 #include "../io/xaver/vtu_point_cloud_reader.hpp"
 #include "../particle/i_particle.hpp"
-#include "../particle/i_particle_factory.hpp"
 #include "../ray/constant_origin.hpp"
-//#include "../ray/cosine_direction.hpp"
 #include "../ray/cosine_direction_z.hpp"
 #include "../ray/disc_origin_x.hpp"
 #include "../ray/disc_origin_z.hpp"
 #include "../ray/source.hpp"
 #include "../ray/rectangle_origin_z.hpp"
+#include "../reflection/diffuse.hpp"
 #include "../trace/point_cloud_context_simplified.hpp"
 #include "../trace/tracer.hpp"
 #include "../trace/triangle_context_simplified.hpp"
@@ -212,28 +211,23 @@ int main(int argc, char* argv[]) {
     numrays = std::stoull(numraysstr);
   } catch (...) {}
 
-  // Create particle and particle factory
+  //// Define particle
+  // In order to pass a value into a local class we need to declare a static
+  // variable. This is like capturing variables in a lambda expression.
+  static numeric_type stickingStatic = stickingC;
   class particle_t : public particle::i_particle<numeric_type> {
-    numeric_type sticking;
-    public:
-    particle_t(numeric_type sticking) : sticking(sticking) {}
-    numeric_type process_hit(size_t primID, std::array<numeric_type, 3> direction) override final {
-      return sticking;
+  public:
+    numeric_type
+    process_hit
+    (size_t primID, std::array<numeric_type, 3> direction) override final
+    {
+      return stickingStatic;
     }
     void init_new() override final { return; }
   };
-  class particle_factory : public particle::i_particle_factory<numeric_type> {
-    numeric_type sticking;
-    public:
-    particle_factory(numeric_type sticking) : sticking(sticking) {}
-    std::unique_ptr<particle::i_particle<numeric_type> > create() override final {
-      return std::make_unique<particle_t> (sticking);
-    }
-  };
-  auto particlefactory = particle_factory ((numeric_type) stickingC);
 
-  auto tracer = trace::tracer<numeric_type>
-    {geometry, boundary, source, reflections, numrays, particlefactory};
+  auto tracer = trace::tracer<numeric_type, particle_t>
+    {geometry, boundary, source, reflections, numrays};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;

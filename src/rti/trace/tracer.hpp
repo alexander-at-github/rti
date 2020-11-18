@@ -27,14 +27,10 @@
 #include "../io/vtp_writer.hpp"
 #include "../mc/rejection_control.hpp"
 #include "../particle/i_particle.hpp"
-#include "../particle/i_particle_factory.hpp"
-#include "../ray/constant_direction.hpp"
+//#include "../ray/constant_direction.hpp"
 #include "../ray/disc_origin.hpp"
 #include "../ray/i_source.hpp"
-#include "../reflection/diffuse.hpp"
 #include "../reflection/i_reflection_model.hpp"
-//#include "../reflection/specular.hpp"
-#include "../rng/cstdlib_rng.hpp"
 #include "../rng/mt64_rng.hpp"
 #include "../util/logger.hpp"
 #include "../util/ray_logger.hpp"
@@ -42,9 +38,12 @@
 
 namespace rti { namespace trace {
     
-  template<typename numeric_type>
+  template<typename numeric_type, typename particle_type>
   class tracer {
-
+    
+    static_assert(std::is_base_of<particle::i_particle<numeric_type>, particle_type>::value,
+                  "Precondition");
+    
   public:
     
     tracer
@@ -52,14 +51,12 @@ namespace rti { namespace trace {
      geo::boundary_x_y<numeric_type>& pBoundary,
      ray::i_source& pSource,
      reflection::i_reflection_model<numeric_type>& pReflection,
-     size_t pNumRays,
-     particle::i_particle_factory<numeric_type>& particlefactory) :
+     size_t pNumRays) :
       mGeometry(pGeometry),
       mBoundary(pBoundary),
       mSource(pSource),
       mReflection(pReflection),
-      mNumRays(pNumRays),
-      particlefactory(particlefactory)
+      mNumRays(pNumRays)
     {
       assert(mGeometry.get_rtc_device() == pBoundary.get_rtc_device() &&
               "the geometry and the boundary need to refer to the same Embree (rtc) device");
@@ -122,7 +119,7 @@ namespace rti { namespace trace {
       // The random number generator itself is stateless (has no members which
       // are modified). Hence, it may be shared by threads.
       // auto rng = std::make_unique<rng::cstdlib_rng>();
-      auto rng = std::make_unique<rng::mt64_rng>();
+      auto rng = rng::mt64_rng {};
 
       // Start timing
       auto timer = util::timer {};
@@ -139,14 +136,16 @@ namespace rti { namespace trace {
         // It seems really important to use two separate seeds / states for
         // sampling the source and sampling reflections. When we use only one
         // state for both, then the variance is very high.
-        auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
-        auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
+        // auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
+        // auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
+        auto rngstate1 = rng::mt64_rng::state {seed};
+        auto rngstate2 = rng::mt64_rng::state {seed+2};
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
 
         // thread-local particle
-        auto particle = particlefactory.create();
+        auto particle = particle_type {};
         // probabilistic weight
         auto rayweight = (numeric_type) 1;
 
@@ -157,10 +156,10 @@ namespace rti { namespace trace {
 
         #pragma omp for
         for (size_t idx = 0; idx < (unsigned long long int) mNumRays; ++idx) {      
-          particle->init_new();
+          particle.init_new();
           rayweight = get_init_ray_weight();
           auto lastinitRW = rayweight;
-          mSource.fill_ray(rayhit.ray, *rng, *rngstate1); // fills also tnear
+          mSource.fill_ray(rayhit.ray, rng, rngstate1); // fills also tnear
           RAYSRCLOG(rayhit);
           if_RLOG_PROGRESS_is_set_print_progress(progresscnt, mNumRays);
           auto reflect = false;
@@ -190,7 +189,7 @@ namespace rti { namespace trace {
             if (rayhit.hit.geomID == boundaryID) {
               // // Ray hit the boundary
               // reflect = true;
-              // auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, *rng, *rngstate2);
+              // auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, rng, rngstate2);
               
               reflect = true;
               auto orgdir = mBoundary.process_hit(rayhit.ray, rayhit.hit);
@@ -222,17 +221,17 @@ namespace rti { namespace trace {
             geohitc += 1;
             RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
             RLOG_DEBUG << "prim == " << mGeometry.prim_to_string(rayhit.hit.primID) << std::endl;
-            auto sticking = particle->process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
+            auto sticking = particle.process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
             auto valuetodrop = rayweight * sticking;
             hitAccumulator.use(rayhit.hit.primID, valuetodrop);
             check_for_additional_intersections(rayhit.ray, rayhit.hit.primID, hitAccumulator, valuetodrop);
             rayweight -= valuetodrop;
             reflect = mc::rejection_control<numeric_type>::check_weight_reweight_or_kill
-              (rayweight, lastinitRW, *rng, *rngstate2);
+              (rayweight, lastinitRW, rng, rngstate2);
             if ( ! reflect ) {
               break;
             }
-            auto orgdir = mReflection.use (rayhit.ray, rayhit.hit, mGeometry, *rng, *rngstate2);
+            auto orgdir = mReflection.use (rayhit.ray, rayhit.hit, mGeometry, rng, rngstate2);
             // TODO: optimize
             rayhit.ray.org_x = orgdir[0][0];
             rayhit.ray.org_y = orgdir[0][1];
@@ -427,6 +426,5 @@ namespace rti { namespace trace {
     ray::i_source& mSource;
     reflection::i_reflection_model<numeric_type>& mReflection;
     size_t mNumRays;
-    particle::i_particle_factory<numeric_type>& particlefactory;
   };
 }}
