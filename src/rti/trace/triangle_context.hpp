@@ -5,7 +5,7 @@
 
 #include <embree3/rtcore.h>
 
-#include "../reflection/i_reflection_model.hpp"
+#include "../reflection/i_reflection.hpp"
 #include "../reflection/specular.hpp"
 #include "dummy_counter.hpp"
 #include "absc_context.hpp"
@@ -33,11 +33,11 @@ namespace rti { namespace trace {
 
     unsigned int mGeometryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
     rti::geo::triangle_geometry<numeric_type>& mGeometry;
-    rti::reflection::i_reflection_model<numeric_type>& mReflectionModel;
+    rti::reflection::i_reflection<numeric_type>& mReflectionModel;
     rti::trace::i_hit_accumulator<numeric_type>& mHitAccumulator;
     unsigned int mBoundaryID = RTC_INVALID_GEOMETRY_ID; // initialize to some useful value
     rti::geo::absc_boundary<numeric_type>& mBoundary;
-    rti::reflection::i_reflection_model<numeric_type>& mBoundaryReflectionModel;
+    rti::reflection::i_reflection<numeric_type>& mBoundaryReflectionModel;
 
     // A vector of primitive IDs collected through the filter function filter_fun_geometry() which we
     // will then post process in the post_process_intersection() function.
@@ -49,11 +49,11 @@ namespace rti { namespace trace {
 
     triangle_context(unsigned int pGeometryID,
             rti::geo::triangle_geometry<numeric_type>& pGeometry,
-            rti::reflection::i_reflection_model<numeric_type>& pReflectionModel,
+            rti::reflection::i_reflection<numeric_type>& pReflectionModel,
             rti::trace::i_hit_accumulator<numeric_type>& pHitAccumulator,
             unsigned int pBoundaryID,
             rti::geo::absc_boundary<numeric_type>& pBoundary,
-            rti::reflection::i_reflection_model<numeric_type>& pBoundaryReflectionModel,
+            rti::reflection::i_reflection<numeric_type>& pBoundaryReflectionModel,
             rti::rng::i_rng& pRng,
             rti::rng::i_rng::i_state& pRngState) :
       // initialize members of virtual base class

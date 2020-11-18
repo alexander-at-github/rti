@@ -3,12 +3,12 @@
 #include <cmath>
 
 #include "../ray/cos_hemi.hpp"
-#include "i_reflection_model.hpp"
+#include "i_reflection.hpp"
 #include "../rng/i_rng.hpp"
 
 namespace rti { namespace reflection {
   template<typename Ty>
-  class diffuse : public rti::reflection::i_reflection_model<Ty> {
+  class diffuse : public rti::reflection::i_reflection<Ty> {
   public:
     rti::util::pair<rti::util::triple<Ty> >
     use(RTCRay& pRayIn, RTCHit& pHitIn, rti::geo::meta_geometry<Ty>& pGeometry,

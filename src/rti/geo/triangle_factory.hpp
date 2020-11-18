@@ -31,11 +31,11 @@ namespace rti { namespace geo {
     std::unique_ptr<rti::trace::absc_context<Ty> > get_new_context(
       unsigned int pGeometryID,
       rti::geo::absc_geometry<Ty>& pGeometry,
-      rti::reflection::i_reflection_model<Ty>& pReflectionModel,
+      rti::reflection::i_reflection<Ty>& pReflectionModel,
       rti::trace::i_hit_accumulator<Ty>& pHitAccumulator,
       unsigned int pBoundaryID,
       rti::geo::absc_boundary<Ty>& pBoundary,
-      rti::reflection::i_reflection_model<Ty>& pBoundaryReflectionModel,
+      rti::reflection::i_reflection<Ty>& pBoundaryReflectionModel,
       rti::rng::i_rng& pRng,
       rti::rng::i_rng::i_state& pRngState,
       rti::particle::i_particle<Ty>& particle) override final

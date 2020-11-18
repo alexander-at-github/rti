@@ -30,7 +30,7 @@
 //#include "../ray/constant_direction.hpp"
 #include "../ray/disc_origin.hpp"
 #include "../ray/i_source.hpp"
-#include "../reflection/i_reflection_model.hpp"
+#include "../reflection/i_reflection.hpp"
 #include "../rng/mt64_rng.hpp"
 #include "../util/logger.hpp"
 #include "../util/ray_logger.hpp"
@@ -50,7 +50,7 @@ namespace rti { namespace trace {
     (geo::point_cloud_disc_geometry<numeric_type>& pGeometry,
      geo::boundary_x_y<numeric_type>& pBoundary,
      ray::i_source& pSource,
-     reflection::i_reflection_model<numeric_type>& pReflection,
+     reflection::i_reflection<numeric_type>& pReflection,
      size_t pNumRays) :
       mGeometry(pGeometry),
       mBoundary(pBoundary),
@@ -424,7 +424,7 @@ namespace rti { namespace trace {
     geo::point_cloud_disc_geometry<numeric_type>& mGeometry;
     geo::boundary_x_y<numeric_type>& mBoundary;
     ray::i_source& mSource;
-    reflection::i_reflection_model<numeric_type>& mReflection;
+    reflection::i_reflection<numeric_type>& mReflection;
     size_t mNumRays;
   };
 }}

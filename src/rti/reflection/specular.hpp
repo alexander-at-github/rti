@@ -1,10 +1,10 @@
 #pragma once
 
-#include "i_reflection_model.hpp"
+#include "i_reflection.hpp"
 
 namespace rti { namespace reflection {
   template<typename Ty>
-  class specular : public rti::reflection::i_reflection_model<Ty> {
+  class specular : public rti::reflection::i_reflection<Ty> {
   public:
 
     rti::util::pair<rti::util::triple<Ty> >

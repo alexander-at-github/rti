@@ -4,10 +4,10 @@
 
 namespace rti { namespace reflection {
   template<typename Ty>
-  class i_reflection_model {
+  class i_reflection {
   public:
     // Pure Virtual Class
-    virtual ~i_reflection_model() {}
+    virtual ~i_reflection() {}
     // Decides whether or not to reflect. If a reflection should happen, it sets
     // the origin and direction in the RTCRayHit object and returns true. If no
     // reflection should happen, then it does not change pRayhit and returns
