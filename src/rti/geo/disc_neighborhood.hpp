@@ -78,6 +78,30 @@ namespace rti { namespace geo {
       if (s1.size() + s2.size() <= 1) {
         return;
       }
+      // Corner case
+      // The pivot element should actually be inbetween min and max.
+      if (pivot == min[diridx] || pivot == max[diridx]) {
+        // In this case the points are extremly close to each other (with respect
+        // to the floating point precision).
+        assert( (min[diridx] + max[diridx]) / 2 == pivot && "Characterization of corner case");
+        auto s1s2 = std::vector<size_t> (s1);
+        s1s2.insert(s1s2.end(), s2.begin(), s2.end());
+        // Add each of them to the neighborhoods
+        for (size_t idx1 = 0; idx1 < s1s2.size()-1; ++idx1) {
+          for (size_t idx2 = idx1+1; idx2 < s1s2.size(); ++idx2) {
+            auto const& pi1 = s1s2[idx1];
+            auto const& pi2 = s1s2[idx2];
+            if (pi1 == pi2) {
+              std::cout << "#### Error: unexpected duplication of coordinates" << std::flush << std::endl;
+            }
+            assert(pi1 != pi2 && "Assumption");
+            nbhd[pi1].push_back(pi2);
+            nbhd[pi2].push_back(pi1);
+          }
+        }
+        return;
+      }
+
       // sets of candidates
       auto s1c = std::vector<size_t> {};
       auto s2c = std::vector<size_t> {};
