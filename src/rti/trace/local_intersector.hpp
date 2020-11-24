@@ -73,30 +73,6 @@ namespace rti { namespace trace {
         }
         return false;
       }
-      
-      
-      auto rorg2HitPoint = rti::util::sum(rorg, rdirC);
-       std::cerr << "rorg2HitPoint: " << rorg2HitPoint[0] << " "
-                << rorg2HitPoint[1] << " " << rorg2HitPoint[2] << std::endl;
-      auto dorg2HitPoint = rti::util::diff(rorg2HitPoint, rorg2dorg);
-
-      // std::cerr << "dorg2HitPOint: " << dorg2HitPoint[0] << " "
-      //          << dorg2HitPoint[1] << " " << dorg2HitPoint[2] << std::endl;
-        
-      auto distSqrd = dorg2HitPoint[0] * dorg2HitPoint[0] +
-        dorg2HitPoint[1] * dorg2HitPoint[1] +
-        dorg2HitPoint[2] * dorg2HitPoint[2];
-      std::cerr << "distSqrd == " << distSqrd << std::endl;
-      std::cerr << "length == " << util::length_of_vec(dorg2HitPoint) << std::endl;
-
-      auto const& radius = disc[3];
-      auto radiusSqrd = radius * radius;
-      std::cerr << "radiusSqrd == " << radiusSqrd << std::endl;
-      if (radiusSqrd > distSqrd) {
-        // Intersection
-        return true;
-      }
-      return false;
     }
   };
 }}

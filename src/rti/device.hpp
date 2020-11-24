@@ -12,7 +12,6 @@
 
 #include "geo/boundary_x_y.hpp"
 #include "geo/bound_condition.hpp"
-#include "geo/point_cloud_disc_factory.hpp"
 #include "io/vtp_writer.hpp"
 #include "particle/i_particle.hpp"
 #include "ray/i_direction.hpp"

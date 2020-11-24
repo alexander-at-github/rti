@@ -23,7 +23,6 @@
 #include "../geo/disc_bounding_box_intersector.hpp"
 #include "../geo/boundary_x_y.hpp"
 #include "../geo/absc_geometry.hpp"
-#include "../geo/point_cloud_disc_factory.hpp"
 #include "../io/vtp_writer.hpp"
 #include "../mc/rejection_control.hpp"
 #include "../particle/i_particle.hpp"
