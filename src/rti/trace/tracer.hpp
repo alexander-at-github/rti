@@ -336,7 +336,7 @@ namespace rti { namespace trace {
 
       // { // Debug
       //   std::cerr << "## Debug" << std::endl;
-      //   local_intersector::does_intersect(ray, disc, mGeometry.get_normal_ref(hit1id));
+      //   local_intersector::intersect(ray, disc, mGeometry.get_normal_ref(hit1id));
       //   std::cerr << "## Debug" << std::endl;
       // }
       
@@ -348,7 +348,7 @@ namespace rti { namespace trace {
 
         auto const& disc = mGeometry.get_prim_ref(id);
         auto const& dnormal = mGeometry.get_normal_ref(id);
-        auto intersect = local_intersector::does_intersect(ray, disc, dnormal);
+        auto intersect = local_intersector::intersect(ray, disc, dnormal);
         if ( intersect ) {
           hitAcc.use(id, valuetodrop);
           cnt += 1;

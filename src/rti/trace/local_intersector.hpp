@@ -21,7 +21,7 @@ namespace rti { namespace trace {
 
     template<typename numeric_type>
     static bool
-    does_intersect
+    intersect
     (RTCRay const& ray,
      util::quadruple<numeric_type> const& disc,
      util::triple<numeric_type> const& dnormal)
