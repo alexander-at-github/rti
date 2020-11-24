@@ -225,6 +225,9 @@ namespace rti { namespace trace {
             hitAccumulator.use(rayhit.hit.primID, valuetodrop);
             check_for_additional_intersections(rayhit.ray, rayhit.hit.primID, hitAccumulator, valuetodrop);
             rayweight -= valuetodrop;
+            if (rayweight == 0) {
+              break;
+            }
             reflect = mc::rejection_control<numeric_type>::check_weight_reweight_or_kill
               (rayweight, lastinitRW, rng, rngstate2);
             if ( ! reflect ) {
