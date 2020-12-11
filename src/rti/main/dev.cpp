@@ -185,6 +185,8 @@ int main(int argc, char* argv[]) {
 
   auto boundary = geo::boundary_x_y<numeric_type>
     {device, bdbox, geo::bound_condition::PERIODIC, geo::bound_condition::PERIODIC};
+  // auto boundary = geo::boundary_x_y<numeric_type>
+  //   {device, bdbox, geo::bound_condition::REFLECTIVE, geo::bound_condition::REFLECTIVE};
   // Prepare source
   auto zmax = std::max(bdbox[0][2], bdbox[1][2]);
   auto originC1 = util::pair<numeric_type> {bdbox[0][0], bdbox[0][1]};

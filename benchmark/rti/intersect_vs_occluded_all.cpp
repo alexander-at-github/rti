@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include <benchmark/benchmark.h>
 
 #include <embree3/rtcore.h>
@@ -5,7 +7,20 @@
 #include <pmmintrin.h>
 #include <xmmintrin.h>
 
+#include "rti/trace/local_intersector.hpp"
+
+using namespace rti;
+
 using embree_record_t = struct {RTCDevice dev; RTCScene scn; RTCGeometry geo;};
+
+struct point_4f_t {
+  float xx, yy, zz, radius;
+};
+struct normal_vec_3f_t {
+  float xx, yy, zz;
+};
+
+auto numpoints = 10u;
 
 static
 void occluded_filter(const struct RTCFilterFunctionNArguments* args) {
@@ -25,16 +40,9 @@ embree_record_t prepare_embree() {
     _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
     _MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
   }
-  auto numpoints = 10u; // unsigned int
   auto device_config = "hugepages=1";
   auto device = rtcNewDevice(device_config);
   auto geometry = rtcNewGeometry(device, RTC_GEOMETRY_TYPE_ORIENTED_DISC_POINT);
-  struct point_4f_t {
-    float xx, yy, zz, radius;
-  };
-  struct normal_vec_3f_t {
-    float xx, yy, zz;
-  };
   auto discs = (point_4f_t*)
     rtcSetNewGeometryBuffer(geometry,
                             RTC_BUFFER_TYPE_VERTEX,
@@ -185,8 +193,87 @@ void occluded_any_one(benchmark::State& pState) {
   release_embree(embreerec);
 }
 
+static
+void embree_with_local_intersector_old_v1(benchmark::State& pState) {
+  // prepare
+  auto context = RTCIntersectContext {};
+  rtcInitIntersectContext(&context);
+  auto embreerec = prepare_embree();
+  auto scene = embreerec.scn;
+  // remove the filters
+  rtcSetGeometryOccludedFilterFunction(embreerec.geo, NULL);
+  rtcSetGeometryIntersectFilterFunction(embreerec.geo, NULL);
+  //
+  auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  rayhit.ray.org_x = 0; rayhit.ray.org_y = 0; rayhit.ray.org_z = 0;
+  rayhit.ray.dir_x = 0; rayhit.ray.dir_y = 0; rayhit.ray.dir_z = 1;
+
+  // Set buffer for local intersector
+  auto const& dbuf = (point_4f_t*) rtcGetGeometryBufferData(embreerec.geo, RTC_BUFFER_TYPE_VERTEX, 0);
+  auto const& nbuf = (normal_vec_3f_t*) rtcGetGeometryBufferData(embreerec.geo, RTC_BUFFER_TYPE_NORMAL, 0);
+
+  // benchmark loop
+  for (auto _ : pState) {
+    rayhit.ray.tfar = std::numeric_limits<float>::max();
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+
+    //rtcOccluded1(scene, &context, &rayhit.ray);
+    rtcIntersect1(scene, &context, &rayhit);
+    benchmark::DoNotOptimize(rayhit);
+    for (size_t idx = 1; idx < numpoints; ++idx) {
+      auto& disc = *reinterpret_cast<util::quadruple<float>*>(&dbuf[idx]);
+      auto& dnormal = *reinterpret_cast<util::triple<float>*>(&nbuf[idx]);
+      auto intersects = trace::local_intersector::intersect_old_v1(rayhit.ray, disc, dnormal);
+      benchmark::DoNotOptimize(intersects);
+    }
+  }
+  // clean up
+  release_embree(embreerec);
+}
+
+static
+void embree_with_local_intersector(benchmark::State& pState) {
+  // prepare
+  auto context = RTCIntersectContext {};
+  rtcInitIntersectContext(&context);
+  auto embreerec = prepare_embree();
+  auto scene = embreerec.scn;
+  // remove the filters
+  rtcSetGeometryOccludedFilterFunction(embreerec.geo, NULL);
+  rtcSetGeometryIntersectFilterFunction(embreerec.geo, NULL);
+  //
+  auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  rayhit.ray.org_x = 0; rayhit.ray.org_y = 0; rayhit.ray.org_z = 0;
+  rayhit.ray.dir_x = 0; rayhit.ray.dir_y = 0; rayhit.ray.dir_z = 1;
+
+  // Set buffer for local intersector
+  auto const& dbuf = (point_4f_t*) rtcGetGeometryBufferData(embreerec.geo, RTC_BUFFER_TYPE_VERTEX, 0);
+  auto const& nbuf = (normal_vec_3f_t*) rtcGetGeometryBufferData(embreerec.geo, RTC_BUFFER_TYPE_NORMAL, 0);
+
+  // benchmark loop
+  for (auto _ : pState) {
+    rayhit.ray.tfar = std::numeric_limits<float>::max();
+    rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
+    rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+
+    //rtcOccluded1(scene, &context, &rayhit.ray);
+    rtcIntersect1(scene, &context, &rayhit);
+    benchmark::DoNotOptimize(rayhit);
+    for (size_t idx = 1; idx < numpoints; ++idx) {
+      auto& disc = *reinterpret_cast<util::quadruple<float>*>(&dbuf[idx]);
+      auto& dnormal = *reinterpret_cast<util::triple<float>*>(&nbuf[idx]);
+      auto intersects = trace::local_intersector::intersect(rayhit.ray, disc, dnormal);
+      benchmark::DoNotOptimize(intersects);
+    }
+  }
+  // clean up
+  release_embree(embreerec);
+}
 
 BENCHMARK(intersect_all)->UseRealTime();
 BENCHMARK(occluded_all)->UseRealTime();
 BENCHMARK(intersect_first)->UseRealTime();
 BENCHMARK(occluded_any_one)->UseRealTime();
+BENCHMARK(embree_with_local_intersector_old_v1)->UseRealTime();
+BENCHMARK(embree_with_local_intersector)->UseRealTime();

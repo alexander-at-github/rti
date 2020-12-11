@@ -8,16 +8,19 @@
 
 namespace rti { namespace ray {
   template<typename Ty>
-  class source : public rti::ray::i_source {
+  class source : public ray::i_source {
     // Combines an origin with a direction
     // Not thread safe. See direction classes for reasons.
   public:
 
-    source(rti::ray::i_origin<Ty>& pOrigin, rti::ray::i_direction<Ty>& pDirection) :
+    source(ray::i_origin<Ty>& pOrigin, ray::i_direction<Ty>& pDirection) :
       mOrigin(pOrigin),
       mDirection(pDirection) {}
 
-    void fill_ray(RTCRay& pRay, rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+    void fill_ray(RTCRay& pRay, rng::i_rng& pRng,
+                  rng::i_rng::i_state& pRngState1, rng::i_rng::i_state& pRngState2,
+                  rng::i_rng::i_state& pRngState3, rng::i_rng::i_state& pRngState4
+                  ) const override final {
 
       // "Avoid store-to-load forwarding issues with single rays
       //
@@ -28,7 +31,7 @@ namespace rti { namespace ray {
 
       auto tnear = 1e-4f; // float
 
-      auto orgn = mOrigin.get(pRng, pRngState);
+      auto orgn = mOrigin.get(pRng, pRngState1, pRngState2);
       // pRay.org_x = (float) orgn[0];
       // pRay.org_y = (float) orgn[1];
       // pRay.org_z = (float) orgn[2];
@@ -43,7 +46,7 @@ namespace rti { namespace ray {
 
       auto time = 0.0f; // float
 
-      auto dir = mDirection.get(pRng, pRngState);
+      auto dir = mDirection.get(pRng, pRngState3, pRngState4);
       // pRay.dir_x = (float) dir[0];
       // pRay.dir_y = (float) dir[1];
       // pRay.dir_z = (float) dir[2];
@@ -55,7 +58,7 @@ namespace rti { namespace ray {
     }
 
   private:
-    rti::ray::i_origin<Ty>& mOrigin;
-    rti::ray::i_direction<Ty>& mDirection;
+    ray::i_origin<Ty>& mOrigin;
+    ray::i_direction<Ty>& mDirection;
   };
 }} // namespace

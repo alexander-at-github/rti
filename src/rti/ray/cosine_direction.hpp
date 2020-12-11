@@ -27,7 +27,10 @@ namespace rti { namespace ray {
     }
 
     rti::util::triple<numeric_type>
-    get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final
+    get(rti::rng::i_rng& pRng,
+        rti::rng::i_rng::i_state& pRngState1,
+        rti::rng::i_rng::i_state& pRngState2
+        ) const override final
     {
       return rti::ray::cos_hemi::get(mBasis, pRng, pRngState);
     }

@@ -91,9 +91,9 @@ namespace rti { namespace geo {
           for (size_t idx2 = idx1+1; idx2 < s1s2.size(); ++idx2) {
             auto const& pi1 = s1s2[idx1];
             auto const& pi2 = s1s2[idx2];
-            if (pi1 == pi2) {
-              std::cout << "#### Error: unexpected duplication of coordinates" << std::flush << std::endl;
-            }
+            // if (pi1 == pi2) {
+            //   std::cout << "#### Error: unexpected duplication of coordinates" << std::flush << std::endl;
+            // }
             assert(pi1 != pi2 && "Assumption");
             nbhd[pi1].push_back(pi2);
             nbhd[pi2].push_back(pi1);

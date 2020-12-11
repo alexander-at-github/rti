@@ -13,7 +13,10 @@ namespace rti { namespace ray {
       mY(pY),
       mZ(pZ) {}
 
-    rti::util::triple<Ty> get(rti::rng::i_rng& pRng, rti::rng::i_rng::i_state& pRngState) const override final {
+    rti::util::triple<Ty> get(rti::rng::i_rng& pRng,
+                              rti::rng::i_rng::i_state& pRngState1,
+                              rti::rng::i_rng::i_state& pRngState2
+                              ) const override final {
       return {mX, mY, mZ};
     }
 

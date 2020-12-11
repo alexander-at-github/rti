@@ -33,9 +33,10 @@ target_sources(benchmark
   # TODO: add files here
   rti/intersect_vs_occluded_all.cpp
   )
-# target_include_directories(benchmark
-#   PRIVATE
-#   )
+target_include_directories(benchmark
+  PRIVATE
+  ${RTI_SRC_DIR}
+  )
 target_link_libraries(benchmark
   PRIVATE
   benchmark::benchmark

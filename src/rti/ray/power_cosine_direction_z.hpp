@@ -15,7 +15,10 @@ namespace rti { namespace ray {
       ee(((numeric_type) 2) / (exp + 1)) {}
 
     util::triple<numeric_type>
-    get(rng::i_rng& pRng, rng::i_rng::i_state& pRngState) const override final
+    get(rng::i_rng& pRng,
+        rng::i_rng::i_state& pRngState1,
+        rng::i_rng::i_state& pRngState2
+        ) const override final
     {
       auto r1 = ((numeric_type) pRng.get(pRngState)) / ((numeric_type) pRng.max());
       auto r2 = ((numeric_type) pRng.get(pRngState)) / ((numeric_type) pRng.max());

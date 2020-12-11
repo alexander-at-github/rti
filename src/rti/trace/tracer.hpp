@@ -131,14 +131,21 @@ namespace rti { namespace trace {
         // of the parallel region.
         alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-        auto seed = (unsigned int) ((omp_get_thread_num() + 1) * 29); // multiply by magic number (prime)
+        // 5393
+        // 2147483647
+        // 1442968193
+        auto seed = (unsigned int) ((omp_get_thread_num() + 1) *  2147483647); // multiply by magic number (prime)
         // It seems really important to use two separate seeds / states for
         // sampling the source and sampling reflections. When we use only one
         // state for both, then the variance is very high.
         // auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
         // auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
         auto rngstate1 = rng::mt64_rng::state {seed};
-        auto rngstate2 = rng::mt64_rng::state {seed+2};
+        auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
+        auto rngstate3 = rng::mt64_rng::state {seed+ (int)(1442968193/2)};
+        auto rngstate4 = rng::mt64_rng::state {seed+ (int)(1442968193/3)};
+        auto rngstate5 = rng::mt64_rng::state {seed+ (int)(1442968193/4)};
+        auto rngstate6 = rng::mt64_rng::state {seed+ (int)(1442968193/5)};
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
@@ -158,7 +165,7 @@ namespace rti { namespace trace {
           particle.init_new();
           rayweight = get_init_ray_weight();
           auto lastinitRW = rayweight;
-          mSource.fill_ray(rayhit.ray, rng, rngstate1); // fills also tnear
+          mSource.fill_ray(rayhit.ray, rng, rngstate1, rngstate2, rngstate3, rngstate4); // fills also tnear
           RAYSRCLOG(rayhit);
           if_RLOG_PROGRESS_is_set_print_progress(progresscnt, mNumRays);
           auto reflect = false;
@@ -172,6 +179,7 @@ namespace rti { namespace trace {
             rayhit.ray.tfar = std::numeric_limits<float>::max(); // Embree uses float
             rayhit.hit.instID[0] = RTC_INVALID_GEOMETRY_ID;
             rayhit.hit.geomID = RTC_INVALID_GEOMETRY_ID;
+            rayhit.ray.tnear = 1e-4; // tnear is also set in the particle source
             // Run the intersection
             rtcIntersect1(rtcscene, &rtccontext, &rayhit);
 
@@ -229,11 +237,11 @@ namespace rti { namespace trace {
               break;
             }
             reflect = mc::rejection_control<numeric_type>::check_weight_reweight_or_kill
-              (rayweight, lastinitRW, rng, rngstate2);
+              (rayweight, lastinitRW, rng, rngstate5);
             if ( ! reflect ) {
               break;
             }
-            auto orgdir = mReflection.use (rayhit.ray, rayhit.hit, mGeometry, rng, rngstate2);
+            auto orgdir = mReflection.use (rayhit.ray, rayhit.hit, mGeometry, rng, rngstate6);
             // TODO: optimize
             rayhit.ray.org_x = orgdir[0][0];
             rayhit.ray.org_y = orgdir[0][1];
@@ -342,12 +350,18 @@ namespace rti { namespace trace {
       //   local_intersector::intersect(ray, disc, mGeometry.get_normal_ref(hit1id));
       //   std::cerr << "## Debug" << std::endl;
       // }
+
+      // { // Debug
+      //   std::cout << "check_for_additional_intersections(): " << hit1id << " ";
+      // }
       
       auto cnt = 0u;
       for (auto const& id : mGeometry.get_neighbors(hit1id)) {
         // std::cout << "using prim id " << id << std::endl;
         // auto& printdisc = mGeometry.get_prim_ref(id);
-        // std::cout << "printdisc == " << printdisc[0] << " " << printdisc[1] << " " << printdisc[2] << " " << printdisc[3] << std::endl;
+        // std::cout
+        //   << "printdisc == " << printdisc[0] << " " << printdisc[1]
+        //   << " " << printdisc[2] << " " << printdisc[3] << std::endl;
 
         auto const& disc = mGeometry.get_prim_ref(id);
         auto const& dnormal = mGeometry.get_normal_ref(id);
@@ -355,9 +369,16 @@ namespace rti { namespace trace {
         if ( intersect ) {
           hitAcc.use(id, valuetodrop);
           cnt += 1;
+          // { // Debug
+          //   std::cout << id << " ";
+          // }
+
         }
       }
       // std::cout << " hits == " << cnt << std::endl;
+      // { // Debug
+      //   std::cout << std::endl;
+      // }
     }
       
     std::vector<numeric_type>
