@@ -20,8 +20,8 @@ namespace rti { namespace ray {
         rng::i_rng::i_state& pRngState2
         ) const override final
     {
-      auto r1 = ((numeric_type) pRng.get(pRngState)) / ((numeric_type) pRng.max());
-      auto r2 = ((numeric_type) pRng.get(pRngState)) / ((numeric_type) pRng.max());
+      auto r1 = ((numeric_type) pRng.get(pRngState1)) / ((numeric_type) pRng.max());
+      auto r2 = ((numeric_type) pRng.get(pRngState2)) / ((numeric_type) pRng.max());
       auto tt = pow(r2, ee);
       auto zz = - sqrtf(tt);
       auto xx = cosf(two_pi * r1) * sqrtf(1 - tt);
