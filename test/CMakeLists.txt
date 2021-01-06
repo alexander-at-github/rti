@@ -24,6 +24,11 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 add_subdirectory(${GTEST_SRC_DIR} ${GTEST_BIN_DIR})
 include(GoogleTest)
 
+find_package(embree 3 REQUIRED
+  PATHS ${EMBREE_DIR}
+  NO_DEFAULT_PATH
+  )
+
 # gnuplot-iostream uses boost
 # set shared libs influences all libraries added after this point.
 # That is, it might interfer with other libraries in unexpected ways.
@@ -50,6 +55,7 @@ target_include_directories(tests
 target_link_libraries(tests
   PRIVATE
   gtest_main
+  ${EMBREE_LIBRARIES}
   Boost::iostreams
   Boost::system
   Boost::filesystem)

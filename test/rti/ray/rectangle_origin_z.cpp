@@ -14,12 +14,13 @@ TEST(rectangle_origin_z_double, histogram_w_cstdlib_rng) {
   auto zval = 2.0; // double
   auto c1 = rti::util::pair<numeric_type> {2.0, 2.0};
   auto c2 = rti::util::pair<numeric_type> {12.0, 24.0};
-  // C-style asserts are for documentation and verification of test assumptions
+  // Test assumptions
   assert(c1[0] <= c2[0] && "Error in test specification; Test assumption fails");
   assert(c1[1] <= c2[1] && "Error in test specification; Test assumption fails");
   auto org = rti::ray::rectangle_origin_z<numeric_type> {zval, c1, c2};
   auto rng = rti::rng::cstdlib_rng {};
-  auto rngstate = rti::rng::cstdlib_rng::state {1234567890};
+  auto rngstate1 = rti::rng::cstdlib_rng::state {1234567890};
+  auto rngstate2 = rti::rng::cstdlib_rng::state { 987654321};
 
   constexpr auto numxbins = 100u;
   constexpr auto numybins = 100u;
@@ -27,7 +28,7 @@ TEST(rectangle_origin_z_double, histogram_w_cstdlib_rng) {
 
   auto numiter = (size_t) 1e6;
   for (size_t idx = 0; idx < numiter; ++idx) {
-    auto sample = org.get(rng, rngstate);
+    auto sample = org.get(rng, rngstate1, rngstate2);
     // TODO: write a test that checks that state is changed
     ASSERT_EQ(zval, sample[2]) << "Sampled z-value is incorrect";
     assert(sample[0] - c1[0] >= 0 && "Error in test specification");

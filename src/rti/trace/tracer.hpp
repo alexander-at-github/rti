@@ -141,11 +141,16 @@ namespace rti { namespace trace {
         // auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
         // auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
         auto rngstate1 = rng::mt64_rng::state {seed};
-        auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
-        auto rngstate3 = rng::mt64_rng::state {seed+ (int)(1442968193/2)};
-        auto rngstate4 = rng::mt64_rng::state {seed+ (int)(1442968193/3)};
-        auto rngstate5 = rng::mt64_rng::state {seed+ (int)(1442968193/4)};
-        auto rngstate6 = rng::mt64_rng::state {seed+ (int)(1442968193/5)};
+        auto& rngstate2 = rngstate1;
+        auto& rngstate3 = rngstate1;
+        auto& rngstate4 = rngstate1;
+        auto& rngstate5 = rngstate1;
+        auto& rngstate6 = rngstate1;
+        // auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
+        // auto rngstate3 = rng::mt64_rng::state {seed+ (int)(1442968193/2)};
+        // auto rngstate4 = rng::mt64_rng::state {seed+ (int)(1442968193/3)};
+        // auto rngstate5 = rng::mt64_rng::state {seed+ (int)(1442968193/4)};
+        // auto rngstate6 = rng::mt64_rng::state {seed+ (int)(1442968193/5)};
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
@@ -219,10 +224,14 @@ namespace rti { namespace trace {
             if (rti::util::dot_product(rti::util::triple<numeric_type> {ray.dir_x, ray.dir_y, ray.dir_z},
                                        mGeometry.get_normal(hit.primID)) > 0) {
               // Hit from the back
-              reflect = false;
               RLOG_TRACE << "a";
-              break;
-              // TODO: One could consider to let hits with very small values in tfar through.
+              // Let ray through, i.e., continue.
+              reflect = true;
+              rayhit.ray.org_x = ray.org_x + ray.dir_x * ray.tfar;
+              rayhit.ray.org_y = ray.org_y + ray.dir_y * ray.tfar;
+              rayhit.ray.org_z = ray.org_z + ray.dir_z * ray.tfar;
+              // keep ray direction as it is
+              continue;
             }
             RLOG_TRACE << "h";
             geohitc += 1;
@@ -342,7 +351,6 @@ namespace rti { namespace trace {
     {
       // std::cout << "neighborhoodsize == " << mGeometry.get_neighbors(hit1id).size() << std::endl;
 
-      auto& disc = mGeometry.get_prim_ref(hit1id);
       // std::cout << "disc " << hit1id << " == " << disc[0] << " " << disc[1] << " " << disc[2] << " " << disc[3] << std::endl;
 
       // { // Debug
@@ -362,11 +370,15 @@ namespace rti { namespace trace {
         // std::cout
         //   << "printdisc == " << printdisc[0] << " " << printdisc[1]
         //   << " " << printdisc[2] << " " << printdisc[3] << std::endl;
+        if (id == hit1id) {
+          // No duplicat of the first hit
+          assert(false && "Correctness Assumption");
+        }
 
         auto const& disc = mGeometry.get_prim_ref(id);
         auto const& dnormal = mGeometry.get_normal_ref(id);
-        auto intersect = local_intersector::intersect(ray, disc, dnormal);
-        if ( intersect ) {
+        auto intersects = local_intersector::intersect(ray, disc, dnormal);
+        if ( intersects ) {
           hitAcc.use(id, valuetodrop);
           cnt += 1;
           // { // Debug

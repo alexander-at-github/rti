@@ -32,7 +32,7 @@ namespace rti { namespace ray {
         rti::rng::i_rng::i_state& pRngState2
         ) const override final
     {
-      return rti::ray::cos_hemi::get(mBasis, pRng, pRngState);
+      return rti::ray::cos_hemi::get(mBasis, pRng, pRngState1);
     }
 
   private:

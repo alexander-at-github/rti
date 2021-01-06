@@ -15,14 +15,15 @@ TEST(power_cosine_direction_z_float, plot_w_cstdlib_rng) {
   auto exp = 20.0f;
   auto cdir = ray::power_cosine_direction_z<numeric_type> (exp);
   auto rng = rng::cstdlib_rng {};
-  auto rngstate = rng::cstdlib_rng::state {1234567890};
+  auto rngstate1 = rti::rng::cstdlib_rng::state {1234567890};
+  auto rngstate2 = rti::rng::cstdlib_rng::state { 987654321};
 
   constexpr auto numiter = (size_t) 1e5;
 
   auto samples = std::array<util::triple<numeric_type>, numiter> {};
 
   for (size_t idx = 0 ; idx < numiter; ++idx) {
-    auto sample = cdir.get(rng, rngstate);
+    auto sample = cdir.get(rng, rngstate1, rngstate2);
     samples[idx] = sample;
   }
 

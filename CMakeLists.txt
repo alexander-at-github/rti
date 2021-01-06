@@ -145,7 +145,7 @@ externalproject_add(rti-test
     #
     -DBOOST_ROOT:PATH=${BOOST_ROOT}
     #-DGMSH_DIR=${GMSH_DIR}
-    #-DEMBREE_DIR=${EMBREE_DIR}
+    -DEMBREE_DIR=${EMBREE_DIR}
     #-DVTK_DIR=${VTK_DIR}
     #
     -DRTI_SRC_DIR=${RTI_SRC_DIR}
