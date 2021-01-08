@@ -30,7 +30,7 @@ add_executable(benchmark "")
 target_sources(benchmark
   PRIVATE
   rti/dummy_benchmark.cpp
-  # TODO: add files here
+  rti/ray/rectangle_origin_z.cpp
   rti/intersect_vs_occluded_all.cpp
   )
 target_include_directories(benchmark
