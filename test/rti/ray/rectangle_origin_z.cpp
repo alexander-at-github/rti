@@ -14,8 +14,9 @@ using namespace rti;
 
 // Test Fixture
 class rectangle_origin_z_double : public ::testing::Test {
-  using nt = double;
 protected:
+  using nt = double;
+
   nt zval = 2.0;
   // Corners of testing domain
   util::pair<nt> c1 {2.0, 2.0}; // x, y
