@@ -99,7 +99,7 @@ namespace rti {
       auto tracer = trace::tracer<numeric_type, particle_type>
         {geometry, boundary, source, reflection, numofrays};
       auto traceresult = tracer.run();
-      mcestimates = extract_mc_estimates_normalized(traceresult);
+      mcestimates = extract_mc_estimates_normalized_smoothed(traceresult, geometry);
       hitcnts = extract_hit_cnts(traceresult);
       assert(mcestimates.size() == hitcnts.size() && "Correctness Assumption");
       rtcReleaseDevice(device);
@@ -155,7 +155,9 @@ namespace rti {
     }
     
     std::vector<numeric_type>
-    extract_mc_estimates_normalized(trace::result<numeric_type>& traceresult)
+    extract_mc_estimates_normalized_smoothed
+      (trace::result<numeric_type>& traceresult,
+       geo::point_cloud_disc_geometry<numeric_type>& geometry)
     {
       auto& hitacc = traceresult.hitAccumulator;
       auto values = hitacc->get_values();
@@ -169,6 +171,13 @@ namespace rti {
       // Account for area and find max value
       for (size_t idx = 0; idx < values.size(); ++idx) {
         auto vv = values[idx] / areas[idx];
+        { // Average over the neighborhood
+          auto neighborhood = geometry.get_neighbors(idx);
+          for (auto const& nbi : neighborhood) {
+            vv += values[nbi] / areas[nbi];
+          }
+          vv /= (neighborhood.size() + 1);
+        }
         mcestimates.push_back(vv);
         if (maxv < vv) {
           maxv = vv;

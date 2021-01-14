@@ -132,6 +132,7 @@ namespace rti { namespace trace {
         alignas(128) auto rayhit = RTCRayHit {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
         // 5393
+        // 115249
         // 2147483647
         // 1442968193
         auto seed = (unsigned int) ((omp_get_thread_num() + 1) *  2147483647); // multiply by magic number (prime)
@@ -141,16 +142,11 @@ namespace rti { namespace trace {
         // auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
         // auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
         auto rngstate1 = rng::mt64_rng::state {seed};
-        auto& rngstate2 = rngstate1;
-        auto& rngstate3 = rngstate1;
-        auto& rngstate4 = rngstate1;
-        auto& rngstate5 = rngstate1;
-        auto& rngstate6 = rngstate1;
-        // auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
-        // auto rngstate3 = rng::mt64_rng::state {seed+ (int)(1442968193/2)};
-        // auto rngstate4 = rng::mt64_rng::state {seed+ (int)(1442968193/3)};
-        // auto rngstate5 = rng::mt64_rng::state {seed+ (int)(1442968193/4)};
-        // auto rngstate6 = rng::mt64_rng::state {seed+ (int)(1442968193/5)};
+        auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
+        auto rngstate3 = rng::mt64_rng::state {seed+ (1442968193/2)};
+        auto rngstate4 = rng::mt64_rng::state {seed+ (1442968193/3)};
+        auto rngstate5 = rng::mt64_rng::state {seed+ (1442968193/4)};
+        auto rngstate6 = rng::mt64_rng::state {seed+ (1442968193/5)};
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
@@ -226,7 +222,7 @@ namespace rti { namespace trace {
               // Hit from the back
               RLOG_TRACE << "a";
               // Let ray through, i.e., continue.
-              reflect = true;
+              reflect = true; // reflect means continue
               rayhit.ray.org_x = ray.org_x + ray.dir_x * ray.tfar;
               rayhit.ray.org_y = ray.org_y + ray.dir_y * ray.tfar;
               rayhit.ray.org_z = ray.org_z + ray.dir_z * ray.tfar;
@@ -370,10 +366,6 @@ namespace rti { namespace trace {
         // std::cout
         //   << "printdisc == " << printdisc[0] << " " << printdisc[1]
         //   << " " << printdisc[2] << " " << printdisc[3] << std::endl;
-        if (id == hit1id) {
-          // No duplicat of the first hit
-          assert(false && "Correctness Assumption");
-        }
 
         auto const& disc = mGeometry.get_prim_ref(id);
         auto const& dnormal = mGeometry.get_normal_ref(id);
