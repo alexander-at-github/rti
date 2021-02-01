@@ -29,12 +29,13 @@
 namespace rti {
   using ::rti::geo::bound_condition;
   using ::rti::particle::i_particle;
+  using ::rti::reflection::i_reflection;
 
-  template<typename numeric_type, typename particle_type>
+  template<typename numeric_type, typename particle_type, typename reflection_type>
   class device final {
 
-    static_assert(std::is_base_of<i_particle<numeric_type>, particle_type>::value,
-                  "Precondition");
+    static_assert(std::is_base_of<i_particle<numeric_type>, particle_type>::value, "Precondition");
+    static_assert(std::is_base_of<i_reflection<numeric_type>, reflection_type>::value, "Precondition");
 
   public:
 
@@ -78,11 +79,6 @@ namespace rti {
       direction = srcDirection;
     }
 
-    void set(reflection::i_reflection<numeric_type>& reflection_)
-    {
-      reflection = reflection_;
-    }
-
     void run()
     {
       auto device_config = "hugepages=1";
@@ -96,8 +92,8 @@ namespace rti {
       auto origin = create_rectangular_source_from_bounding_box(bdbox);
       auto boundary = geo::boundary_x_y<numeric_type> {device, bdbox, xCond, yCond};
       auto source = ray::source<numeric_type> {origin, direction};
-      auto tracer = trace::tracer<numeric_type, particle_type>
-        {geometry, boundary, source, reflection, numofrays};
+      auto tracer = trace::tracer<numeric_type, particle_type, reflection_type>
+        {geometry, boundary, source, numofrays};
       auto traceresult = tracer.run();
       mcestimates = extract_mc_estimates_normalized_smoothed(traceresult, geometry);
       hitcnts = extract_hit_cnts(traceresult);
@@ -295,9 +291,6 @@ namespace rti {
 
     bound_condition xCond = geo::bound_condition::REFLECTIVE;
     bound_condition yCond = geo::bound_condition::REFLECTIVE;
-
-    reflection::diffuse<numeric_type> diffuse; // defaut behaviour
-    reflection::i_reflection<numeric_type>& reflection = diffuse;
 
     ray::cosine_direction_z<numeric_type> cosine; // default behaviour
     ray::i_direction<numeric_type>& direction = cosine;

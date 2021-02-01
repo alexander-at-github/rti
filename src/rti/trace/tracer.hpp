@@ -37,11 +37,11 @@
 
 namespace rti { namespace trace {
     
-  template<typename numeric_type, typename particle_type>
+    template<typename numeric_type, typename particle_type, typename reflection_type>
   class tracer {
     
-    static_assert(std::is_base_of<particle::i_particle<numeric_type>, particle_type>::value,
-                  "Precondition");
+    static_assert(std::is_base_of<particle::i_particle<numeric_type>, particle_type>::value, "Precondition");
+    static_assert(std::is_base_of<reflection::i_reflection<numeric_type>, reflection_type>::value, "Precondition");
     
   public:
     
@@ -49,12 +49,10 @@ namespace rti { namespace trace {
     (geo::point_cloud_disc_geometry<numeric_type>& pGeometry,
      geo::boundary_x_y<numeric_type>& pBoundary,
      ray::i_source& pSource,
-     reflection::i_reflection<numeric_type>& pReflection,
      size_t pNumRays) :
       mGeometry(pGeometry),
       mBoundary(pBoundary),
       mSource(pSource),
-      mReflection(pReflection),
       mNumRays(pNumRays)
     {
       assert(mGeometry.get_rtc_device() == pBoundary.get_rtc_device() &&
@@ -147,12 +145,15 @@ namespace rti { namespace trace {
         auto rngstate4 = rng::mt64_rng::state {seed+ (1442968193/3)};
         auto rngstate5 = rng::mt64_rng::state {seed+ (1442968193/4)};
         auto rngstate6 = rng::mt64_rng::state {seed+ (1442968193/5)};
+        auto rngstate7 = rng::mt64_rng::state {seed+ (1442968193/6)};
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
 
-        // thread-local particle
+        // thread-local particle and reflection object
         auto particle = particle_type {};
+        auto surfreflect = reflection_type {};
+          
         // probabilistic weight
         auto rayweight = (numeric_type) 1;
 
@@ -233,7 +234,8 @@ namespace rti { namespace trace {
             geohitc += 1;
             RLOG_DEBUG << "rayhit.hit.primID == " << rayhit.hit.primID << std::endl;
             RLOG_DEBUG << "prim == " << mGeometry.prim_to_string(rayhit.hit.primID) << std::endl;
-            auto sticking = particle.process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
+            // auto sticking = particle.process_hit(hit.primID, {ray.dir_x, ray.dir_y, ray.dir_z});
+            auto sticking = particle.get_sticking_probability(rayhit.ray, rayhit.hit, mGeometry, rng, rngstate5);
             auto valuetodrop = rayweight * sticking;
             hitAccumulator.use(rayhit.hit.primID, valuetodrop);
             check_for_additional_intersections(rayhit.ray, rayhit.hit.primID, hitAccumulator, valuetodrop);
@@ -242,11 +244,11 @@ namespace rti { namespace trace {
               break;
             }
             reflect = mc::rejection_control<numeric_type>::check_weight_reweight_or_kill
-              (rayweight, lastinitRW, rng, rngstate5);
+              (rayweight, lastinitRW, rng, rngstate6);
             if ( ! reflect ) {
               break;
             }
-            auto orgdir = mReflection.use (rayhit.ray, rayhit.hit, mGeometry, rng, rngstate6);
+            auto orgdir = surfreflect.use (rayhit.ray, rayhit.hit, mGeometry, rng, rngstate7);
             // TODO: optimize
             rayhit.ray.org_x = orgdir[0][0];
             rayhit.ray.org_y = orgdir[0][1];
@@ -451,7 +453,6 @@ namespace rti { namespace trace {
     geo::point_cloud_disc_geometry<numeric_type>& mGeometry;
     geo::boundary_x_y<numeric_type>& mBoundary;
     ray::i_source& mSource;
-    reflection::i_reflection<numeric_type>& mReflection;
     size_t mNumRays;
   };
 }}

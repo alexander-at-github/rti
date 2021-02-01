@@ -205,7 +205,6 @@ int main(int argc, char* argv[]) {
   //    util::triple<numeric_type> {1.f, 0.f,  0.f}}};
   auto direction = ray::cosine_direction_z<numeric_type> {};
   auto source = ray::source<numeric_type> {origin, direction};
-  auto reflections = reflection::diffuse<numeric_type> {};
   
   auto numrays = 128 * 1024ull; // default value // magic number
   auto numraysstr = cmlopts->get_string_option_value("NUM_RAYS");
@@ -220,16 +219,21 @@ int main(int argc, char* argv[]) {
   class particle_t : public particle::i_particle<numeric_type> {
   public:
     numeric_type
-    process_hit
-    (size_t primID, std::array<numeric_type, 3> direction) override final
-    {
+    get_sticking_probability
+    (RTCRay& rayin,
+     RTCHit& hitin,
+     geo::meta_geometry<numeric_type>& geometry,
+     rng::i_rng& rng,
+     rng::i_rng::i_state& rngstate) override final {
       return stickingStatic;
     }
-    void init_new() override final { return; }
+
+    void init_new() override final {}
   };
 
-  auto tracer = trace::tracer<numeric_type, particle_t>
-    {geometry, boundary, source, reflections, numrays};
+  using reflection = reflection::diffuse<numeric_type>;
+  auto tracer = trace::tracer<numeric_type, particle_t, reflection>
+    {geometry, boundary, source, numrays};
   auto result = tracer.run();
   std::cout << result << std::endl;
   //std::cout << *result.hitAccumulator << std::endl;
