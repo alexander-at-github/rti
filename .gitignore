@@ -5,3 +5,5 @@ resources/silvaco
 benchmarks-old/*/
 notes/
 doc/*/
+benchmark/other/
+compile_commands.json
