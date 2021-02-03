@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <vtkAbstractArray.h>
 #include <vtkCellIterator.h>
 #include <vtkCellData.h>
@@ -44,11 +46,20 @@ namespace rti { namespace io {
       std::string sqrtOfAreaStr = "sqrt-of-area";
       celldata->SetActiveAttribute(sqrtOfAreaStr.c_str(), vtkDataSetAttributes::SCALARS);
       vtkSmartPointer<vtkDataArray> sqrtOfAreaArray = celldata->GetScalars();
-      if (sqrtOfAreaArray == nullptr) {
+      std::string radiusStr = "radius";
+      celldata->SetActiveAttribute(radiusStr.c_str(), vtkDataSetAttributes::SCALARS);
+      vtkSmartPointer<vtkDataArray> radiusArray = celldata->GetScalars();
+      if (sqrtOfAreaArray == nullptr && radiusArray == nullptr) {
         std::cerr
           << "Warning: " << typeid(this).name()
-          << " could not find cell data with the name \"sqrt-of-area\" in the file "
+          << " could not find cell data with the name \"sqrt-of-area\" or \"radius\" in the file "
           << pFilename << std::endl;
+      }
+      if (sqrtOfAreaArray == nullptr && radiusArray == nullptr) {
+        std::cout
+          << "file " << pFilename << " contains cell data with the name  \"sqrt-of-area\" and "
+          << "\"radius\"." << std::endl
+          << "Using the \"radius\" values, ingnoring the \"sqrt-of-area\" values" << std::endl;
       }
       vtkSmartPointer<vtkDataArray> normals = celldata->GetNormals();
       if (normals == nullptr) {
@@ -60,10 +71,14 @@ namespace rti { namespace io {
         double xyz[3]; // 3 dimensions
         polydata->GetPoint(idx, xyz);
         double radius[1]; // 1 dimension
-        sqrtOfAreaArray->GetTuple(idx, radius);
-        double radiusEpsilon = 1.0 / 32; // about 3%
-        // TODO: Is that correct?
-        radius[0] *= std::sqrt(3.0)/2 * (1 + radiusEpsilon);
+        assert(sqrtOfAreaArray != nullptr || radiusArray != nullptr && "Correctness Assertion");
+        if (radiusArray != nullptr) {
+          radiusArray->GetTuple(idx, radius); // set radius
+        } else {
+          sqrtOfAreaArray->GetTuple(idx, radius);
+          double radiusEpsilon = 1.0 / 32; // about 3%
+          radius[0] *= std::sqrt(3.0)/2 * (1 + radiusEpsilon);
+        }
         rti::util::quadruple<numeric_type> point {(numeric_type) xyz[0], (numeric_type) xyz[1] , (numeric_type) xyz[2], (numeric_type) radius[0]};
         mPoints.push_back(point);
         double nxnynz[3];

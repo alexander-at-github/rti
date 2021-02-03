@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
     exit(EXIT_FAILURE);
   }
   if (cmlopts->get_bool_option_value("TRIANGLES")) {
-    std::cerr << "Triangles this version of " << argv[0] << " not supported " << std::endl;
+    std::cerr << "Triangles in this version of " << argv[0] << " not supported " << std::endl;
     exit(EXIT_FAILURE);
   }
   auto reader = io::vtp_point_cloud_reader<numeric_type> {infilename};
@@ -178,10 +178,6 @@ int main(int argc, char* argv[]) {
   
   // Compute bounding box
   auto bdbox = geometry.get_bounding_box();
-  // Increase the size of the bounding box by an epsilon on the z axis.
-  assert(bdbox[0][2] <= bdbox[1][2] && "Assumption");
-  auto epsilon = 0.1 * (bdbox[1][2] - bdbox[0][2]); // -0.1;
-  bdbox[1][2] += epsilon;
 
   auto boundary = geo::boundary_x_y<numeric_type>
     {device, bdbox, geo::bound_condition::PERIODIC, geo::bound_condition::PERIODIC};

@@ -78,10 +78,12 @@ namespace rti { namespace geo {
       return mInfilename;
     }
 
+    // Returns bounding box with a bit of empty space (equal to the maximum
+    // of the radii of the discs) on top (z-dimension) of the geometry.
     util::pair<util::triple<numeric_type> >
     get_bounding_box()
     {
-      return {mincoords, maxcoords};
+      return {mincoords, {maxcoords[0], maxcoords[1], maxcoords[2] + maxradius}};
     }
 
     size_t get_num_primitives()
@@ -195,12 +197,13 @@ namespace rti { namespace geo {
         mVVBuffer[idx].yy = (float) qudtrpl[1];
         mVVBuffer[idx].zz = (float) qudtrpl[2];
         mVVBuffer[idx].radius = (float) qudtrpl[3];
-        if (qudtrpl[0] < mincoords[0]){ mincoords[0] = qudtrpl[0]; }
-        if (qudtrpl[1] < mincoords[1]){ mincoords[1] = qudtrpl[1]; }
-        if (qudtrpl[2] < mincoords[2]){ mincoords[2] = qudtrpl[2]; }
-        if (qudtrpl[0] > maxcoords[0]){ maxcoords[0] = qudtrpl[0]; }
-        if (qudtrpl[1] > maxcoords[1]){ maxcoords[1] = qudtrpl[1]; }
-        if (qudtrpl[2] > maxcoords[2]){ maxcoords[2] = qudtrpl[2]; }
+        if (qudtrpl[0] < mincoords[0]) { mincoords[0] = qudtrpl[0]; }
+        if (qudtrpl[1] < mincoords[1]) { mincoords[1] = qudtrpl[1]; }
+        if (qudtrpl[2] < mincoords[2]) { mincoords[2] = qudtrpl[2]; }
+        if (qudtrpl[0] > maxcoords[0]) { maxcoords[0] = qudtrpl[0]; }
+        if (qudtrpl[1] > maxcoords[1]) { maxcoords[1] = qudtrpl[1]; }
+        if (qudtrpl[2] > maxcoords[2]) { maxcoords[2] = qudtrpl[2]; }
+        if (qudtrpl[3] > maxradius) { maxradius = (numeric_type) qudtrpl[3]; }
       }
       mNNBuffer = (normal_vec_3f_t*) rtcSetNewGeometryBuffer
         (mGeometry,
@@ -260,5 +263,6 @@ namespace rti { namespace geo {
     constexpr static numeric_type nummin = std::numeric_limits<numeric_type>::lowest();
     util::triple<numeric_type> mincoords = util::triple<numeric_type> {nummax, nummax, nummax};
     util::triple<numeric_type> maxcoords = util::triple<numeric_type> {nummin, nummin, nummin};
+    numeric_type maxradius = (numeric_type) 0.0;
   };
 }}
