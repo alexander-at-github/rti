@@ -32,6 +32,7 @@
 #include "../reflection/i_reflection.hpp"
 #include "../rng/mt64_rng.hpp"
 #include "../util/logger.hpp"
+#include "../util/stats.hpp"
 #include "../util/ray_logger.hpp"
 #include "../util/timer.hpp"
 
@@ -121,6 +122,8 @@ namespace rti { namespace trace {
       // Start timing
       auto timer = util::timer {};
 
+      auto statsobj = util::stats<numeric_type> {38 ,8};
+
       #pragma omp parallel \
         reduction(+ : geohitc, nongeohitc) \
         reduction(hit_accumulator_combine : hitAccumulator)
@@ -133,19 +136,32 @@ namespace rti { namespace trace {
         // 115249
         // 2147483647
         // 1442968193
-        auto seed = (unsigned int) ((omp_get_thread_num() + 1) *  2147483647); // multiply by magic number (prime)
+        auto seed = (unsigned int) ((omp_get_thread_num() + 1) * 31 );
         // It seems really important to use two separate seeds / states for
         // sampling the source and sampling reflections. When we use only one
         // state for both, then the variance is very high.
-        // auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
-        // auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
         auto rngstate1 = rng::mt64_rng::state {seed};
-        auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
-        auto rngstate3 = rng::mt64_rng::state {seed+ (1442968193/2)};
-        auto rngstate4 = rng::mt64_rng::state {seed+ (1442968193/3)};
-        auto rngstate5 = rng::mt64_rng::state {seed+ (1442968193/4)};
-        auto rngstate6 = rng::mt64_rng::state {seed+ (1442968193/5)};
-        auto rngstate7 = rng::mt64_rng::state {seed+ (1442968193/6)};
+        auto rngstate2 = rng::mt64_rng::state {seed+ 1};
+        auto rngstate3 = rng::mt64_rng::state {seed+ 2};
+        auto rngstate4 = rng::mt64_rng::state {seed+ 3};
+        auto rngstate5 = rng::mt64_rng::state {seed+ 4};
+        auto rngstate6 = rng::mt64_rng::state {seed+ 5};
+        auto rngstate7 = rng::mt64_rng::state {seed+ 6};
+        #pragma omp critical
+        {
+          std::cout << "omp_get_thread_num() == " << omp_get_thread_num()
+                    << "    seed0 == " << seed << std::endl;
+        }
+        // { // these values deliver a really good result - why?
+        //   auto seed = (unsigned int) ((omp_get_thread_num() + 1) *  5);
+        //   auto rngstate1 = rng::mt64_rng::state {seed};
+        //   auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
+        //   auto rngstate3 = rng::mt64_rng::state {seed+ (1442968193/2)};
+        //   auto rngstate4 = rng::mt64_rng::state {seed+ (1442968193/3)};
+        //   auto rngstate5 = rng::mt64_rng::state {seed+ (1442968193/4)};
+        //   auto rngstate6 = rng::mt64_rng::state {seed+ (1442968193/5)};
+        //   auto rngstate7 = rng::mt64_rng::state {seed+ (1442968193/6)};
+        // }
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
@@ -153,7 +169,7 @@ namespace rti { namespace trace {
         // thread-local particle and reflection object
         auto particle = particle_type {};
         auto surfreflect = reflection_type {};
-          
+
         // probabilistic weight
         auto rayweight = (numeric_type) 1;
 
@@ -199,7 +215,7 @@ namespace rti { namespace trace {
               // // Ray hit the boundary
               // reflect = true;
               // auto orgdir = boundaryReflection.use (rayhit.ray, rayhit.hit, mBoundary, rng, rngstate2);
-              
+
               reflect = true;
               auto orgdir = mBoundary.process_hit(rayhit.ray, rayhit.hit);
               // TODO: optimize
@@ -238,6 +254,14 @@ namespace rti { namespace trace {
             auto sticking = particle.get_sticking_probability(rayhit.ray, rayhit.hit, mGeometry, rng, rngstate5);
             auto valuetodrop = rayweight * sticking;
             hitAccumulator.use(rayhit.hit.primID, valuetodrop);
+
+            // #pragma omp critical
+            // {
+            //   statsobj.record({ray.org_x + ray.dir_x * ray.tfar,
+            //       ray.org_y + ray.dir_y * ray.tfar,
+            //       ray.org_z + ray.dir_z * ray.tfar});
+            // }
+
             check_for_additional_intersections(rayhit.ray, rayhit.hit.primID, hitAccumulator, valuetodrop);
             rayweight -= valuetodrop;
             if (rayweight == 0) {
@@ -287,6 +311,8 @@ namespace rti { namespace trace {
         hitAccumulator.set_exposed_areas(discareas);
       }
       // Assertion: hitAccumulator is reduced to one instance by openmp reduction
+      statsobj.chi_squared_test_uniform(hitAccumulator);
+      //statsobj.kolmogorov_smirnov_test_uniform();
 
       result.timeNanoseconds = timer.elapsed_nanoseconds();
       result.hitAccumulator = std::make_unique<trace::hit_accumulator<numeric_type> >(hitAccumulator);
@@ -360,7 +386,7 @@ namespace rti { namespace trace {
       // { // Debug
       //   std::cout << "check_for_additional_intersections(): " << hit1id << " ";
       // }
-      
+
       auto cnt = 0u;
       for (auto const& id : mGeometry.get_neighbors(hit1id)) {
         // std::cout << "using prim id " << id << std::endl;
@@ -386,7 +412,7 @@ namespace rti { namespace trace {
       //   std::cout << std::endl;
       // }
     }
-      
+
     std::vector<numeric_type>
     compute_disc_areas
     (geo::point_cloud_disc_geometry<numeric_type>& geometry,
@@ -447,9 +473,9 @@ namespace rti { namespace trace {
       }
       raycnt += 1;
     }
-    
+
   private:
-    
+
     geo::point_cloud_disc_geometry<numeric_type>& mGeometry;
     geo::boundary_x_y<numeric_type>& mBoundary;
     ray::i_source& mSource;

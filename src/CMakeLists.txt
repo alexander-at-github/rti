@@ -90,6 +90,7 @@ target_link_libraries (
   rti
   PRIVATE
   rtidevice
+  tbb # for rti::util::stats
   )
 install (
   TARGETS rti

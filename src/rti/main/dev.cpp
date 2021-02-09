@@ -35,6 +35,7 @@
 #include "../ray/disc_origin_z.hpp"
 #include "../ray/source.hpp"
 #include "../ray/rectangle_origin_z.hpp"
+#include "../ray/rectangle_origin_z_v2.hpp" // testing
 #include "../reflection/diffuse.hpp"
 #include "../trace/point_cloud_context_simplified.hpp"
 #include "../trace/tracer.hpp"
@@ -192,7 +193,9 @@ int main(int argc, char* argv[]) {
   // such that z == c for some constant c. (That is in accordance with the silvaco
   // verification instances.)
   //
-  auto origin = ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
+
+  //auto origin = ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
+  auto origin = ray::rectangle_origin_z_v2<numeric_type> {zmax, originC1, originC2};
 
   // Cosine direction in the opposite direction of the z-axis
   // auto direction = ray::cosine_direction<numeric_type> {
