@@ -22,8 +22,8 @@ namespace rti { namespace ray {
                "Precondition: pBasis is normal");
       }
 
-      Ty r1 = ((Ty) pRng.get(pRngState)) / pRng.max();
-      Ty r2 = ((Ty) pRng.get(pRngState)) / pRng.max();
+      Ty r1 = ((Ty) pRng.get(pRngState)) / ((Ty)pRng.max() + 1);
+      Ty r2 = ((Ty) pRng.get(pRngState)) / ((Ty)pRng.max() + 1);
       assert (0 <= r1 && r1 <= 1 && "Error in computing random number in the interval [0, 1]");
       assert (0 <= r2 && r2 <= 1 && "Error in computing random number in the interval [0, 1]");
 
