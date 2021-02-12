@@ -13,6 +13,6 @@ namespace rti { namespace ray {
                           rti::rng::i_rng::i_state&,
                           rti::rng::i_rng::i_state&,
                           rti::rng::i_rng::i_state&
-                          ) const = 0;
+                          ) = 0;
   };
 }} // namespace

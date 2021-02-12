@@ -20,7 +20,7 @@ namespace rti { namespace ray {
     void fill_ray(RTCRay& pRay, rng::i_rng& pRng,
                   rng::i_rng::i_state& pRngState1, rng::i_rng::i_state& pRngState2,
                   rng::i_rng::i_state& pRngState3, rng::i_rng::i_state& pRngState4
-                  ) const override final {
+                  ) override final {
 
       // "Avoid store-to-load forwarding issues with single rays
       //

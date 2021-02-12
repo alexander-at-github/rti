@@ -33,6 +33,7 @@
 #include "../ray/cosine_direction_z.hpp"
 #include "../ray/disc_origin_x.hpp"
 #include "../ray/disc_origin_z.hpp"
+#include "../ray/non_mc_source.hpp"
 #include "../ray/source.hpp"
 #include "../ray/rectangle_origin_z.hpp"
 #include "../ray/rectangle_origin_z_v2.hpp" // testing
@@ -195,21 +196,24 @@ int main(int argc, char* argv[]) {
   //
 
   //auto origin = ray::rectangle_origin_z<numeric_type> {zmax, originC1, originC2};
-  auto origin = ray::rectangle_origin_z_v2<numeric_type> {zmax, originC1, originC2};
+  // auto origin = ray::rectangle_origin_z_v2<numeric_type> {zmax, originC1, originC2};
 
-  // Cosine direction in the opposite direction of the z-axis
-  // auto direction = ray::cosine_direction<numeric_type> {
-  //   {util::triple<numeric_type> {0.f, 0.f, -1.f},
-  //    util::triple<numeric_type> {0.f, 1.f,  0.f},
-  //    util::triple<numeric_type> {1.f, 0.f,  0.f}}};
-  auto direction = ray::cosine_direction_z<numeric_type> {};
-  auto source = ray::source<numeric_type> {origin, direction};
-  
+  // // Cosine direction in the opposite direction of the z-axis
+  // // auto direction = ray::cosine_direction<numeric_type> {
+  // //   {util::triple<numeric_type> {0.f, 0.f, -1.f},
+  // //    util::triple<numeric_type> {0.f, 1.f,  0.f},
+  // //    util::triple<numeric_type> {1.f, 0.f,  0.f}}};
+  // auto direction = ray::cosine_direction_z<numeric_type> {};
+  // auto source = ray::source<numeric_type> {origin, direction};
+
   auto numrays = 128 * 1024ull; // default value // magic number
   auto numraysstr = cmlopts->get_string_option_value("NUM_RAYS");
   try {
     numrays = std::stoull(numraysstr);
   } catch (...) {}
+
+  auto direction = ray::cosine_direction_z<numeric_type> {};
+  auto source = ray::non_mc_source<numeric_type> {zmax, originC1, originC2, numrays, direction};
 
   //// Define particle
   // In order to pass a value into a local class we need to declare a static

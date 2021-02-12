@@ -148,15 +148,19 @@ namespace rti::util {
       std::cout << "Edge values in [" << edges.front() << ", " << edges.back() << "]" << std::endl;
       std::cout << "Inner values in [" << inner.front() << ", " << inner.back() << "]" << std::endl;
 
-      auto totalcnts = std::accumulate(cnts.begin(), cnts.end(), 0);
+      using vv = std::vector<size_t>;
+      auto totalcnts = std::accumulate<vv::const_iterator, vv::value_type>(
+          cnts.cbegin(), cnts.cend(), 0u);
 
-      auto correctcornerval = (double) totalcnts / (4*numInnerNodes + 2*numEdgeNodes + numCornerNodes);
+      auto correctcornerval =
+          (double)totalcnts /
+          (4 * numInnerNodes + 2 * numEdgeNodes + numCornerNodes);
       auto correctedgeval = 2 * correctcornerval;
       auto correctinnerval = 4 * correctcornerval;
       std::cout << "correctcornerval == " << correctcornerval
                 << " correctedgeval == " << correctedgeval
                 << " correctinnerval == " << correctinnerval << std::endl;
-      
+
       auto chsq = 0.0;
       auto degfreedom = cnts.size() - 1; // -1 ; see book Numerical Recipes page 732
       auto handlevalues = [&chsq, &degfreedom](auto const& actualVal, auto const& expectedVal) {
@@ -169,15 +173,16 @@ namespace rti::util {
         }
         auto dd = (double) expectedVal - actualVal;
         auto contribution = dd*dd/expectedVal;
-        if (contribution > 3) {
-          std::cout << "chi-squared contribution == " << contribution << std::endl;
-        }
+        // if (contribution > 3) {
+        //   std::cout << "chi-squared contribution == " << contribution << std::endl;
+        // }
         chsq += contribution;
       };
 
       for (auto const& pair : std::vector<std::pair<std::vector<size_t>, double> > {{corners, correctcornerval}, {edges, correctedgeval}, {inner, correctinnerval}}) {
         auto const& expectedVal = pair.second;
         for (auto const& val : pair.first) {
+          std::cout << val << "\t\t\t" << expectedVal << std::endl;
           handlevalues(val, expectedVal);
         }
       }
