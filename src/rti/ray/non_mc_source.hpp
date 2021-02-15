@@ -17,10 +17,13 @@ public:
     //
     // (C) 99u, 144, 32 seems to roduce a result with low noise levels: ~0.99873 (0.00127)
     //     with Chi-Squared == 7.73513 and degrees of freedom == 303
+    //     that is 46080000 rays
     // (D) 255u, 144, 32 seems to roduce a result with low noise levels: ~0.0.99926 (0.0007)
     //     with Chi-Squared == 17.9828 and degrees of freedom == 303
+    //     that is 299635200 rays
     // (E) 999u, 144, 32 noise levels: ~0.9992 (0.0008)
     //     with Chi-Squared == 263.218 and degrees of freedom == 303
+    //     that is 4608000000 rays
 
     using pair = util::pair<numeric_type>;
     

@@ -33,6 +33,7 @@
 #include "../ray/cosine_direction_z.hpp"
 #include "../ray/disc_origin_x.hpp"
 #include "../ray/disc_origin_z.hpp"
+#include "../ray/nonrng_loc_rng_dir_source.hpp"
 #include "../ray/non_mc_source.hpp"
 #include "../ray/source.hpp"
 #include "../ray/rectangle_origin_z.hpp"
@@ -213,7 +214,8 @@ int main(int argc, char* argv[]) {
   } catch (...) {}
 
   auto direction = ray::cosine_direction_z<numeric_type> {};
-  auto source = ray::non_mc_source<numeric_type> {zmax, originC1, originC2, numrays, direction};
+  // auto source = ray::non_mc_source<numeric_type> {zmax, originC1, originC2, numrays, direction};
+  auto source = ray::nonrng_loc_rng_dir_source<numeric_type> {zmax, originC1, originC2, numrays, direction};
 
   //// Define particle
   // In order to pass a value into a local class we need to declare a static
