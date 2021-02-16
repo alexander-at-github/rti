@@ -10,8 +10,8 @@
 
 namespace rti { namespace util {
 //
-// #define RAYLOG_ON
-// #define RAYSRCLOG_ON
+//#define RAYLOG_ON
+#define RAYSRCLOG_ON
 
   // vector of 3D line segments
   static auto sRayLogVec = std::vector<rti::util::pair<rti::util::triple<float> > > {};

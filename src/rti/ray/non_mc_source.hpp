@@ -35,6 +35,7 @@ public:
       mNonRng1(mNonRng1Max)
       //mNonRng2(mNonRng2Max)
     {
+      std::cout << "USING non_mc_source" << std::endl;
       mNumXOrgs = 144;
       mNumYOrgs = 32;
       dx = (mC2[0] - mC1[0]) / mNumXOrgs;
