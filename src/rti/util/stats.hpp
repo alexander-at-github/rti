@@ -182,7 +182,6 @@ namespace rti::util {
       for (auto const& pair : std::vector<std::pair<std::vector<size_t>, double> > {{corners, correctcornerval}, {edges, correctedgeval}, {inner, correctinnerval}}) {
         auto const& expectedVal = pair.second;
         for (auto const& val : pair.first) {
-          std::cout << val << "\t\t\t" << expectedVal << std::endl;
           handlevalues(val, expectedVal);
         }
       }
