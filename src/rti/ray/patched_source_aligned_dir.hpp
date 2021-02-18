@@ -8,18 +8,14 @@
 #include "rectangle_origin_z.hpp"
 
 namespace rti::ray {
-template <typename Ty> class patched_source : public ray::i_source {
-  // Combines an origin with a direction
-  // Not thread safe. See direction classes for reasons.
+template <typename Ty>
+class patched_source_aligned_dir : public ray::i_source {
 
-  // interesting results:
-  // 46080000 rays; noise: ~0.99106 (0.00894)
-  // Chi-Squared == 231.706 degrees of freedom == 303
-  
 public:
-  patched_source(Ty pZval, util::pair<Ty> pC1, util::pair<Ty> pC2,
-                 size_t pNumRays, size_t pNumXPatches, size_t pNumYPatches,
-                 ray::i_direction<Ty> &pDirection)
+  patched_source_aligned_dir(Ty pZval, util::pair<Ty> pC1,
+                                  util::pair<Ty> pC2, size_t pNumRays,
+                                  size_t pNumXPatches, size_t pNumYPatches,
+                                  ray::i_direction<Ty> &pDirection)
       : mZval(pZval), mC1(pC1), mC2(pC2), mNumRays(pNumRays),
         mNumXPatches(pNumXPatches), mNumYPatches(pNumYPatches),
         mPackSize(pNumXPatches * pNumYPatches), mDirection(pDirection),
@@ -31,7 +27,7 @@ public:
     auto patchC1 = util::pair<Ty>{0, 0};
     auto patchC2 = util::pair<Ty>{(Ty)mpatchdx, (Ty)mpatchdy};
     mPatchOrigin = rectangle_origin_z<float>{mZval, patchC1, patchC2};
-    std::cout << "USING patched_source" << std::endl;
+    std::cout << "USING patched_source_aligned_dir" << std::endl;
     assert(mNumRays % mPackSize == 0 && "Precondition");
   }
 
@@ -41,6 +37,7 @@ public:
                 rng::i_rng::i_state &pRngState4) override final {
     if (mPackIdx == 0) {
       mCurrPatchOrgn = mPatchOrigin.get(pRng, pRngState1, pRngState2);
+      mCurrDir =  mDirection.get(pRng, pRngState3, pRngState4);
     }
     assert(mPackIdx < mPackSize && "Precondition");
     auto pckix = mPackIdx % mNumXPatches;
@@ -64,7 +61,7 @@ public:
     reinterpret_cast<__m128 &>(pRay) =
         _mm_set_ps(tnear, (float)orgn[2], (float)orgn[1], (float)orgn[0]);
     auto constexpr time = 0.0f;
-    auto dir = mDirection.get(pRng, pRngState3, pRngState4);
+    auto const &dir = mCurrDir;
     reinterpret_cast<__m128 &>(pRay.dir_x) =
         _mm_set_ps(time, (float)dir[2], (float)dir[1], (float)dir[0]);
     //
@@ -87,6 +84,7 @@ private:
   ray::i_direction<Ty> &mDirection;
   ray::rectangle_origin_z<float> mPatchOrigin;
   util::triple<Ty> mCurrPatchOrgn;
+  util::triple<Ty> mCurrDir;
   double mpatchdx;
   double mpatchdy;
 };

@@ -27,7 +27,7 @@ public:
                             ray::i_origin<numeric_type> &pOrigin,
                             ray::i_direction<numeric_type> &pDirection)
       : mNumRays(pNumRays), mOrigin(pOrigin), mDirection(pDirection),
-        mNonRng1Max(99u), mNonRng1(mNonRng1Max) {
+        mNonRng1Max(39u), mNonRng1(mNonRng1Max) {
     std::cout << "USING rng_loc_nonrng_dir_source" << std::endl;
     std::cout << "mNumRays == " << mNumRays
               << " mNumRays / (mNonRng1Max + 1) / (mNonRng1Max + 1) == "

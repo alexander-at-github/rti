@@ -30,7 +30,7 @@ public:
     non_mc_source(numeric_type pZval, pair pC1, pair pC2, size_t pNumRays,
                   ray::i_direction<numeric_type>& pDirection) :
       mZval(pZval), mC1(pC1), mC2(pC2), mNumRays(pNumRays), mDirection(pDirection),
-      mNonRng1Max(999u),
+      mNonRng1Max(249u),
       //mNonRng2Max(10),
       mNonRng1(mNonRng1Max)
       //mNonRng2(mNonRng2Max)
@@ -38,6 +38,8 @@ public:
       std::cout << "USING non_mc_source" << std::endl;
       mNumXOrgs = 144;
       mNumYOrgs = 32;
+      mNumXOrgs = 288;
+      mNumYOrgs = 64;
       dx = (mC2[0] - mC1[0]) / mNumXOrgs;
       dy = (mC2[1] - mC1[1]) / mNumYOrgs;
       std::cout << "mNumRays == " << mNumRays << " non-mc-count == " << mNumXOrgs * mNumYOrgs * (mNonRng1Max+1) * (mNonRng1Max+1) << std::endl;

@@ -25,6 +25,8 @@ public:
       std::cout << "USING nonrng_loc_rng_dir_source" << std::endl;
       mNumXOrgs = 144;
       mNumYOrgs = 32;
+      mNumXOrgs = 288;
+      mNumYOrgs = 64;
       dx = (mC2[0] - mC1[0]) / mNumXOrgs;
       dy = (mC2[1] - mC1[1]) / mNumYOrgs;
       std::cout << "mNumRays == " << mNumRays << " mNumRays / mNumXOrgs / mNumYOrgs == " << (double) mNumRays / mNumXOrgs / mNumYOrgs << std::endl;

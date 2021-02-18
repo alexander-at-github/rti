@@ -15,7 +15,9 @@ namespace rti { namespace ray {
 
     source(ray::i_origin<Ty>& pOrigin, ray::i_direction<Ty>& pDirection) :
       mOrigin(pOrigin),
-      mDirection(pDirection) {}
+      mDirection(pDirection) {
+      std::cout << "USING source" << std::endl;
+    }
 
     void fill_ray(RTCRay& pRay, rng::i_rng& pRng,
                   rng::i_rng::i_state& pRngState1, rng::i_rng::i_state& pRngState2,

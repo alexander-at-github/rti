@@ -35,6 +35,7 @@
 #include "../ray/disc_origin_z.hpp"
 #include "../ray/nonrng_loc_rng_dir_source.hpp"
 #include "../ray/patched_source.hpp"
+#include "../ray/patched_source_aligned_dir.hpp"
 #include "../ray/rng_loc_nonrng_dir_source.hpp"
 #include "../ray/non_mc_source.hpp"
 #include "../ray/source.hpp"
@@ -218,13 +219,14 @@ int main(int argc, char* argv[]) {
   auto direction = ray::cosine_direction_z<numeric_type>{};
   auto origin = ray::rectangle_origin_z<numeric_type>{zmax, originC1, originC2};
   //
-  // auto source = ray::source<numeric_type> {origin, direction};
+  //auto source = ray::source<numeric_type> {origin, direction};
   //auto source = ray::patched_source<numeric_type>{zmax, originC1, originC2, numrays, 144, 32, direction};
-  auto source = ray::patched_source<numeric_type>{zmax, originC1, originC2, numrays, 36, 8, direction};
+  auto source = ray::patched_source<numeric_type>{zmax, originC1, originC2, numrays, 288, 64, direction};
+  //auto source = ray::patched_source_aligned_dir<numeric_type>{zmax, originC1, originC2, numrays, 144, 32, direction};
   //
-  // auto source = ray::non_mc_source<numeric_type> {zmax, originC1, originC2,
-  // numrays, direction};
-  // auto source = ray::nonrng_loc_rng_dir_source<numeric_type>{zmax, originC1, originC2, numrays, direction};
+  //auto source = ray::non_mc_source<numeric_type> {zmax, originC1, originC2,
+  //    numrays, direction};
+  //auto source = ray::nonrng_loc_rng_dir_source<numeric_type>{zmax, originC1, originC2, numrays, direction};
   //auto source = ray::rng_loc_nonrng_dir_source<numeric_type>{numrays, origin, direction};
 
   //// Define particle
@@ -285,20 +287,20 @@ int main(int argc, char* argv[]) {
     std::cout << "Writing bounding box to " << bbfilename << std::endl;
     io::vtp_writer<numeric_type>::write(boundary, bbfilename);
 
-    auto raylog = RAYLOG_GET_PTR();
-    if (raylog != nullptr) {
-      auto raylogfilename = vtksys::SystemTools::
-        GetFilenameWithoutExtension(outfilename).append(".ray-log.vtp");
-      std::cout << "Writing ray log to " << raylogfilename << std::endl;
-      io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
-    }
-    auto raysrclog = RAYSRCLOG_GET_PTR();
-    if (raysrclog != nullptr) {
-      auto raysrclogfilename = vtksys::SystemTools::
-        GetFilenameWithoutExtension(outfilename).append(".ray-src-log.vtp");
-      std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
-      io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
-    }
+    // auto raylog = RAYLOG_GET_PTR();
+    // if (raylog != nullptr) {
+    //   auto raylogfilename = vtksys::SystemTools::
+    //     GetFilenameWithoutExtension(outfilename).append(".ray-log.vtp");
+    //   std::cout << "Writing ray log to " << raylogfilename << std::endl;
+    //   io::vtp_writer<numeric_type>::write(raylog, raylogfilename);
+    // }
+    // auto raysrclog = RAYSRCLOG_GET_PTR();
+    // if (raysrclog != nullptr) {
+    //   auto raysrclogfilename = vtksys::SystemTools::
+    //     GetFilenameWithoutExtension(outfilename).append(".ray-src-log.vtp");
+    //   std::cout << "Writing ray src log to " << raysrclogfilename << std::endl;
+    //   io::vtp_writer<numeric_type>::write(raysrclog, raysrclogfilename);
+    // }
   }
 
   rtcReleaseDevice(device);
