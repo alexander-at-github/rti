@@ -133,19 +133,14 @@ namespace rti { namespace trace {
         // 115249
         // 2147483647
         // 1442968193
-        auto seed = (unsigned int) ((omp_get_thread_num() + 1) *  2147483647); // multiply by magic number (prime)
-        // It seems really important to use two separate seeds / states for
-        // sampling the source and sampling reflections. When we use only one
-        // state for both, then the variance is very high.
-        // auto rngstate1 = std::make_unique<rng::mt64_rng::state>(seed);
-        // auto rngstate2 = std::make_unique<rng::mt64_rng::state>(seed+2);
-        auto rngstate1 = rng::mt64_rng::state {seed};
-        auto rngstate2 = rng::mt64_rng::state {seed+ 1442968193};
-        auto rngstate3 = rng::mt64_rng::state {seed+ (1442968193/2)};
-        auto rngstate4 = rng::mt64_rng::state {seed+ (1442968193/3)};
-        auto rngstate5 = rng::mt64_rng::state {seed+ (1442968193/4)};
-        auto rngstate6 = rng::mt64_rng::state {seed+ (1442968193/5)};
-        auto rngstate7 = rng::mt64_rng::state {seed+ (1442968193/6)};
+        auto seed = (unsigned int) ((omp_get_thread_num() + 1) *  31); // multiply by magic number (prime)
+        auto rngstate1 = rng::mt64_rng::state { seed + 0 };
+        auto rngstate2 = rng::mt64_rng::state { seed + 1 };
+        auto rngstate3 = rng::mt64_rng::state { seed + 2 };
+        auto rngstate4 = rng::mt64_rng::state { seed + 3 };
+        auto rngstate5 = rng::mt64_rng::state { seed + 4 };
+        auto rngstate6 = rng::mt64_rng::state { seed + 5 };
+        auto rngstate7 = rng::mt64_rng::state { seed + 6 };
 
         // A dummy counter for the boundary
         auto boundaryCntr = trace::dummy_counter {};
