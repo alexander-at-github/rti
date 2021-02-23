@@ -1,9 +1,9 @@
 externalproject_add(vtk-external
   GIT_REPOSITORY
     https://gitlab.kitware.com/vtk/vtk.git
-  # Hash of tags/v8.2.0
+  # Hash of tags/v9.0.1
   GIT_TAG
-    e3de2c35c9f44fd6d16ad4c6b6527de7c4f677c7
+    96e6fa9b3ff245e4d51d49f23d40e9ad8774e85e
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>
     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
@@ -14,11 +14,10 @@ externalproject_add(vtk-external
     #-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
     -DBUILD_TESTING=OFF
     -DBUILD_EXAMPLES=OFF
-    # TODO: fix
-    #-DBOOST_ROOT=$ENV{HPTCAD_BOOST_INSTALL_DIR}
+    #
     -DVTK_WRAP_PYTHON=OFF
-    -DVTK_PYTHON_VERSION=3.5
-    -DVTK_LEGACY_REMOVE=OFF
+    #-DVTK_PYTHON_VERSION=3.5
+    -DVTK_LEGACY_REMOVE=ON
     -DVTK_Group_StandAlone=OFF
     -DVTK_Group_Rendering=OFF
     -DModule_vtkIOXML=ON
