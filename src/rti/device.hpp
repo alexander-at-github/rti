@@ -59,6 +59,11 @@ namespace rti {
       spacing = spacing_;
     }
 
+    void set_grid_spacing(numeric_type spacing_) {
+      spacing.clear();
+      spacing.push_back(spacing_);
+    }
+
     void set_number_of_rays(size_t numofrays_)
     {
       numofrays = numofrays_;
@@ -207,16 +212,20 @@ namespace rti {
     combine_points_with_grid_spacing_and_compute_max_disc_radius()
     {
       auto result = std::vector<util::quadruple<numeric_type> > {};
-      assert(points.size() == spacing.size() && "Assumption");
-      maxDscRad = 0.0;
+      const auto num_spacings = spacing.size();
+      assert((points.size() == num_spacings || num_spacings == 1) && "Assumption");
+      maxDscRad = spacing[0];
+      auto sca = spacing[0];
       result.reserve(points.size());
       for (size_t idx = 0; idx < points.size(); ++idx) {
-        auto tri = points[idx];
-        auto sca = spacing[idx];
-        result.push_back({tri[0], tri[1], tri[2], sca});
-        if (maxDscRad < sca) {
-          maxDscRad = sca;
+        const auto& tri = points[idx];
+        if(num_spacings != 1){
+          sca = spacing[idx];
+          if (maxDscRad < sca) {
+            maxDscRad = sca;
+          }
         }
+        result.push_back({tri[0], tri[1], tri[2], sca});
       }
       return result;
     }
