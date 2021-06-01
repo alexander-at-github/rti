@@ -95,7 +95,7 @@ namespace rti { namespace geo {
       auto xx = rayin.org_x + rayin.dir_x * rayin.tfar;
       auto yy = rayin.org_y + rayin.dir_y * rayin.tfar;
       auto zz = rayin.org_z + rayin.dir_z * rayin.tfar;
-      auto const eps = 1e-6;
+      auto const eps = 1e-5;
       if (primID == xMaxTriIdcs[0] || primID == xMaxTriIdcs[1] ||
           primID == xMinTriIdcs[0] || primID == xMinTriIdcs[1]) {
         // X boundary

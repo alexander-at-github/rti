@@ -11,7 +11,7 @@
 namespace rti { namespace util {
 
   //constexpr double pi() { return std::atan(1)*4; }
-  constexpr double pi() { return std::acos(-1); }
+  constexpr double pi() { return 3.141592653589793238462643383279502884L; }
   //constexpr auto pi = std::acos(-1);
 
   template<typename Ty>
